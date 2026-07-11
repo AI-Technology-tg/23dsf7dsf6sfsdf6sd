@@ -19,8 +19,8 @@
 @media (max-width: 900px) {
     html.reminko-mobile-preview #live2d-widget.live2d-widget-container {
         position: fixed !important;
-        right: -24px !important;
-        bottom: -18px !important;
+        right: -48px !important;
+        bottom: -42px !important;
         left: auto !important;
         top: auto !important;
         z-index: 1400 !important;
@@ -46,7 +46,7 @@
 
 @media (max-width: 420px) {
     html.reminko-mobile-preview #live2d-widget.live2d-widget-container {
-        right: -34px !important;
-        bottom: -18px !important;
+        right: -58px !important;
+        bottom: -42px !important;
     }
 }
