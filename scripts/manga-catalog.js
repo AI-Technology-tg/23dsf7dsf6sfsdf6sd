@@ -52,6 +52,10 @@ function initMangaCatalogAfterNavigation() {
 }
 
 window.addEventListener('reminko:navigation-applied', initMangaCatalogAfterNavigation);
+window.addEventListener('reminko-remanga-catalog-loaded', () => {
+    if (!document.getElementById('catalogResults')) return;
+    loadGenres();
+});
 
 document.addEventListener('DOMContentLoaded', () => {
     void ensureRemangaCatalogForPage().then(() => {

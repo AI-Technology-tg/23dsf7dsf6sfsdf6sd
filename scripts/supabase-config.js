@@ -236,7 +236,11 @@ function reminkoPathMatchesExtraRoute(pathname, key) {
         case 'favorites-manga':
             return file === 'favorites-manga.html';
         case 'manga_catalog':
-            return p.includes('/catalog/manga') || (file === 'manga.html' && p.includes('catalog'));
+            return (
+                p.includes('/catalog/manga') ||
+                (file === 'manga.html' && p.includes('catalog')) ||
+                (p.includes('/manga/') && (file === 'view.html' || file === 'reader.html'))
+            );
         case 'minko_ai':
             return file === 'minko-ai.html';
         case 'admin':
@@ -264,6 +268,8 @@ function reminkoPathAllowedDuringMaintenance(pathname, extraRoutes) {
     if (file === 'index.html' || (p.endsWith('/') && (!file || !file.includes('.')))) return true;
     if (p.includes('/catalog/anime') || (file === 'anime.html' && p.includes('catalog'))) return true;
     if (p.includes('/anime/') && file === 'view.html') return true;
+    if (p.includes('/catalog/manga') || (file === 'manga.html' && p.includes('catalog'))) return true;
+    if (p.includes('/manga/') && (file === 'view.html' || file === 'reader.html')) return true;
     if (file === 'reset-password.html' || file === 'payment-success.html' || file === 'cancel-success.html') {
         return true;
     }
