@@ -34,6 +34,7 @@ npm run automate:anime:api:enrich
 ## Netlify
 
 Если Netlify привязан к этому GitHub-репозиторию, новый commit от GitHub Actions автоматически запустит deploy.
+Git-аккаунт автора коммита должен быть привязан в Netlify Team, иначе private repo может блокировать deploy.
 
 Проверить в Netlify:
 
