@@ -723,19 +723,20 @@
 
     html.reminko-mobile-preview .catalog-filter-bar--anime #filterGenrePanel.filter-select-panel {
         position: fixed !important;
-        left: var(--reminko-mobile-page-x, 0.85rem) !important;
-        right: var(--reminko-mobile-page-x, 0.85rem) !important;
-        top: auto !important;
-        bottom: calc(var(--reminko-mobile-nav-h, 72px) + env(safe-area-inset-bottom, 0px) + 0.65rem) !important;
-        width: auto !important;
+        left: 50% !important;
+        right: auto !important;
+        top: 50% !important;
+        bottom: auto !important;
+        width: min(92vw, 390px) !important;
         min-width: 0 !important;
         max-width: none !important;
-        max-height: min(62vh, 480px) !important;
+        max-height: min(68vh, 520px) !important;
         padding: 0.85rem !important;
-        border-radius: 22px 22px 18px 18px !important;
+        border-radius: 22px !important;
         background: rgba(13, 13, 26, 0.98) !important;
         border: 1px solid rgba(227, 0, 255, 0.24) !important;
-        box-shadow: 0 -18px 48px rgba(0, 0, 0, 0.54) !important;
+        box-shadow: 0 20px 70px rgba(0, 0, 0, 0.68) !important;
+        transform: translate(-50%, -50%) !important;
         overflow-y: auto !important;
         z-index: 2400 !important;
         overscroll-behavior: contain;
