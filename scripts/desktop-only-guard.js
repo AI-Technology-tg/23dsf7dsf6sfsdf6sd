@@ -262,8 +262,23 @@
         }
     }
 
+    function isGitHubPagesMobilePreview() {
+        try {
+            var host = String(window.location.hostname || '').toLowerCase();
+            var path = String(window.location.pathname || '');
+            return host === 'ai-technology-tg.github.io' && path.indexOf('/23dsf7dsf6sfsdf6sd/') === 0;
+        } catch (_) {
+            return false;
+        }
+    }
+
     function checkMobilePreviewAccess() {
         if (mobilePreviewAccessPromise) return mobilePreviewAccessPromise;
+        if (isGitHubPagesMobilePreview()) {
+            markMobilePreviewAllowed();
+            mobilePreviewAccessPromise = Promise.resolve(true);
+            return mobilePreviewAccessPromise;
+        }
         mobilePreviewAccessPromise = fetch(MOBILE_PREVIEW_ENDPOINT, {
             method: 'GET',
             cache: 'no-store',
