@@ -2525,6 +2525,85 @@ html {
     }
 }
 
+/* Mobile preview: без системных подсветок/теней нажатия. */
+@media (max-width: 900px) {
+    html.reminko-mobile-preview *,
+    html.reminko-mobile-preview *::before,
+    html.reminko-mobile-preview *::after {
+        -webkit-tap-highlight-color: transparent !important;
+    }
+
+    html.reminko-mobile-preview a,
+    html.reminko-mobile-preview button,
+    html.reminko-mobile-preview input,
+    html.reminko-mobile-preview select,
+    html.reminko-mobile-preview textarea,
+    html.reminko-mobile-preview label,
+    html.reminko-mobile-preview [role='button'],
+    html.reminko-mobile-preview .sidebar-link,
+    html.reminko-mobile-preview .anime-card,
+    html.reminko-mobile-preview .jikan-card,
+    html.reminko-mobile-preview .filter-chip,
+    html.reminko-mobile-preview .filter-option,
+    html.reminko-mobile-preview .genre-btn,
+    html.reminko-mobile-preview .anime-franchise-card {
+        -webkit-tap-highlight-color: transparent !important;
+        -webkit-touch-callout: none;
+        outline: none !important;
+    }
+
+    html.reminko-mobile-preview a:focus,
+    html.reminko-mobile-preview a:focus-visible,
+    html.reminko-mobile-preview a:active,
+    html.reminko-mobile-preview button:focus,
+    html.reminko-mobile-preview button:focus-visible,
+    html.reminko-mobile-preview button:active,
+    html.reminko-mobile-preview input:focus,
+    html.reminko-mobile-preview input:focus-visible,
+    html.reminko-mobile-preview input:active,
+    html.reminko-mobile-preview select:focus,
+    html.reminko-mobile-preview select:focus-visible,
+    html.reminko-mobile-preview select:active,
+    html.reminko-mobile-preview textarea:focus,
+    html.reminko-mobile-preview textarea:focus-visible,
+    html.reminko-mobile-preview textarea:active,
+    html.reminko-mobile-preview [role='button']:focus,
+    html.reminko-mobile-preview [role='button']:focus-visible,
+    html.reminko-mobile-preview [role='button']:active,
+    html.reminko-mobile-preview .sidebar-link:focus,
+    html.reminko-mobile-preview .sidebar-link:focus-visible,
+    html.reminko-mobile-preview .sidebar-link:active,
+    html.reminko-mobile-preview .anime-card:focus,
+    html.reminko-mobile-preview .anime-card:focus-visible,
+    html.reminko-mobile-preview .anime-card:active,
+    html.reminko-mobile-preview .jikan-card:focus,
+    html.reminko-mobile-preview .jikan-card:focus-visible,
+    html.reminko-mobile-preview .jikan-card:active,
+    html.reminko-mobile-preview .filter-chip:focus,
+    html.reminko-mobile-preview .filter-chip:focus-visible,
+    html.reminko-mobile-preview .filter-chip:active,
+    html.reminko-mobile-preview .filter-option:focus,
+    html.reminko-mobile-preview .filter-option:focus-visible,
+    html.reminko-mobile-preview .filter-option:active,
+    html.reminko-mobile-preview .genre-btn:focus,
+    html.reminko-mobile-preview .genre-btn:focus-visible,
+    html.reminko-mobile-preview .genre-btn:active,
+    html.reminko-mobile-preview .anime-franchise-card:focus,
+    html.reminko-mobile-preview .anime-franchise-card:focus-visible,
+    html.reminko-mobile-preview .anime-franchise-card:active {
+        outline: none !important;
+        box-shadow: none !important;
+        filter: none !important;
+    }
+
+    html.reminko-mobile-preview input[type='range'],
+    html.reminko-mobile-preview input[type='range']:focus,
+    html.reminko-mobile-preview input[type='range']:active {
+        outline: none !important;
+        box-shadow: none !important;
+    }
+}
+
 .history-actions {
     display: flex;
     gap: 0.75rem;
