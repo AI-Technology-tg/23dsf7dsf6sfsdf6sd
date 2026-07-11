@@ -584,6 +584,20 @@ function createJikanCard(anime) {
         '';
     const score = anime.score ? anime.score.toFixed(1) : '—';
     const titleEn = anime.title_english || anime.title || anime.title_japanese || '—';
+    const cachedShiki =
+        anime.mal_id && window.shikimoriApi?.readCachedByMalId
+            ? window.shikimoriApi.readCachedByMalId(anime.mal_id)
+            : null;
+    const catalogTitle =
+        anime.mal_id && window.KodikCatalogStore?.getAll
+            ? (window.KodikCatalogStore.getAll() || []).find((a) => String(a.mal_id) === String(anime.mal_id))?.title
+            : '';
+    const titleDisplay =
+        (catalogTitle && /[а-яё]/i.test(catalogTitle) ? catalogTitle : '') ||
+        (cachedShiki?.russian || '') ||
+        (anime.title_russian || '') ||
+        (anime.title && /[а-яё]/i.test(anime.title) ? anime.title : '') ||
+        titleEn;
     const epLine = initialEpLine(anime);
     const status =
         anime.status === 'Currently Airing'
@@ -618,12 +632,12 @@ function createJikanCard(anime) {
 
     const titleEl = card.querySelector('.jikan-card-title');
     if (titleEl) {
-        titleEl.textContent = titleEn;
-        titleEl.setAttribute('title', titleEn);
+        titleEl.textContent = titleDisplay;
+        titleEl.setAttribute('title', titleDisplay);
     }
     const posterImg = card.querySelector('.jikan-card-poster img');
     if (posterImg) {
-        posterImg.alt = titleEn || 'Постер аниме';
+        posterImg.alt = titleDisplay || 'Постер аниме';
         if (typeof attachJikanPosterFallback === 'function') {
             attachJikanPosterFallback(posterImg, anime.mal_id, anime);
         }
@@ -784,6 +798,30 @@ function renderJikanCards(containerId, animeList) {
     });
 }
 
+function appendJikanCards(containerId, animeList, excludeMalIds) {
+    const container = document.getElementById(containerId);
+    if (!container || !Array.isArray(animeList) || animeList.length === 0) return;
+
+    if (typeof registerJikanHomeList === 'function') {
+        registerJikanHomeList(animeList);
+    }
+
+    const exclude = excludeMalIds instanceof Set ? excludeMalIds : new Set(excludeMalIds || []);
+    let displayList = animeList.filter((anime) => anime && !exclude.has(String(anime.mal_id)));
+    if (typeof filterJikanItemsRestricted === 'function') {
+        displayList = filterJikanItemsRestricted(displayList);
+    }
+    if (!displayList.length) return;
+
+    displayList.forEach((anime) => {
+        container.appendChild(createJikanCard(anime));
+    });
+
+    requestAnimationFrame(() => {
+        applyShikimoriToStrip(container, displayList);
+    });
+}
+
 async function loadSeasonAnime() {
     const cache = getHomeCache();
     if (cache && cache.season) {
@@ -904,6 +942,15 @@ async function loadAnnouncedHomeSection(mediaType) {
 
 if (typeof window !== 'undefined') {
     window.loadAnnouncedHomeSection = loadAnnouncedHomeSection;
+    window.appendAnnouncedHomeSection = async function appendAnnouncedHomeSection(mediaType, excludeMalIds) {
+        const raw = await fetchJikanAnnouncedListCached();
+        const m = mediaType === 'film' ? 'film' : 'serial';
+        const list =
+            typeof filterAnnouncedJikanByMedia === 'function'
+                ? filterAnnouncedJikanByMedia(raw, m)
+                : raw;
+        appendJikanCards('kodikAnnouncedGrid', list.slice(0, JIKAN_ANNOUNCED_HOME_LIMIT), excludeMalIds);
+    };
 }
 
 // ==================== Недавно просмотренные ====================

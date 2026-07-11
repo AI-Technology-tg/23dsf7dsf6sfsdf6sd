@@ -412,6 +412,14 @@
         const items = _catalog.length ? pickAnnounced(_catalog, m) : [];
         if (items.length) {
             renderSectionGrid('kodikAnnouncedGrid', items);
+            if (typeof global.appendAnnouncedHomeSection === 'function') {
+                const exclude = new Set(
+                    items
+                        .map((anime) => (anime && anime.mal_id != null ? String(anime.mal_id) : ''))
+                        .filter(Boolean)
+                );
+                void global.appendAnnouncedHomeSection(m, exclude);
+            }
             return;
         }
 
