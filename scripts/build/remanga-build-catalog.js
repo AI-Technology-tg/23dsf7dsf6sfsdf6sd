@@ -6,7 +6,8 @@
  *   node scripts/build/remanga-build-catalog.js
  *
  * Переменные окружения:
- *   REMANGA_PAGES=25   — сколько страниц API (по 100 тайтлов)
+ *   REMANGA_PAGES=300  — запас страниц API (ReManga сейчас отдаёт около 40 тайтлов на страницу)
+ *   REMANGA_TARGET=10000 — сколько тайтлов сохранить в итоговом каталоге
  *   REMANGA_ENRICH=1   — подтянуть жанры и branch_id из v2 (медленнее)
  */
 'use strict';
@@ -21,8 +22,9 @@ const API = 'https://api.remanga.org/api';
 const SITE = 'https://remanga.org';
 const UA = 'Re-Minko-Catalog-Build/1.0';
 
-const PAGES = Math.max(1, parseInt(process.env.REMANGA_PAGES || '25', 10));
+const PAGES = Math.max(1, parseInt(process.env.REMANGA_PAGES || '300', 10));
 const COUNT = Math.min(100, Math.max(1, parseInt(process.env.REMANGA_COUNT || '100', 10)));
+const TARGET = Math.max(1, parseInt(process.env.REMANGA_TARGET || '10000', 10));
 const ENRICH = process.env.REMANGA_ENRICH !== '0';
 const ENRICH_CONCURRENCY = Math.max(1, parseInt(process.env.REMANGA_ENRICH_CONCURRENCY || '6', 10));
 const ENRICH_DELAY_MS = Math.max(0, parseInt(process.env.REMANGA_ENRICH_DELAY_MS || '80', 10));
@@ -99,8 +101,43 @@ async function fetchListPage(page) {
     return data.content || [];
 }
 
+function loadExistingCatalog() {
+    try {
+        if (!fs.existsSync(OUT_FILE)) return new Map();
+        const parsed = JSON.parse(fs.readFileSync(OUT_FILE, 'utf8'));
+        const items = Array.isArray(parsed?.items) ? parsed.items : [];
+        return new Map(items.filter((item) => item?.id).map((item) => [item.id, item]));
+    } catch (_) {
+        return new Map();
+    }
+}
+
+function mergeExistingItem(item, existingById) {
+    const old = existingById.get(item.id);
+    if (!old) return item;
+    return {
+        ...item,
+        ...old,
+        _remanga: {
+            ...(item._remanga || {}),
+            ...(old._remanga || {}),
+        },
+    };
+}
+
+async function fetchListPageWithRetry(page) {
+    for (let attempt = 1; attempt <= 3; attempt++) {
+        const rows = await fetchListPage(page);
+        if (rows.length || attempt === 3) return rows;
+        console.warn(`  empty page ${page}, retry ${attempt}/3…`);
+        await sleep(500 * attempt);
+    }
+    return [];
+}
+
 async function enrichItem(item) {
     if (!item._remanga?.dir) return item;
+    if (item._remanga?.branchId && item.description && item.genres?.length) return item;
     await sleep(ENRICH_DELAY_MS);
     try {
         const d = await apiGet(`${API}/v2/titles/${encodeURIComponent(item._remanga.dir)}/`);
@@ -155,19 +192,27 @@ async function enrichAll(items) {
 }
 
 async function main() {
-    console.log(`ReManga catalog: pages=${PAGES}, count=${COUNT}, enrich=${ENRICH}`);
+    console.log(`ReManga catalog: pages=${PAGES}, count=${COUNT}, target=${TARGET}, enrich=${ENRICH}`);
 
     const seen = new Set();
     const items = [];
+    const existingById = loadExistingCatalog();
+    let emptyStreak = 0;
 
-    for (let page = 1; page <= PAGES; page++) {
+    for (let page = 1; page <= PAGES && items.length < TARGET; page++) {
         console.log(`Страница ${page}/${PAGES}…`);
-        const rows = await fetchListPage(page);
-        if (!rows.length) break;
+        const rows = await fetchListPageWithRetry(page);
+        if (!rows.length) {
+            emptyStreak++;
+            if (emptyStreak >= 5) break;
+            continue;
+        }
+        emptyStreak = 0;
         for (const row of rows) {
             if (!row?.id || !row.dir || seen.has(row.id)) continue;
             seen.add(row.id);
-            items.push(mapListItem(row));
+            items.push(mergeExistingItem(mapListItem(row), existingById));
+            if (items.length >= TARGET) break;
         }
         await sleep(120);
     }
@@ -183,6 +228,7 @@ async function main() {
             count: items.length,
             withChapters,
             pages: PAGES,
+            target: TARGET,
             ordering: '-total_views',
         },
         items,
