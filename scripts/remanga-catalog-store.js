@@ -15,12 +15,26 @@
         const cfg = global.APP_CONFIG && global.APP_CONFIG.remanga;
         const rel = (cfg && cfg.catalogPath) || 'data/remanga-manga-catalog.json';
         if (/^https?:\/\//i.test(rel)) return rel;
+        const path = rel.replace(/^\/+/, '');
+        const loc = global.location || {};
+        const host = String(loc.hostname || '').toLowerCase();
+        const origin = loc.origin || '';
+        const protocol = String(loc.protocol || '');
+        const isLocal =
+            !origin ||
+            host.includes('localhost') ||
+            host.includes('127.0.0.1') ||
+            protocol.startsWith('file');
+        if (!isLocal && host.endsWith('.github.io')) {
+            const firstPathPart = String(loc.pathname || '/').split('/').filter(Boolean)[0];
+            const basePath = firstPathPart ? `/${firstPathPart}/` : '/';
+            return origin.replace(/\/$/, '') + basePath + path;
+        }
         const base =
             (global.APP_CONFIG && global.APP_CONFIG.siteOrigin) ||
-            (global.location && global.location.origin) ||
+            origin ||
             '';
-        const path = rel.replace(/^\//, '');
-        if (base && !base.includes('localhost') && !String(global.location?.protocol).startsWith('file')) {
+        if (base && !isLocal) {
             return base.replace(/\/$/, '') + '/' + path;
         }
         const depth =
