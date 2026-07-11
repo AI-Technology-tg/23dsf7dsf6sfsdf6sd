@@ -423,6 +423,43 @@ const FRANCHISE_JIKAN_RELATIONS = new Set([
     'other',
 ]);
 
+const FRANCHISE_MANUAL_MAL_GROUPS = [
+    {
+        key: 'rezero',
+        title: 'Re:Zero',
+        malIds: [
+            31240, // TV-1
+            39587, // TV-2 part 1
+            42203, // TV-2 part 2
+            54857, // TV-3
+            61316, // TV-4
+            36286, // Memory Snow
+            38414, // Frozen Bond
+            33142, // Break Time
+            42364, // Break Time 2
+            60012, // Break Time 3
+            63830, // Break Time 4
+            38389, // collaboration short
+        ],
+    },
+];
+
+const FRANCHISE_MANUAL_MAL_LOOKUP = (() => {
+    const map = new Map();
+    for (const group of FRANCHISE_MANUAL_MAL_GROUPS) {
+        for (const mal of group.malIds || []) {
+            map.set(parseInt(mal, 10), group);
+        }
+    }
+    return map;
+})();
+
+function manualFranchiseGroupForMal(malId) {
+    const mal = parseInt(malId, 10);
+    if (!Number.isFinite(mal) || mal <= 0) return null;
+    return FRANCHISE_MANUAL_MAL_LOOKUP.get(mal) || null;
+}
+
 const FRANCHISE_RELATIONS_CACHE_PREFIX = 'reminko_franchise_rel_v6_';
 const FRANCHISE_RELATIONS_CACHE_TTL = 7 * 24 * 60 * 60 * 1000;
 const FRANCHISE_BFS_MAX_NODES = 64;
@@ -786,7 +823,27 @@ function franchiseStripEligibleItem(anime) {
 
 async function buildFranchiseSeasonsFromJikanRelations(malId) {
     const { entries, edges } = await fetchFranchiseRelationGraph(malId);
-    const malIds = entries.map((e) => e.mal_id).filter((m) => m != null);
+    const manualGroup = manualFranchiseGroupForMal(malId);
+    const entryByMal = new Map();
+    for (const entry of entries) {
+        const mal = parseInt(entry && entry.mal_id, 10);
+        if (Number.isFinite(mal) && mal > 0) entryByMal.set(mal, entry);
+    }
+    if (manualGroup) {
+        for (const manualMal of manualGroup.malIds || []) {
+            const mal = parseInt(manualMal, 10);
+            if (!Number.isFinite(mal) || mal <= 0 || entryByMal.has(mal)) continue;
+            entryByMal.set(mal, {
+                mal_id: mal,
+                name: manualGroup.title || `MAL ${mal}`,
+                type: 'anime',
+                relation: 'manual-franchise',
+            });
+            edges.push({ from: parseInt(malId, 10), to: mal, relation: 'manual-franchise' });
+        }
+    }
+    const mergedEntries = [...entryByMal.values()];
+    const malIds = mergedEntries.map((e) => e.mal_id).filter((m) => m != null);
     const byMal = new Map();
 
     for (const hit of findCatalogAnimeByMalIds(malIds)) {
@@ -794,7 +851,7 @@ async function buildFranchiseSeasonsFromJikanRelations(malId) {
         if (Number.isFinite(mal)) byMal.set(mal, hit);
     }
 
-    for (const entry of entries) {
+    for (const entry of mergedEntries) {
         const mal = parseInt(entry.mal_id, 10);
         if (!Number.isFinite(mal) || mal <= 0) continue;
         if (byMal.has(mal)) continue;
@@ -803,7 +860,7 @@ async function buildFranchiseSeasonsFromJikanRelations(malId) {
     }
 
     const relationMalSet = new Set();
-    for (const entry of entries) {
+    for (const entry of mergedEntries) {
         const m = parseInt(entry.mal_id, 10);
         if (Number.isFinite(m) && m > 0) relationMalSet.add(m);
     }
@@ -813,7 +870,7 @@ async function buildFranchiseSeasonsFromJikanRelations(malId) {
         items: sortFranchiseSeasonsChronologically(items, edges),
         edges,
         relationMalSet,
-        entries,
+        entries: mergedEntries,
     };
 }
 
