@@ -39,7 +39,7 @@
         if (!cur || !cur.src) return;
         var href;
         try {
-            href = new URL('../styles/live2d-widget.css?v=mobile-v4-7', cur.src).href;
+            href = new URL('../styles/live2d-widget.css?v=mobile-v4-8', cur.src).href;
         } catch (e) {
             return;
         }
@@ -105,9 +105,69 @@
     function hideLive2dImmediately() {
         var el = document.getElementById('live2d-widget');
         if (!el || !el.style) return;
+        el.style.setProperty('transition', 'none', 'important');
         el.style.setProperty('opacity', '0', 'important');
         el.style.setProperty('visibility', 'hidden', 'important');
         el.style.setProperty('background', 'transparent', 'important');
+    }
+
+    function targetNavigationLink(target) {
+        var node = target;
+        while (node && node !== document.documentElement) {
+            if (node.tagName && String(node.tagName).toLowerCase() === 'a') return node;
+            node = node.parentNode;
+        }
+        return null;
+    }
+
+    function shouldHideForNavigationLink(link) {
+        if (!link) return false;
+        var href = link.getAttribute('href') || '';
+        if (!href || href.charAt(0) === '#') return false;
+        if (link.target && link.target !== '_self') return false;
+        if (link.hasAttribute('download')) return false;
+        return true;
+    }
+
+    function bindEarlyHideTriggers() {
+        document.addEventListener(
+            'pointerdown',
+            function (e) {
+                if (shouldHideForNavigationLink(targetNavigationLink(e.target))) hideLive2dImmediately();
+            },
+            true
+        );
+        document.addEventListener(
+            'submit',
+            function () {
+                hideLive2dImmediately();
+            },
+            true
+        );
+        window.addEventListener(
+            'keydown',
+            function (e) {
+                var key = String(e.key || '').toLowerCase();
+                if (key === 'f5' || ((e.ctrlKey || e.metaKey) && key === 'r')) hideLive2dImmediately();
+            },
+            true
+        );
+        document.addEventListener('visibilitychange', function () {
+            if (document.visibilityState === 'hidden') hideLive2dImmediately();
+        });
+        window.addEventListener('reminko:loading-screen-shown', hideLive2dImmediately);
+    }
+
+    function watchLoadingOverlayReturn() {
+        var el = document.getElementById('loadingScreen');
+        if (!el || typeof MutationObserver === 'undefined') return;
+        var lastGone = loadingOverlayGone();
+        var obs = new MutationObserver(function () {
+            var gone = loadingOverlayGone();
+            if (lastGone && !gone) hideLive2dImmediately();
+            lastGone = gone;
+        });
+        obs.observe(el, { attributes: true, attributeFilter: ['class', 'style'] });
     }
 
     function loadingOverlayGone() {
@@ -157,6 +217,8 @@
 
     window.addEventListener('pagehide', hideLive2dImmediately);
     window.addEventListener('beforeunload', hideLive2dImmediately);
+    bindEarlyHideTriggers();
+    afterWindowLoad(watchLoadingOverlayReturn);
 
     schedule();
 })();
