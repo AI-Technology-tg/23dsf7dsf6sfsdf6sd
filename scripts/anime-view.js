@@ -318,9 +318,40 @@ function franchiseBuildRootBases(titleRu, titleEn, titleJp) {
         const base = normalizeFranchiseBaseKey(raw);
         if (base && base.length >= 4) bases.add(base);
         const wp = franchiseTitleWordPrefix(raw);
-        if (wp && wp.length >= 6) bases.add(wp);
+        if (wp && wp.length >= 10 && !franchiseBaseLooksTooGeneric(wp)) bases.add(wp);
     }
     return bases;
+}
+
+function franchiseBaseLooksTooGeneric(base) {
+    const words = String(base || '')
+        .split(/\s+/)
+        .filter(Boolean);
+    if (words.length < 2) return true;
+    const generic = new Set([
+        'клинок',
+        'магия',
+        'магическая',
+        'битва',
+        'история',
+        'легенда',
+        'герой',
+        'герои',
+        'королева',
+        'король',
+        'девочка',
+        'мальчик',
+        'демон',
+        'демоны',
+        'blade',
+        'queen',
+        'story',
+        'legend',
+        'hero',
+        'heroes',
+        'magic',
+    ]);
+    return words.length <= 2 && words.some((w) => generic.has(w));
 }
 
 function franchiseTitleWordPrefix(title) {
@@ -339,14 +370,21 @@ function franchiseTitleBelongsToRoot(title, rootBase) {
     if (k === rootBase) return true;
     const shorter = k.length <= rootBase.length ? k : rootBase;
     const longer = k.length > rootBase.length ? k : rootBase;
-    if (shorter.length >= 6 && longer.startsWith(shorter)) return true;
+    if (!franchiseBaseLooksTooGeneric(shorter) && shorter.length >= 10 && longer.startsWith(shorter)) return true;
     const wCand = franchiseTitleWordPrefix(title);
     const wRoot = rootBase
         .split(/\s+/)
         .filter((w) => w.length >= 2)
         .slice(0, 2)
         .join(' ');
-    if (wCand.length >= 6 && wRoot.length >= 6 && wCand === wRoot) return true;
+    if (
+        wCand.length >= 10 &&
+        wRoot.length >= 10 &&
+        wCand === wRoot &&
+        !franchiseBaseLooksTooGeneric(wRoot)
+    ) {
+        return true;
+    }
     return false;
 }
 
@@ -378,9 +416,14 @@ const FRANCHISE_JIKAN_RELATIONS = new Set([
     'prequel',
     'parent story',
     'full story',
+    'side story',
+    'alternative version',
+    'summary',
+    'spin-off',
+    'other',
 ]);
 
-const FRANCHISE_RELATIONS_CACHE_PREFIX = 'reminko_franchise_rel_v5_';
+const FRANCHISE_RELATIONS_CACHE_PREFIX = 'reminko_franchise_rel_v6_';
 const FRANCHISE_RELATIONS_CACHE_TTL = 7 * 24 * 60 * 60 * 1000;
 const FRANCHISE_BFS_MAX_NODES = 64;
 const FRANCHISE_BFS_MAX_FETCHES = 48;
@@ -724,12 +767,13 @@ function catalogAnimeForMalId(mal, relationEntry) {
         }
     }
     const name = relationEntry && relationEntry.name ? String(relationEntry.name).trim() : '';
+    const relationType = String(relationEntry?.type || '').toLowerCase();
     return {
         id: 10000000 + m,
         mal_id: m,
         title: name || `Аниме MAL ${m}`,
         titleAlt: name,
-        type: relationEntry && relationEntry.type === 'anime' ? 'Сериал' : 'Сериал',
+        type: relationType === 'movie' ? 'Фильм' : 'Сериал',
         year: null,
         isJikanVirtual: true
     };
@@ -737,9 +781,6 @@ function catalogAnimeForMalId(mal, relationEntry) {
 
 function franchiseStripEligibleItem(anime) {
     if (!anime) return false;
-    if (anime.type === 'Фильм') return false;
-    const jt = anime._jikanRaw && anime._jikanRaw.type;
-    if (jt === 'Movie') return false;
     return true;
 }
 
@@ -834,7 +875,9 @@ function renderFranchiseSeasonCard(a, currentId, currentMal) {
     const isCur =
         (currentId != null && String(a.id) === String(currentId)) ||
         (Number.isFinite(mal) && mal > 0 && Number.isFinite(curMal) && curMal > 0 && mal === curMal);
-    const yearLine = a.year != null ? `<span class="anime-franchise-card__year">${a.year}</span>` : '';
+    const typeLine = a.type ? escapeHtmlText(a.type) : '';
+    const yearAndType = [a.year != null ? String(a.year) : '', typeLine].filter(Boolean).join(' · ');
+    const yearLine = yearAndType ? `<span class="anime-franchise-card__year">${yearAndType}</span>` : '';
     const hoverLayer = isCur
         ? ''
         : '<div class="anime-franchise-card__hover" aria-hidden="true"><span class="anime-franchise-card__go-btn" role="button" tabindex="-1">Перейти</span></div>';
@@ -858,7 +901,7 @@ function renderFranchiseSeasonsIntoStrip(strip, items, currentId, currentMal) {
     const scrollable = list.length > 5;
     strip.classList.remove('anime-franchise-strip--empty');
     strip.innerHTML = `<div class="anime-franchise-strip__inner">
-        <span class="anime-franchise-strip__label">Сезоны</span>
+        <span class="anime-franchise-strip__label">Франшиза</span>
         <div class="anime-franchise-strip__grid anime-franchise-strip__scroll${scrollable ? ' anime-franchise-strip__scroll--many' : ''}">${list.map((a) => renderFranchiseSeasonCard(a, currentId, currentMal)).join('')}</div>
     </div>`;
     const scroller = strip.querySelector('.anime-franchise-strip__scroll');
@@ -905,7 +948,7 @@ async function hydrateFranchiseSeasonsStrip(currentId, titleRu, titleEn, titleJp
     if (!strip) return;
     strip.classList.remove('anime-franchise-strip--empty');
     strip.innerHTML =
-        '<div class="anime-franchise-strip__inner"><span class="anime-franchise-strip__label">Сезоны</span><span class="anime-franchise-strip__loading">Загрузка…</span></div>';
+        '<div class="anime-franchise-strip__inner"><span class="anime-franchise-strip__label">Франшиза</span><span class="anime-franchise-strip__loading">Загрузка…</span></div>';
     if (typeof window.KodikCatalogStore?.load === 'function') {
         try {
             await window.KodikCatalogStore.load();
