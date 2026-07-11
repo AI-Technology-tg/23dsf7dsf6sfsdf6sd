@@ -20,12 +20,10 @@
     html.reminko-mobile-preview #live2d-widget.live2d-widget-container {
         position: fixed !important;
         right: -18px !important;
-        bottom: calc(var(--reminko-mobile-nav-h, 94px) + env(safe-area-inset-bottom, 0px) - 18px) !important;
+        bottom: 0 !important;
         left: auto !important;
         top: auto !important;
-        z-index: 1290 !important;
-        width: 464px !important;
-        height: 928px !important;
+        z-index: 1400 !important;
         max-width: none !important;
         max-height: none !important;
         overflow: visible !important;
@@ -36,10 +34,9 @@
 
     html.reminko-mobile-preview #live2d-widget.live2d-widget-container #live2dcanvas,
     html.reminko-mobile-preview #live2d-widget.live2d-widget-container canvas {
-        width: 464px !important;
-        height: 928px !important;
         max-width: none !important;
         max-height: none !important;
+        image-rendering: auto !important;
     }
 
     html.reminko-mobile-preview #live2d-widget .live2d-widget-dialog-container {
@@ -49,15 +46,7 @@
 
 @media (max-width: 420px) {
     html.reminko-mobile-preview #live2d-widget.live2d-widget-container {
-        right: -42px !important;
-        bottom: calc(var(--reminko-mobile-nav-h, 94px) + env(safe-area-inset-bottom, 0px) - 22px) !important;
-        width: 420px !important;
-        height: 840px !important;
-    }
-
-    html.reminko-mobile-preview #live2d-widget.live2d-widget-container #live2dcanvas,
-    html.reminko-mobile-preview #live2d-widget.live2d-widget-container canvas {
-        width: 420px !important;
-        height: 840px !important;
+        right: -54px !important;
+        bottom: 0 !important;
     }
 }

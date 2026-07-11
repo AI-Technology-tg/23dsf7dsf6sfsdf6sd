@@ -12,6 +12,23 @@
         opacity: 0.62
     };
 
+    var REM_MOBILE_PREVIEW = {
+        scale: 1.22,
+        display: { width: 464, height: 928, vOffset: 0 },
+        opacity: 0.68
+    };
+
+    function isMobilePreview() {
+        try {
+            return !!(
+                window.__reminkoMobilePreviewAllowed ||
+                document.documentElement.classList.contains('reminko-mobile-preview')
+            );
+        } catch (_) {
+            return false;
+        }
+    }
+
     function injectLive2dCss() {
         if (document.getElementById('reminko-live2d-css')) return;
         var cur = document.currentScript;
@@ -42,13 +59,14 @@
             'https://cdn.jsdelivr.net/npm/live2d-widget@3.1.4/lib/L2Dwidget.min.js';
         sc.charset = 'utf-8';
         sc.onload = function () {
-            var targetOpacity = REM.opacity != null ? REM.opacity : 0.75;
+            var remConfig = isMobilePreview() ? REM_MOBILE_PREVIEW : REM;
+            var targetOpacity = remConfig.opacity != null ? remConfig.opacity : 0.75;
             var display = {
                 position: 'right',
-                width: REM.display.width,
-                height: REM.display.height,
+                width: remConfig.display.width,
+                height: remConfig.display.height,
                 hOffset: 0,
-                vOffset: REM.display.vOffset != null ? REM.display.vOffset : -20
+                vOffset: remConfig.display.vOffset != null ? remConfig.display.vOffset : -20
             };
 
             L2Dwidget.on('create-container', function (el) {
@@ -64,12 +82,12 @@
             L2Dwidget.init({
                 model: {
                     jsonPath: REM.jsonPath,
-                    scale: REM.scale
+                    scale: remConfig.scale
                 },
                 display: display,
                 mobile: {
                     show: true,
-                    scale: 0.5,
+                    scale: isMobilePreview() ? 1 : 0.5,
                     motion: true
                 },
                 react: {
