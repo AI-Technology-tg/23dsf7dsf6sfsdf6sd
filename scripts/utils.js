@@ -175,6 +175,7 @@ function reminkoEnhanceHorizontalDragScroll(container, opts) {
     let dragged = false;
     let captureApplied = false;
     let startX = 0;
+    let startY = 0;
     let startScroll = 0;
     let activePointer = null;
     let pointerDownAt = 0;
@@ -190,6 +191,7 @@ function reminkoEnhanceHorizontalDragScroll(container, opts) {
         pointerDownAt = Date.now();
         maxAbsDx = 0;
         startX = e.clientX;
+        startY = e.clientY;
         startScroll = container.scrollLeft;
         activePointer = e.pointerId;
     }
@@ -197,6 +199,18 @@ function reminkoEnhanceHorizontalDragScroll(container, opts) {
     function onPointerMove(e) {
         if (!drag || e.pointerId !== activePointer) return;
         const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
+        if (
+            document.documentElement &&
+            document.documentElement.classList.contains('reminko-mobile-preview') &&
+            Math.abs(dy) > Math.abs(dx) + 6
+        ) {
+            drag = false;
+            captureApplied = false;
+            activePointer = null;
+            container.classList.remove('is-dragging');
+            return;
+        }
         maxAbsDx = Math.max(maxAbsDx, Math.abs(dx));
         if (!captureApplied && Math.abs(dx) > dragPx) {
             captureApplied = true;
