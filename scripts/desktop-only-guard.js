@@ -8,6 +8,9 @@
 
     var PHONE_MAX_LONG_SIDE = 1000;
     var PHONE_MAX_SHORT_SIDE = 540;
+    var MOBILE_PREVIEW_CLASS = 'reminko-mobile-preview';
+    var MOBILE_PREVIEW_ENDPOINT = '/.netlify/functions/mobile-preview-access';
+    var mobilePreviewAccessPromise = null;
 
     function isLikelySearchOrPreviewBot(userAgent) {
         var ua = userAgent || '';
@@ -184,15 +187,15 @@
                     if (!values) return;
                     if (isLikelyRealDesktop(navigator.userAgent || '')) return;
                     if (values.mobile === true) {
-                        mountWall();
+                        maybeMountWallForMobilePreview();
                         return;
                     }
                     var platform = String(values.platform || '');
                     if (/Android|iOS/i.test(platform)) {
-                        mountWall();
+                        maybeMountWallForMobilePreview();
                         return;
                     }
-                    if (hasPhoneLikeHardware()) mountWall();
+                    if (hasPhoneLikeHardware()) maybeMountWallForMobilePreview();
                 })
                 .catch(function () {
                     /* ignore */
@@ -239,6 +242,54 @@
     function resolvePublicUrl(relativePath) {
         var root = getSiteRootPrefix();
         return root + String(relativePath || '').replace(/^\//, '');
+    }
+
+    function markMobilePreviewAllowed() {
+        try {
+            var root = document.documentElement;
+            if (root) {
+                root.classList.add(MOBILE_PREVIEW_CLASS);
+                root.setAttribute('data-reminko-mobile-preview', '1');
+            }
+            if (document.body) document.body.classList.add(MOBILE_PREVIEW_CLASS);
+            window.__reminkoMobilePreviewAllowed = true;
+            var wall = document.getElementById('reminko-desktop-only-wall');
+            if (wall) wall.remove();
+            if (document.body) document.body.style.overflow = '';
+            if (root) root.style.overflow = '';
+        } catch (_) {
+            /* ignore */
+        }
+    }
+
+    function checkMobilePreviewAccess() {
+        if (mobilePreviewAccessPromise) return mobilePreviewAccessPromise;
+        mobilePreviewAccessPromise = fetch(MOBILE_PREVIEW_ENDPOINT, {
+            method: 'GET',
+            cache: 'no-store',
+            credentials: 'omit'
+        })
+            .then(function (res) {
+                if (!res || !res.ok) return false;
+                return res.json();
+            })
+            .then(function (data) {
+                if (data && data.allowed === true) {
+                    markMobilePreviewAllowed();
+                    return true;
+                }
+                return false;
+            })
+            .catch(function () {
+                return false;
+            });
+        return mobilePreviewAccessPromise;
+    }
+
+    function maybeMountWallForMobilePreview() {
+        checkMobilePreviewAccess().then(function (allowed) {
+            if (!allowed) mountWall();
+        });
     }
 
     function checkApkAvailable(relativePath) {
@@ -347,7 +398,7 @@
 
     function boot() {
         if (shouldBlockMobileBrowsing()) {
-            mountWall();
+            maybeMountWallForMobilePreview();
             return;
         }
         scheduleAsyncMobileRecheck();

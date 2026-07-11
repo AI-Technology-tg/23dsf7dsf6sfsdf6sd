@@ -1718,6 +1718,310 @@ html {
     color: var(--text-color);
 }
 
+/* Скрытый тест мобильной версии: включается только серверной проверкой IP телефона. */
+@media (max-width: 900px) {
+    html.reminko-mobile-preview,
+    html.reminko-mobile-preview body {
+        width: 100%;
+        min-width: 0;
+        overflow-x: hidden;
+        -webkit-text-size-adjust: 100%;
+    }
+
+    html.reminko-mobile-preview body {
+        padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px));
+        background:
+            radial-gradient(circle at top, rgba(124, 58, 237, 0.2), transparent 38vh),
+            #0b0b12;
+    }
+
+    html.reminko-mobile-preview .top-navbar {
+        position: sticky;
+        top: 0;
+        z-index: 1200;
+        padding: calc(0.45rem + env(safe-area-inset-top, 0px)) 0 0.55rem;
+        background: rgba(7, 8, 16, 0.88);
+        -webkit-backdrop-filter: blur(18px);
+        backdrop-filter: blur(18px);
+    }
+
+    html.reminko-mobile-preview .top-nav-container {
+        padding: 0 0.75rem;
+        gap: 0.55rem;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+    html.reminko-mobile-preview .top-logo {
+        min-width: 0;
+        gap: 0.45rem;
+        font-size: 1rem;
+    }
+
+    html.reminko-mobile-preview .top-logo-img {
+        width: 30px;
+        height: 30px;
+    }
+
+    html.reminko-mobile-preview .top-search-wrapper {
+        order: 5;
+        flex: 1 0 100%;
+        max-width: none;
+        margin: 0;
+    }
+
+    html.reminko-mobile-preview .top-search-input {
+        height: 42px;
+        border-radius: 999px;
+        font-size: 16px;
+        background: rgba(255, 255, 255, 0.08);
+    }
+
+    html.reminko-mobile-preview .search-dropdown {
+        position: fixed;
+        left: 0.75rem;
+        right: 0.75rem;
+        top: calc(88px + env(safe-area-inset-top, 0px));
+        max-height: min(70vh, 520px);
+        border-radius: 18px;
+    }
+
+    html.reminko-mobile-preview .top-random-anime-slot {
+        width: 38px;
+        height: 38px;
+    }
+
+    html.reminko-mobile-preview .top-random-anime-btn {
+        left: 0;
+        width: 42px;
+        height: 42px;
+        transform: translateY(-50%);
+    }
+
+    html.reminko-mobile-preview .top-nav-actions {
+        margin-left: auto;
+        gap: 0.35rem;
+    }
+
+    html.reminko-mobile-preview .top-nav-link {
+        min-height: 36px;
+        padding: 0.45rem 0.65rem;
+        border-radius: 999px;
+        font-size: 0.78rem;
+    }
+
+    html.reminko-mobile-preview .main-layout {
+        display: block;
+        min-height: auto;
+    }
+
+    html.reminko-mobile-preview .main-content-wrapper {
+        width: 100%;
+        max-width: 100%;
+        padding: 0;
+        margin: 0;
+    }
+
+    html.reminko-mobile-preview .sidebar {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        top: auto;
+        z-index: 1300;
+        width: 100%;
+        height: auto;
+        max-height: 76px;
+        padding: 0.35rem 0.45rem calc(0.35rem + env(safe-area-inset-bottom, 0px));
+        border-right: 0;
+        border-top: 1px solid rgba(167, 139, 250, 0.22);
+        background: rgba(8, 9, 15, 0.94);
+        -webkit-backdrop-filter: blur(20px);
+        backdrop-filter: blur(20px);
+        overflow-x: auto;
+        overflow-y: hidden;
+    }
+
+    html.reminko-mobile-preview .sidebar-nav {
+        display: flex;
+        flex-direction: row;
+        gap: 0.35rem;
+        padding: 0;
+        min-width: max-content;
+    }
+
+    html.reminko-mobile-preview .sidebar-link {
+        min-width: 64px;
+        max-width: 78px;
+        min-height: 58px;
+        flex-direction: column;
+        justify-content: center;
+        gap: 0.22rem;
+        padding: 0.42rem 0.35rem;
+        border-radius: 16px;
+        font-size: 0.62rem;
+        text-align: center;
+        border: 1px solid transparent;
+    }
+
+    html.reminko-mobile-preview .sidebar-link svg {
+        width: 19px;
+        height: 19px;
+    }
+
+    html.reminko-mobile-preview .sidebar-link span {
+        flex: 0 1 auto;
+        line-height: 1.1;
+    }
+
+    html.reminko-mobile-preview .sidebar-link.active {
+        background: rgba(168, 85, 247, 0.24);
+        color: #fff;
+        border-color: rgba(167, 139, 250, 0.32);
+        box-shadow: none;
+    }
+
+    html.reminko-mobile-preview .sidebar-divider,
+    html.reminko-mobile-preview .sidebar-legal-wrap,
+    html.reminko-mobile-preview .vip-badge,
+    html.reminko-mobile-preview .contemplation-badge {
+        display: none;
+    }
+
+    html.reminko-mobile-preview .page-container,
+    html.reminko-mobile-preview .catalog-main,
+    html.reminko-mobile-preview .anime-detail-shell,
+    html.reminko-mobile-preview .profile-container,
+    html.reminko-mobile-preview .friends-page,
+    html.reminko-mobile-preview .messages-page {
+        width: 100%;
+        max-width: 100%;
+        padding: 0.85rem;
+        box-sizing: border-box;
+    }
+
+    html.reminko-mobile-preview .catalog-title,
+    html.reminko-mobile-preview .section-title,
+    html.reminko-mobile-preview .anime-detail-title {
+        text-align: left;
+        font-size: clamp(1.45rem, 7vw, 2rem);
+        line-height: 1.12;
+    }
+
+    html.reminko-mobile-preview .anime-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.75rem;
+    }
+
+    html.reminko-mobile-preview .anime-card,
+    html.reminko-mobile-preview .jikan-card {
+        border-radius: 16px;
+    }
+
+    html.reminko-mobile-preview .anime-card:hover,
+    html.reminko-mobile-preview .jikan-card:hover {
+        transform: none;
+    }
+
+    html.reminko-mobile-preview .anime-card-title,
+    html.reminko-mobile-preview .jikan-card-title {
+        font-size: 0.82rem;
+        line-height: 1.25;
+    }
+
+    html.reminko-mobile-preview .catalog-filter-bar {
+        position: sticky;
+        top: calc(88px + env(safe-area-inset-top, 0px));
+        z-index: 100;
+        display: block;
+        padding: 0.75rem;
+        border-radius: 18px;
+        margin-bottom: 0.85rem;
+    }
+
+    html.reminko-mobile-preview .filter-bar-search {
+        min-width: 0;
+        margin-bottom: 0.55rem;
+    }
+
+    html.reminko-mobile-preview .filter-bar-group {
+        display: flex;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        gap: 0.45rem;
+        padding-bottom: 0.15rem;
+    }
+
+    html.reminko-mobile-preview .filter-chip {
+        min-height: 38px;
+        border-radius: 999px;
+        padding: 0.5rem 0.75rem;
+    }
+
+    html.reminko-mobile-preview .filter-dropdown,
+    html.reminko-mobile-preview .filter-select-panel {
+        position: fixed;
+        left: 0.75rem;
+        right: 0.75rem;
+        top: auto;
+        bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+        width: auto;
+        min-width: 0;
+        max-width: none;
+        max-height: 55vh;
+        border-radius: 20px;
+        z-index: 1500;
+    }
+
+    html.reminko-mobile-preview .anime-detail-header,
+    html.reminko-mobile-preview .anime-detail-main {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    html.reminko-mobile-preview .anime-detail-poster {
+        width: min(72vw, 260px);
+        margin: 0 auto;
+    }
+
+    html.reminko-mobile-preview .anime-detail-info {
+        text-align: left;
+    }
+
+    html.reminko-mobile-preview .anime-detail-meta,
+    html.reminko-mobile-preview .anime-detail-statrow,
+    html.reminko-mobile-preview .anime-detail-genres,
+    html.reminko-mobile-preview .anime-detail-actions {
+        justify-content: flex-start;
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        padding-bottom: 0.2rem;
+    }
+
+    html.reminko-mobile-preview .anime-detail-actions .btn {
+        min-height: 44px;
+        flex: 1 0 auto;
+    }
+
+    html.reminko-mobile-preview .anime-kodik-player-wrap,
+    html.reminko-mobile-preview .anime-inline-player,
+    html.reminko-mobile-preview iframe {
+        max-width: 100%;
+    }
+}
+
+@media (max-width: 420px) {
+    html.reminko-mobile-preview .anime-grid {
+        gap: 0.55rem;
+    }
+
+    html.reminko-mobile-preview .sidebar-link {
+        min-width: 60px;
+        max-width: 72px;
+        font-size: 0.58rem;
+    }
+}
+
 .history-actions {
     display: flex;
     gap: 0.75rem;
