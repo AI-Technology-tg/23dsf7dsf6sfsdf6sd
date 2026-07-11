@@ -15,7 +15,7 @@
     var REM_MOBILE_PREVIEW = {
         scale: 1.22,
         display: { width: 348, height: 696, vOffset: 0 },
-        opacity: 0.68
+        opacity: 0.48
     };
 
     function isMobilePreview() {
@@ -39,7 +39,7 @@
         if (!cur || !cur.src) return;
         var href;
         try {
-            href = new URL('../styles/live2d-widget.css?v=mobile-v4-4', cur.src).href;
+            href = new URL('../styles/live2d-widget.css?v=mobile-v4-5', cur.src).href;
         } catch (e) {
             return;
         }
