@@ -39,7 +39,7 @@
         if (!cur || !cur.src) return;
         var href;
         try {
-            href = new URL('../styles/live2d-widget.css?v=mobile-v4-8', cur.src).href;
+            href = new URL('../styles/live2d-widget.css?v=mobile-v4-10', cur.src).href;
         } catch (e) {
             return;
         }
@@ -131,7 +131,7 @@
 
     function bindEarlyHideTriggers() {
         document.addEventListener(
-            'pointerdown',
+            'click',
             function (e) {
                 if (shouldHideForNavigationLink(targetNavigationLink(e.target))) hideLive2dImmediately();
             },
