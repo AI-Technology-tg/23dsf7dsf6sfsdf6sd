@@ -40,6 +40,10 @@ const ReManga = (() => {
         return `${base}?url=${encodeURIComponent(url)}`;
     }
 
+    function publicCorsProxyUrl(url) {
+        return `https://corsproxy.io/?${encodeURIComponent(url)}`;
+    }
+
     async function rateLimitedFetch(url) {
         const now = Date.now();
         const wait = RATE_LIMIT_MS - (now - lastRequest);
@@ -54,6 +58,10 @@ const ReManga = (() => {
         const proxied = remangaProxyBase() ? proxyUrl(url) : url;
         let resp = await fetch(proxied, { credentials: 'omit', headers });
         if (!resp.ok && proxied !== url) {
+            const publicProxy = publicCorsProxyUrl(url);
+            resp = await fetch(publicProxy, { credentials: 'omit', headers });
+        }
+        if (!resp.ok && resp.url !== url) {
             resp = await fetch(url, { credentials: 'omit', headers });
         }
         if (!resp.ok) throw new Error(`ReManga API ${resp.status}`);
