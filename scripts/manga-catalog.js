@@ -369,6 +369,20 @@ function reminkoBindMangaCatalogFilterDelegation() {
             return;
         }
 
+        const closeBtn = t.closest('[data-filter-panel-close]');
+        if (closeBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+            const panelId = closeBtn.dataset.filterPanelClose;
+            const panel = panelId ? document.getElementById(panelId) : closeBtn.closest('.filter-select-panel');
+            if (panel) panel.classList.remove('active');
+            if (panel && panel.id) {
+                const btn = document.getElementById(panel.id.replace('Panel', 'Btn'));
+                if (btn) btn.classList.remove('active');
+            }
+            return;
+        }
+
         const chip = t.closest('.filter-select-btn');
         if (chip && chip.dataset && chip.dataset.target) {
             e.stopPropagation();

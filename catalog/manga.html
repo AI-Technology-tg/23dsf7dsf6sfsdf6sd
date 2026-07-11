@@ -45,7 +45,7 @@
     <link rel="manifest" href="../Fons/vavo/site.webmanifest">
     <link rel="stylesheet" href="../styles/main.css?v=mobile-v4-9">
     <link rel="stylesheet" href="../styles/sidebar-layout.css">
-    <link rel="stylesheet" href="../styles/catalog.css?v=mobile-v4-11">
+    <link rel="stylesheet" href="../styles/catalog.css?v=mobile-v4-12">
     <link rel="stylesheet" href="../styles/loading.css">
     <link rel="stylesheet" href="../styles/notifications.css">
 </head>
@@ -88,6 +88,10 @@
                             <svg class="filter-chip-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
                         </button>
                         <div class="filter-dropdown filter-select-panel" id="filterGenrePanel">
+                            <div class="filter-mobile-panel-head">
+                                <strong>Жанры</strong>
+                                <button type="button" class="filter-panel-close" data-filter-panel-close="filterGenrePanel" aria-label="Закрыть жанры">×</button>
+                            </div>
                             <div class="filter-dropdown-inner filter-genres-grid"></div>
                         </div>
                     </div>
@@ -246,7 +250,7 @@
     <script src="../scripts/register.js"></script>
     <script src="../scripts/main.js"></script>
     <script src="../scripts/loading.js"></script>
-    <script src="../scripts/manga-catalog.js"></script>
+    <script src="../scripts/manga-catalog.js?v=mobile-v4-12"></script>
     <script src="../scripts/apply-navigation.js?v=mobile-v4-10"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
