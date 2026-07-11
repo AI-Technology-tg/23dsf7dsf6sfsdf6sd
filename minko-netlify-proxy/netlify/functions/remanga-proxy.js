@@ -43,11 +43,29 @@ exports.handler = async (event) => {
             method: 'GET',
             headers: {
                 Accept: 'application/json, */*',
-                Referer: 'https://remanga.org/'
+                'Accept-Language': 'ru-RU,ru;q=0.9,en;q=0.8',
+                'Cache-Control': 'no-cache',
+                Origin: 'https://remanga.org',
+                Referer: 'https://remanga.org/',
+                'User-Agent':
+                    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36'
             }
         });
         const text = await res.text();
-        return { statusCode: res.status, headers, body: text || '{}' };
+        if (!res.ok) {
+            console.warn('[remanga-proxy] upstream', res.status, target.pathname);
+        }
+        const contentType = res.headers.get('content-type') || '';
+        return {
+            statusCode: res.status,
+            headers: {
+                ...headers,
+                'Content-Type': contentType.includes('json')
+                    ? 'application/json; charset=utf-8'
+                    : 'text/plain; charset=utf-8'
+            },
+            body: text || '{}'
+        };
     } catch (e) {
         console.error('[remanga-proxy]', e);
         return {
