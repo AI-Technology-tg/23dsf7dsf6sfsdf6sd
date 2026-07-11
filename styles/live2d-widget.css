@@ -1,0 +1,16 @@
+/* Live2D: затухание вместо «выезда» снизу вверх / ухода сверху вниз */
+#live2d-widget.live2d-widget-container {
+    transition: opacity 0.5s ease !important;
+    transform: translate3d(0, 0, 0) !important;
+    max-width: min(280px, 100vw) !important;
+    max-height: min(520px, 70vh) !important;
+    overflow: hidden !important;
+}
+
+#live2d-widget.live2d-widget-container #live2dcanvas {
+    transition: opacity 0.45s ease;
+}
+
+#live2d-widget .live2d-widget-dialog-container {
+    transition: opacity 0.4s ease !important;
+}

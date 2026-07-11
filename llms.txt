@@ -1,0 +1,24 @@
+# Re-Minko (re-minko-anime.com)
+
+> Re-Minko — русскоязычный аниме-сайт: каталог аниме с просмотром онлайн и ИИ-помощник Minko AI (Минко AI).
+
+## Основные страницы
+
+- Главная и каталог аниме: https://re-minko-anime.com/
+- Каталог аниме (фильтры, поиск): https://re-minko-anime.com/catalog/anime.html
+- Minko AI — чат-бот про аниме и сайт Re-Minko: https://re-minko-anime.com/minko-ai.html
+- Информация о сайте: https://re-minko-anime.com/info.html
+
+## Что можно делать на сайте
+
+- Искать и смотреть аниме онлайн (плеер Kodik)
+- Общаться с Minko AI — помощник по тайтлам и сайту
+- Регистрация, профиль, избранное, история просмотра
+
+## Ключевые слова
+
+смотреть аниме онлайн, аниме сайт, каталог аниме, Minko AI, Минко AI, Re-Minko, re-minko-anime
+
+## Sitemap
+
+https://re-minko-anime.com/sitemap.xml

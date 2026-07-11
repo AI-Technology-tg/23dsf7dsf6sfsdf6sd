@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <style id="reminko-critical-first-paint">
+      /* Первый кадр до загрузки внешних CSS: тёмный фон и полноэкранный лоадер (антимигание FOUC) */
+      html { background-color: #0b0b12; }
+      body { margin: 0; background-color: #0b0b12; color: #e5e7eb; }
+      #loadingScreen {
+        position: fixed !important;
+        inset: 0 !important;
+        width: 100% !important;
+        min-height: 100vh !important;
+        z-index: 2147483646 !important;
+        background: #000000 !important;
+        display: flex !important;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        box-sizing: border-box;
+      }
+      body:not(.reminko-content-revealed) .main-layout {
+        opacity: 0 !important;
+        visibility: hidden !important;
+        pointer-events: none !important;
+      }
+    </style>
+    <script src="scripts/desktop-only-guard.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Каталог аниме, смотреть онлайн — Minko AI | Re-Minko</title>
+    <meta
+        name="description"
+        content="Re-Minko (re-minko-anime.com): русскоязычный каталог аниме с фильтрами и поиском, смотреть аниме онлайн и Minko AI."
+    />
+    <meta
+        name="keywords"
+        content="смотреть аниме, смотреть аниме онлайн, аниме сайт, сайт аниме, каталог аниме, аниме каталог, минко ии, Minko AI, Минко AI, Re-Minko, re-minko-anime"
+    />
+    <meta name="application-name" content="Re-Minko" />
+    <meta name="author" content="Re-Minko" />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <meta name="googlebot" content="index, follow" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <meta name="google-site-verification" content="oLpERKMmaA8H94dCvtl1iVmw81woGJeujpGKl9kn6Sg" />
+    <meta name="yandex-verification" content="7826d5f9bd1db2e7" />
+    <meta name="yandex-verification" content="6fy3tvb2ffr2jte8" />
+
+    <link rel="canonical" href="https://re-minko-anime.com/" />
+    <link rel="alternate" hreflang="ru" href="https://re-minko-anime.com/" />
+    <link rel="alternate" hreflang="x-default" href="https://re-minko-anime.com/" />
+    <link rel="alternate" type="text/plain" href="https://re-minko-anime.com/llms.txt" title="LLMs.txt — описание сайта для ИИ" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Re-Minko" />
+    <meta property="og:locale" content="ru_RU" />
+    <meta property="og:title" content="Каталог аниме, смотреть онлайн и Минко AI — Re-Minko" />
+    <meta
+        property="og:description"
+        content="Аниме-сайт: каталог, смотреть аниме онлайн и ИИ-помощник Минко AI."
+    />
+    <meta property="og:url" content="https://re-minko-anime.com/" />
+    <meta property="og:image" content="https://re-minko-anime.com/Fons/fonG.jpg" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Каталог аниме и Минко AI — Re-Minko" />
+    <meta
+        name="twitter:description"
+        content="Смотреть аниме онлайн, каталог и Minko AI на re-minko-anime.com."
+    />
+    <meta name="twitter:image" content="https://re-minko-anime.com/Fons/fonG.jpg" />
+
+    <meta name="theme-color" content="#5b21b6" />
+
+    <script type="application/ld+json">
+        {
+            "@context": "https://schema.org",
+            "@type": "WebSite",
+            "name": "Re-Minko",
+            "alternateName": ["Re Minko", "Re-Minko anime", "re-minko-anime.com"],
+            "url": "https://re-minko-anime.com/",
+            "description": "Аниме-сайт и каталог: смотреть аниме онлайн, ИИ-помощник Минко AI (Minko AI). re-minko-anime.com.",
+            "inLanguage": "ru-RU",
+            "publisher": {
+                "@type": "Organization",
+                "name": "Re-Minko",
+                "url": "https://re-minko-anime.com/"
+            },
+            "potentialAction": {
+                "@type": "SearchAction",
+                "target": {
+                    "@type": "EntryPoint",
+                    "urlTemplate": "https://re-minko-anime.com/catalog/anime.html?search={search_term_string}"
+                },
+                "query-input": "required name=search_term_string"
+            }
+        }
+    </script>
+
+    <link rel="apple-touch-icon" sizes="180x180" href="Fons/vavo/apple-touch-icon.png">
+    <link rel="icon" href="Fons/vavo/favicon-32x32.png">
+    <link rel="shortcut icon" href="Fons/vavo/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="Fons/vavo/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="Fons/vavo/favicon-16x16.png">
+    <link rel="manifest" href="Fons/vavo/site.webmanifest">
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/sidebar-layout.css">
+    <link rel="stylesheet" href="styles/home.css">
+    <link rel="stylesheet" href="styles/loading.css">
+    <link rel="stylesheet" href="styles/register-flow.css">
+    <link rel="stylesheet" href="styles/notifications.css">
+</head>
+<body>
+    <!-- Экран загрузки -->
+    <div class="loading-screen" id="loadingScreen">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Загрузка<span class="loading-dots"></span></div>
+        <div class="loading-character"></div>
+        <div class="loading-anime"></div>
+    </div>
+
+    <!-- Верхняя панель будет добавлена через navigation.js -->
+    
+    <!-- Основной контейнер с боковой панелью -->
+    <div class="main-layout">
+        <!-- Левая боковая панель навигации будет добавлена через navigation.js -->
+        
+        <!-- Главный контент -->
+        <main class="main-content-wrapper home-page">
+
+            <!-- Hero-секция -->
+            <section class="home-hero">
+                <div class="home-hero-bg"></div>
+                <div class="home-hero-content">
+                    <div class="home-hero-text">
+                        <h1 class="home-hero-title">Re-Minko</h1>
+                        <p class="home-hero-lead">Смотри аниме так, как тебе нравится.</p>
+                        <p class="home-hero-subtitle">В каталоге — тысячи тайтлов: ищи, фильтруй, открывай сезоны. Один дома? Загляни к Minko AI — разберёт серию и подскажет, с чего начать.</p>
+                        <p class="home-hero-wink">Сериал сам себя не досмотрит. Это не баг — это жизнь.</p>
+                        <div class="home-hero-stats" id="heroStats">
+                            <div class="hero-stat">
+                                <span class="hero-stat-value" id="statAnimeCount">—</span>
+                                <span class="hero-stat-label">Аниме</span>
+                            </div>
+                            <div class="hero-stat">
+                                <span class="hero-stat-value" id="statMangaCount">—</span>
+                                <span class="hero-stat-label">Манга</span>
+                            </div>
+                        </div>
+                        <div class="home-hero-watch" id="heroWatchHistory" aria-label="Недавно просмотренные аниме"></div>
+                    </div>
+                    <aside class="home-hero-social" aria-label="Соцсети и приложения Re-Minko">
+                        <p class="home-hero-social-heading">Наши соцсети</p>
+                        <div class="home-hero-social-avatars">
+                            <button
+                                type="button"
+                                class="home-social-avatar"
+                                data-social="telegram"
+                                aria-label="Re-Minko в Telegram"
+                            >
+                                <img data-social-src="Fons/Sociale/Telegram.png" src="Fons/Sociale/Telegram.png" alt="" width="80" height="80" decoding="async" />
+                            </button>
+                            <button
+                                type="button"
+                                class="home-social-avatar"
+                                data-social="tiktok"
+                                aria-label="Re-Minko в TikTok"
+                            >
+                                <img data-social-src="Fons/Sociale/TikTok.png" src="Fons/Sociale/TikTok.png" alt="" width="80" height="80" decoding="async" />
+                            </button>
+                            <button
+                                type="button"
+                                class="home-social-avatar"
+                                data-social="instagram"
+                                aria-label="Re-Minko в Instagram"
+                            >
+                                <img data-social-src="Fons/Sociale/Instagram.png" src="Fons/Sociale/Instagram.png" alt="" width="80" height="80" decoding="async" />
+                            </button>
+                            <button
+                                type="button"
+                                class="home-social-avatar"
+                                data-social="facebook"
+                                aria-label="Re-Minko в Facebook"
+                            >
+                                <img data-social-src="Fons/Sociale/Facebook.png" src="Fons/Sociale/Facebook.png" alt="" width="80" height="80" decoding="async" />
+                            </button>
+                            <button
+                                type="button"
+                                class="home-social-avatar"
+                                data-social="twitter"
+                                aria-label="Re-Minko в Twitter"
+                            >
+                                <img data-social-src="Fons/Sociale/Twitter.png" src="Fons/Sociale/Twitter.png" alt="" width="80" height="80" decoding="async" />
+                            </button>
+                            <button
+                                type="button"
+                                class="home-social-avatar"
+                                data-social="vk"
+                                aria-label="Re-Minko во ВКонтакте"
+                            >
+                                <img data-social-src="Fons/Sociale/VK.png" src="Fons/Sociale/VK.png" alt="" width="80" height="80" decoding="async" />
+                            </button>
+                            <button
+                                type="button"
+                                class="home-social-avatar"
+                                data-social="discord"
+                                aria-label="Re-Minko в Discord"
+                            >
+                                <img data-social-src="Fons/Sociale/Discord.png" src="Fons/Sociale/Discord.png" alt="" width="80" height="80" decoding="async" />
+                            </button>
+                            <button
+                                type="button"
+                                class="home-social-avatar home-social-avatar--app home-social-avatar--soon"
+                                id="homeAppAndroidBtn"
+                                data-social="android"
+                                aria-label="Re-Minko для Android — в разработке"
+                                title="Мобильное приложение скоро"
+                            >
+                                <img data-social-src="Fons/androids.png" src="Fons/androids.png" alt="" width="80" height="80" decoding="async" />
+                                <span class="home-social-avatar-badge">скоро</span>
+                            </button>
+                        </div>
+                        <p class="home-hero-social-hint home-hero-social-hint--apps">
+                            Мобильное приложение для Android — <strong>в разработке</strong>.
+                        </p>
+                    </aside>
+                </div>
+            </section>
+
+            <aside class="home-beta-banner" id="homeBetaBanner" aria-live="polite">
+                <div class="home-beta-banner-inner">
+                    <span class="home-beta-pill">Бета</span>
+                    <p class="home-beta-text">
+                        Сайт в <strong>бета-версии</strong>: мы постоянно обновляем и дорабатываем разделы.
+                    </p>
+                </div>
+            </aside>
+
+            <!-- Недавно просмотренные (локальная история залогиненного пользователя) -->
+            <section class="home-section home-section--recent" id="recentlyWatchedSection" style="display:none;">
+                <div class="section-header">
+                    <h2 class="section-title">Недавно просмотренные</h2>
+                    <span class="section-badge badge-recent">Продолжить</span>
+                    <a href="profile.html" class="section-more-link">Профиль →</a>
+                </div>
+                <p class="section-subtitle">Аниме, которые вы смотрите или недавно смотрели</p>
+                <div class="home-horizontal-scroll home-recent-scroll" id="recentlyWatchedGrid"></div>
+            </section>
+
+            <!-- Kodik: анонсы / выходит / популярное -->
+            <section class="home-section home-section--kodik" id="kodikHomeAnnounced" hidden aria-hidden="true">
+                <div class="section-header section-header--with-toggle">
+                    <div class="section-header-main">
+                        <h2 class="section-title">Анонсировано</h2>
+                        <span class="section-badge badge-upcoming">Скоро</span>
+                        <a href="catalog/anime.html?filter=upcoming" class="section-more-link">Все анонсы →</a>
+                    </div>
+                    <div class="home-type-toggle" role="tablist" aria-label="Тип: анонсы">
+                        <button type="button" class="home-type-toggle-btn is-active" data-media="serial" role="tab" aria-selected="true">Сериалы</button>
+                        <button type="button" class="home-type-toggle-btn" data-media="film" role="tab" aria-selected="false">Фильмы</button>
+                    </div>
+                </div>
+                <p class="section-subtitle">Анонсы из Jikan — премьеры сериалов и фильмов, которые ещё не вышли</p>
+                <div class="home-horizontal-scroll" id="kodikAnnouncedGrid">
+                    <div class="home-loading-placeholder">Загрузка каталога…</div>
+                </div>
+            </section>
+
+            <section class="home-section home-section--kodik" id="kodikHomeAiring" hidden aria-hidden="true">
+                <div class="section-header section-header--with-toggle">
+                    <div class="section-header-main">
+                        <h2 class="section-title">Сейчас выходит</h2>
+                        <span class="section-badge badge-season">Онгоинг</span>
+                        <a href="catalog/anime.html?status=Онгоинг" class="section-more-link">Все онгоинги →</a>
+                    </div>
+                    <div class="home-type-toggle" role="tablist" aria-label="Тип: выходит">
+                        <button type="button" class="home-type-toggle-btn is-active" data-media="serial" role="tab" aria-selected="true">Сериалы</button>
+                        <button type="button" class="home-type-toggle-btn" data-media="film" role="tab" aria-selected="false">Фильмы</button>
+                    </div>
+                </div>
+                <p class="section-subtitle">Уже вышла минимум 1 серия — тайтл ещё в эфире</p>
+                <div class="home-horizontal-scroll" id="kodikAiringGrid">
+                    <div class="home-loading-placeholder">Загрузка каталога…</div>
+                </div>
+            </section>
+
+            <section class="home-section home-section--kodik" id="kodikHomePopular" hidden aria-hidden="true">
+                <div class="section-header section-header--with-toggle">
+                    <div class="section-header-main">
+                        <h2 class="section-title">Всегда популярно</h2>
+                        <span class="section-badge badge-recent">Топ</span>
+                        <a href="catalog/anime.html?yearFrom=2022&yearTo=2026&sort=rating-desc" class="section-more-link">В каталог →</a>
+                    </div>
+                    <div class="home-type-toggle" role="tablist" aria-label="Тип: популярное">
+                        <button type="button" class="home-type-toggle-btn is-active" data-media="serial" role="tab" aria-selected="true">Сериалы</button>
+                        <button type="button" class="home-type-toggle-btn" data-media="film" role="tab" aria-selected="false">Фильмы</button>
+                    </div>
+                </div>
+                <p class="section-subtitle">Самые любимые сериалы и фильмы последних лет</p>
+                <div class="home-horizontal-scroll" id="kodikPopularGrid">
+                    <div class="home-loading-placeholder">Загрузка каталога…</div>
+                </div>
+            </section>
+
+            <!-- Jikan-секции (legacy, скрыты) -->
+            <section class="home-section" hidden aria-hidden="true">
+                <div class="section-header">
+                    <h2 class="section-title">Новинки сезона</h2>
+                    <span class="section-badge badge-season">Сезон</span>
+                    <a href="catalog/anime.html?filter=season" class="section-more-link">Все новинки →</a>
+                </div>
+                <p class="section-subtitle">Новинки текущего сезона (обновляется из API)</p>
+                <div class="home-horizontal-scroll" id="seasonAnimeGrid">
+                    <div class="home-loading-placeholder">Загрузка...</div>
+                </div>
+            </section>
+
+            <!-- Скоро выходит — отключено -->
+            <section class="home-section" hidden aria-hidden="true">
+                <div class="section-header">
+                    <h2 class="section-title">Скоро выходит</h2>
+                    <span class="section-badge badge-upcoming">Анонсы</span>
+                    <a href="catalog/anime.html?filter=upcoming" class="section-more-link">Все анонсы →</a>
+                </div>
+                <p class="section-subtitle">Анонсы и ожидаемые премьеры</p>
+                <div class="home-horizontal-scroll" id="upcomingAnimeGrid">
+                    <div class="home-loading-placeholder">Загрузка...</div>
+                </div>
+            </section>
+
+            <!-- Друзья смотрят -->
+            <section class="home-section" id="friendsWatchingSection" style="display:none;">
+                <div class="section-header">
+                    <h2 class="section-title">Друзья смотрят</h2>
+                    <span class="section-badge" style="background:rgba(34,197,94,0.15);color:#22c55e;">Онлайн</span>
+                </div>
+                <p class="section-subtitle">Аниме, которые смотрят или смотрели ваши друзья</p>
+                <div class="anime-grid" id="friendsWatchingGrid"></div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Модальные окна создаются через navigation.js (ensureModalsExist) -->
+
+    <!-- Scripts -->
+    <script src="scripts/logger.js"></script>
+    <script src="config.local.js" onerror="window.__reminkoNoLocalConfig=true"></script>
+    <script src="scripts/config.js"></script>
+    <script src="scripts/kodik-catalog-store.js"></script>
+    <script src="scripts/remanga-catalog-store.js"></script>
+    <script src="scripts/kodik-api.js"></script>
+    <script src="scripts/network-utils.js"></script>
+    <script src="scripts/form-validation.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="scripts/supabase-config.js"></script>
+    <script src="scripts/direct-messages.js"></script>
+    <script src="scripts/oauth-auth.js"></script>
+    <script src="scripts/mature-content.js" defer></script>
+    <script src="scripts/data.js" defer></script>
+    <script src="scripts/shikimori-api.js" defer></script>
+    <script src="scripts/manga-data.js" defer></script>
+    <script src="scripts/jikan-api.js" defer></script>
+    <script src="scripts/jikan-announced.js" defer></script>
+    <script src="scripts/anilist-api.js" defer></script>
+    <script src="scripts/poster-api.js" defer></script>
+    <script src="scripts/api.js" defer></script>
+    <script src="scripts/utils.js"></script>
+    <script src="scripts/utils-notifications.js"></script>
+    <script src="scripts/auth.js"></script>
+    <script src="scripts/watch-history.js" defer></script>
+    <script src="scripts/anime-stats.js" defer></script>
+    <script src="scripts/loading-phrases.js" defer></script>
+    <script src="scripts/notifications.js" defer></script>
+    <script src="scripts/episode-notifications.js" defer></script>
+    <script src="scripts/favorites.js" defer></script>
+    <script src="scripts/register.js" defer></script>
+    <script src="scripts/email-confirm.js" defer></script>
+    <script src="scripts/navigation.js" defer></script>
+    <script src="scripts/password-reset.js" defer></script>
+    <script src="scripts/friends.js" defer></script>
+    <script src="scripts/main.js"></script>
+    <script src="scripts/loading.js" defer></script>
+    <script src="scripts/release-countdown.js" defer></script>
+    <div id="homeSocialPanel" class="home-social-panel" hidden>
+        <div class="home-social-panel__backdrop" data-social-close></div>
+        <div class="home-social-panel__card" role="dialog" aria-modal="true" aria-labelledby="homeSocialPanelTitle">
+            <button type="button" class="home-social-panel__close" data-social-close aria-label="Закрыть">×</button>
+            <div class="home-social-panel__icon" id="homeSocialPanelIcon" aria-hidden="true"></div>
+            <h2 class="home-social-panel__title" id="homeSocialPanelTitle"></h2>
+            <p class="home-social-panel__text" id="homeSocialPanelText"></p>
+            <a class="home-social-panel__go btn btn-primary" id="homeSocialPanelGo" href="#" target="_blank" rel="noopener noreferrer"></a>
+        </div>
+    </div>
+
+    <script src="scripts/home.js" defer></script>
+    <script src="scripts/kodik-home.js" defer></script>
+    <script src="scripts/apply-navigation.js" defer></script>
+    <script src="scripts/site-visit-tracker.js" defer></script>
+</body>
+</html>

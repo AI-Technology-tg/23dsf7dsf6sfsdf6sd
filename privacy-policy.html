@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <style id="reminko-critical-first-paint">
+      /* Первый кадр до загрузки внешних CSS: тёмный фон и полноэкранный лоадер (антимигание FOUC) */
+      html { background-color: #0b0b12; }
+      body { margin: 0; background-color: #0b0b12; color: #e5e7eb; }
+      #loadingScreen {
+        position: fixed !important;
+        inset: 0 !important;
+        width: 100% !important;
+        min-height: 100vh !important;
+        z-index: 2147483646 !important;
+        background: #000000 !important;
+        display: flex !important;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        box-sizing: border-box;
+      }
+      body:not(.reminko-content-revealed) .main-layout {
+        opacity: 0 !important;
+        visibility: hidden !important;
+        pointer-events: none !important;
+      }
+    </style>
+    <script src="scripts/desktop-only-guard.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Политика конфиденциальности | Re-Minko</title>
+    <meta
+        name="description"
+        content="Политика конфиденциальности Re-Minko: сайт re-minko-anime.com и приложение Android. Supabase, Minko AI, обработка данных."
+    />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://re-minko-anime.com/privacy-policy.html" />
+    <link rel="apple-touch-icon" sizes="180x180" href="Fons/vavo/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="Fons/vavo/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="Fons/vavo/favicon-16x16.png">
+    <link rel="manifest" href="Fons/vavo/site.webmanifest">
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/sidebar-layout.css">
+    <link rel="stylesheet" href="styles/loading.css">
+    <link rel="stylesheet" href="styles/register-flow.css">
+    <link rel="stylesheet" href="styles/notifications.css">
+    <link rel="stylesheet" href="styles/info-page.css">
+</head>
+<body>
+    <div class="loading-screen" id="loadingScreen">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Загрузка<span class="loading-dots"></span></div>
+        <div class="loading-character"></div>
+        <div class="loading-anime"></div>
+    </div>
+
+    <div class="main-layout">
+        <main class="main-content-wrapper info-page">
+            <div class="page-container">
+                <div class="page-header">
+                    <a href="info.html" class="btn btn-secondary">← Информация о проекте</a>
+                </div>
+
+                <header class="info-hero">
+                    <div class="info-hero-inner">
+                        <span class="info-hero-badge">Юридическая информация</span>
+                        <h1>Политика конфиденциальности</h1>
+                        <p class="info-hero-lead">
+                            Настоящая Политика конфиденциальности описывает, какие данные обрабатываются при использовании
+                            сайта <strong>re-minko-anime.com</strong> и мобильного приложения <strong>Re-Minko</strong>
+                            (Android, идентификатор пакета <code>com.reminko.mobile</code>) — далее совместно «Сервис», «Re-Minko», «мы».
+                        </p>
+                        <p class="info-hero-lead" style="margin-top: 0.75rem;">
+                            <a href="terms-of-service.html">Условия использования</a>
+                            ·
+                            <a href="info.html">О проекте</a>
+                        </p>
+                    </div>
+                </header>
+
+                <div class="info-grid">
+                    <article class="info-card info-card--wide">
+                        <h2>1. Оператор и контакты</h2>
+                        <p>
+                            Оператор персональных данных — администрация проекта Re-Minko (сайт re-minko-anime.com).
+                            По вопросам обработки данных, доступа, исправления или удаления:
+                            <a href="mailto:re.minko.anime.com@gmail.com">re.minko.anime.com@gmail.com</a>.
+                        </p>
+                        <p>
+                            Используя Сервис, вы подтверждаете, что ознакомились с этой Политикой.
+                            Если вы не согласны с её условиями, пожалуйста, не используйте Сервис.
+                        </p>
+                    </article>
+
+                    <article class="info-card info-card--wide">
+                        <h2>2. К каким продуктам относится политика</h2>
+                        <ul>
+                            <li><strong>Веб-сайт</strong> re-minko-anime.com — каталог, просмотр, чаты, совместный просмотр, профиль, Minko AI и др.</li>
+                            <li><strong>Мобильное приложение Re-Minko</strong> для Android — каталог аниме и манги, избранное, просмотр, Minko AI, вход в тот же аккаунт, что на сайте.</li>
+                        </ul>
+                        <p>Учётная запись единая: данные профиля и избранного синхронизируются через общий backend.</p>
+                    </article>
+
+                    <article class="info-card info-card--wide">
+                        <h2>3. Какие данные мы обрабатываем</h2>
+                        <p>В зависимости от используемых функций могут обрабатываться следующие категории данных:</p>
+                        <ul>
+                            <li><strong>Регистрация и вход:</strong> адрес электронной почты, пароль (хранится в зашифрованном виде у провайдера аутентификации), внутренний идентификатор пользователя.</li>
+                            <li><strong>Вход через Google (только сайт):</strong> имя, email, идентификатор Google, URL аватара — в объёме, который передаёт Google при вашем согласии.</li>
+                            <li><strong>Профиль:</strong> отображаемое имя (username), аватар, пол и иные поля, которые вы заполняете добровольно.</li>
+                            <li><strong>Избранное:</strong> идентификаторы аниме и манги, добавленных в избранное (на сайте и в приложении).</li>
+                            <li><strong>История просмотра:</strong> идентификаторы просмотренных тайтлов, прогресс, время просмотра (на сайте — в том числе локально в браузере).</li>
+                            <li><strong>Сообщения:</strong> текст сообщений в общем чате, личных сообщениях, чатах комнат «Смотреть вместе» (только сайт).</li>
+                            <li><strong>Minko AI:</strong> текст ваших сообщений в чате с ИИ-помощником; на сайте для авторизованных пользователей сообщения могут сохраняться в базе данных для работы сервиса и модерации.</li>
+                            <li><strong>Настройки:</strong> параметры уведомлений, автовоспроизведения, рекомендаций и др.</li>
+                            <li><strong>Технические данные:</strong> IP-адрес, тип устройства и браузера, язык, User-Agent, дата и время обращения, URL страницы, referrer.</li>
+                            <li><strong>Аналитика посещений (сайт):</strong> псевдонимный идентификатор посетителя (<code>visitor_id</code>), просмотренные пути, заголовки страниц, тип события.</li>
+                            <li><strong>Локальные данные на устройстве:</strong> сессия входа, кэш избранного, история чата Minko AI, кэш постеров (IndexedDB в приложении), прочие настройки — в localStorage, sessionStorage или IndexedDB.</li>
+                        </ul>
+                        <p>Мы сознательно не запрашиваем специальные категории персональных данных (здоровье, биометрия и т.п.). Не указывайте их в чатах и профиле.</p>
+                    </article>
+
+                    <article class="info-card info-card--wide">
+                        <h2>4. Цели обработки</h2>
+                        <ul>
+                            <li>Регистрация, аутентификация и ведение учётной записи.</li>
+                            <li>Предоставление функций каталога, просмотра, чтения манги, избранного, чатов, совместного просмотра.</li>
+                            <li>Работа Minko AI — формирование ответов на ваши запросы.</li>
+                            <li>Синхронизация данных между сайтом и приложением.</li>
+                            <li>Обеспечение безопасности, предотвращение злоупотреблений и спама.</li>
+                            <li>Улучшение работы Сервиса и базовая аналитика посещаемости.</li>
+                            <li>Показ рекламы (если включена на сайте).</li>
+                            <li>Исполнение требований применимого законодательства.</li>
+                        </ul>
+                    </article>
+
+                    <article class="info-card info-card--wide">
+                        <h2>5. Правовые основания</h2>
+                        <p>
+                            Обработка осуществляется на основании вашего согласия (регистрация, использование функций),
+                            необходимости исполнения пользовательского соглашения, а также законных интересов оператора
+                            (безопасность, аналитика в обезличенном виде), если иное не требуется законом.
+                        </p>
+                    </article>
+
+                    <article class="info-card info-card--wide">
+                        <h2>6. Подрядчики и передача третьим лицам</h2>
+                        <p>Для работы Сервиса мы привлекаем следующие категории получателей данных:</p>
+                        <ul>
+                            <li><strong>Supabase</strong> (supabase.com) — хостинг базы данных, аутентификация, хранение профилей, избранного, сообщений, логов чата Minko AI и аналитики посещений. Серверы могут находиться за пределами вашей страны.</li>
+                            <li><strong>Netlify</strong> (netlify.com) — хостинг сайта и серверless-функций (прокси Minko AI, генерация аватаров). Текст чата Minko AI обрабатывается на стороне Netlify перед отправкой в OpenAI.</li>
+                            <li><strong>OpenAI</strong> (openai.com) — обработка текста сообщений Minko AI для генерации ответов. Не передавайте в чат пароли, документы и иную чувствительную информацию.</li>
+                            <li><strong>Google</strong> — OAuth-вход на сайте; STUN-сервер для WebRTC при голосовой связи в «Смотреть вместе» (<code>stun.l.google.com</code>).</li>
+                            <li><strong>Kodik / Kodik Player</strong> — встраивание плеера и метаданные каталога; при просмотре ваш IP и технические параметры могут передаваться Kodik.</li>
+                            <li><strong>Jikan / MyAnimeList</strong>, <strong>Shikimori</strong>, <strong>AniList</strong> — публичные API метаданных аниме (названия, постеры, описания).</li>
+                            <li><strong>ReManga</strong> (api.remanga.org) — каталог и главы манги; при запросах передаются технические данные соединения.</li>
+                            <li><strong>corsproxy.io</strong> — прокси для отдельных запросов к API манги при ограничениях CORS (видит URL запроса).</li>
+                            <li><strong>Яндекс</strong> — рекламная сеть РСЯ (если блоки рекламы подключены в настройках сайта); cookie и идентификаторы рекламы по правилам Яндекса.</li>
+                            <li><strong>CDN</strong> (jsdelivr, Google Fonts и др.) — доставка скриптов и шрифтов; могут получать IP-адрес и User-Agent.</li>
+                        </ul>
+                        <p>
+                            Мы не продаём персональные данные. Передача осуществляется только в объёме, необходимом для указанных целей,
+                            на основании договоров или публичных условий соответствующих сервисов.
+                        </p>
+                    </article>
+
+                    <article class="info-card info-card--wide" id="mobile-app">
+                        <h2>7. Мобильное приложение (Google Play)</h2>
+                        <ul>
+                            <li><strong>Разрешения Android:</strong> приложение запрашивает доступ к <strong>Интернету</strong> для загрузки каталога, постеров, авторизации и Minko AI. Доступ к камере, микрофону, контактам, геолокации и файлам не запрашивается.</li>
+                            <li><strong>Локальное хранение:</strong> сессия Supabase, избранное, история чата Minko AI и кэш постеров (IndexedDB) хранятся на устройстве. При включённом резервном копировании Android часть данных WebView может попадать в резервную копию Google.</li>
+                            <li><strong>Общий аккаунт:</strong> email и пароль обрабатываются так же, как на сайте, через Supabase.</li>
+                            <li><strong>Minko AI в приложении:</strong> сообщения отправляются на сервер re-minko-anime.com и далее в OpenAI (см. раздел 6).</li>
+                            <li><strong>Реклама:</strong> в текущей версии приложения рекламные SDK не встроены.</li>
+                        </ul>
+                        <p>
+                            Для Google Play Console используйте URL этой страницы:
+                            <a href="https://re-minko-anime.com/privacy-policy.html">https://re-minko-anime.com/privacy-policy.html</a>.
+                        </p>
+                    </article>
+
+                    <article class="info-card info-card--wide">
+                        <h2>8. Cookie и локальное хранилище</h2>
+                        <p>
+                            Сайт и приложение используют cookie, localStorage, sessionStorage и IndexedDB для:
+                            сохранения сессии входа, настроек, кэша каталога и постеров, работы Minko AI и аналитики.
+                            Сторонние сервисы (Supabase, реклама, OAuth) могут устанавливать собственные cookie.
+                            Вы можете ограничить cookie в настройках браузера; без них часть функций может быть недоступна.
+                        </p>
+                    </article>
+
+                    <article class="info-card info-card--wide">
+                        <h2>9. Срок хранения</h2>
+                        <p>
+                            Данные хранятся пока действует учётная запись и используется Сервис, либо пока это необходимо для целей обработки.
+                            Логи чата Minko AI и аналитика могут храниться ограниченный срок для безопасности и улучшения сервиса.
+                            После удаления аккаунта данные удаляются или обезличиваются, за исключением случаев, когда хранение требуется по закону.
+                        </p>
+                    </article>
+
+                    <article class="info-card info-card--wide">
+                        <h2>10. Ваши права</h2>
+                        <p>Вы вправе:</p>
+                        <ul>
+                            <li>Запросить информацию об обрабатываемых данных.</li>
+                            <li>Исправить неточные данные в профиле или через обращение на email.</li>
+                            <li>Запросить удаление учётной записи и связанных данных.</li>
+                            <li>Отозвать согласие на обработку, если оно было дано (при этом часть функций может стать недоступной).</li>
+                            <li>Обратиться в уполномоченный орган по защите персональных данных в вашей стране.</li>
+                        </ul>
+                        <p>Запросы направляйте на <a href="mailto:re.minko.anime.com@gmail.com">re.minko.anime.com@gmail.com</a> или через страницу <a href="account-deletion.html">удаления аккаунта</a>. Срок ответа — до 30 дней, если иное не предусмотрено законом.</p>
+                    </article>
+
+                    <article class="info-card info-card--wide">
+                        <h2>11. Дети</h2>
+                        <p>
+                            Сервис не предназначен для лиц младше 13 лет. Мы не собираем персональные данные детей сознательно.
+                            Если вы считаете, что ребёнок предоставил нам данные, свяжитесь с нами для их удаления.
+                        </p>
+                    </article>
+
+                    <article class="info-card info-card--wide">
+                        <h2>12. Безопасность</h2>
+                        <p>
+                            Мы применяем организационные и технические меры: HTTPS, ограничение доступа к инфраструктуре,
+                            политики доступа Supabase (RLS). Абсолютная защита в сети не гарантируется —
+                            используйте надёжный пароль и не передавайте доступ третьим лицам.
+                        </p>
+                    </article>
+
+                    <article class="info-card info-card--wide">
+                        <h2>13. Трансграничная передача</h2>
+                        <p>
+                            Используя Сервис, вы соглашаетесь с возможной передачей данных в страны, где расположены серверы
+                            Supabase, Netlify, OpenAI и иных подрядчиков (в том числе США и страны ЕС),
+                            с учётом их политик конфиденциальности и применимых механизмов защиты.
+                        </p>
+                    </article>
+
+                    <article class="info-card info-card--wide">
+                        <h2>14. Изменения политики</h2>
+                        <p>
+                            Мы можем обновлять эту Политику. Актуальная версия всегда доступна по адресу
+                            <a href="https://re-minko-anime.com/privacy-policy.html">re-minko-anime.com/privacy-policy.html</a>
+                            с указанием даты ниже. Существенные изменения по возможности доводятся до сведения через сайт или приложение.
+                            Продолжение использования Сервиса после публикации изменений означает согласие с обновлённой редакцией,
+                            если иное не запрещено законом.
+                        </p>
+                        <p class="info-footer-note" style="margin-top: 1rem;">
+                            Последнее обновление: <strong>27 мая 2026 г.</strong>
+                        </p>
+                    </article>
+                </div>
+
+                <p class="info-footer-note">
+                    Re-Minko · re-minko-anime.com · приложение com.reminko.mobile
+                </p>
+            </div>
+        </main>
+    </div>
+
+    <script src="scripts/data.js"></script>
+    <script src="scripts/anilist-api.js"></script>
+    <script src="scripts/api.js"></script>
+    <script src="scripts/utils.js"></script>
+    <script src="scripts/utils-notifications.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="scripts/supabase-config.js"></script>
+    <script src="scripts/direct-messages.js"></script>
+    <script src="scripts/oauth-auth.js"></script>
+    <script src="scripts/navigation.js"></script>
+    <script src="scripts/auth.js"></script>
+    <script src="scripts/loading-phrases.js"></script>
+    <script src="scripts/notifications.js"></script>
+    <script src="scripts/register.js"></script>
+    <script src="scripts/main.js"></script>
+    <script src="scripts/loading.js"></script>
+    <script src="scripts/apply-navigation.js"></script>
+</body>
+</html>

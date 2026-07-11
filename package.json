@@ -1,0 +1,46 @@
+{
+  "name": "re-minko",
+  "version": "1.0.0",
+  "description": "Платформа для просмотра аниме и манги с AI помощником Minko",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx http-server -p 8080 -c-1",
+    "build": "npm run minify",
+    "build:kodik": "node scripts/build/kodik-build-catalog.js",
+    "build:remanga": "node scripts/build/remanga-build-catalog.js",
+    "build:sitemap": "node scripts/build/generate-sitemap.js",
+    "fetch:kodik": "node scripts/build/kodik-api-sync.js",
+    "automate:anime": "npm run build:kodik && node scripts/build/anime-automation.js && npm run build:sitemap",
+    "automate:anime:enrich": "npm run build:kodik && node scripts/build/anime-automation.js --enrich-missing --limit=80 && npm run build:sitemap",
+    "automate:anime:api": "npm run fetch:kodik && npm run automate:anime",
+    "automate:anime:api:enrich": "npm run fetch:kodik && npm run automate:anime:enrich",
+    "sync:kodik": "npm run automate:anime",
+    "publish:kodik": "node scripts/build/kodik-publish-online.js",
+    "minify": "npm run minify:js && npm run minify:css",
+    "minify:js": "node scripts/build/minify-js.js",
+    "minify:css": "node scripts/build/minify-css.js",
+    "lint": "eslint scripts/*.js --max-warnings 999 || true",
+    "test": "echo 'Тесты не настроены'"
+  },
+  "keywords": [
+    "anime",
+    "manga",
+    "streaming",
+    "supabase",
+    "ai"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.57.0",
+    "http-server": "^14.1.1",
+    "terser": "^5.24.0",
+    "clean-css": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}

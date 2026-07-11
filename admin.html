@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <style id="reminko-critical-first-paint">
+      /* Первый кадр до загрузки внешних CSS: тёмный фон и полноэкранный лоадер (антимигание FOUC) */
+      html { background-color: #0b0b12; }
+      body { margin: 0; background-color: #0b0b12; color: #e5e7eb; }
+      #loadingScreen {
+        position: fixed !important;
+        inset: 0 !important;
+        width: 100% !important;
+        min-height: 100vh !important;
+        z-index: 2147483646 !important;
+        background: #000000 !important;
+        display: flex !important;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        box-sizing: border-box;
+      }
+      body:not(.reminko-content-revealed) .main-layout {
+        opacity: 0 !important;
+        visibility: hidden !important;
+        pointer-events: none !important;
+      }
+    </style>
+    <script src="scripts/desktop-only-guard.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Панель Создателя | Re-Minko</title>
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="apple-touch-icon" sizes="180x180" href="Fons/vavo/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="Fons/vavo/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="Fons/vavo/favicon-16x16.png">
+    <link rel="manifest" href="Fons/vavo/site.webmanifest">
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/sidebar-layout.css">
+    <link rel="stylesheet" href="styles/loading.css">
+    <link rel="stylesheet" href="styles/notifications.css">
+    <link rel="stylesheet" href="styles/register-flow.css">
+    <link rel="stylesheet" href="styles/admin-panel.css">
+</head>
+<body>
+    <!-- Экран загрузки -->
+    <div class="loading-screen" id="loadingScreen">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Загрузка<span class="loading-dots"></span></div>
+    </div>
+
+    <!-- Верхняя панель будет добавлена через navigation.js -->
+    
+    <!-- Основной контейнер с боковой панелью -->
+    <div class="main-layout">
+        <!-- Левая боковая панель навигации будет добавлена через navigation.js -->
+        
+        <!-- Главный контент -->
+        <main class="main-content-wrapper">
+            <div class="admin-container">
+                <div class="admin-header">
+                    <h1>🛡️ Панель Создателя</h1>
+                    <p class="admin-subtitle">Полное управление сайтом Re-Minko</p>
+                </div>
+
+                <!-- Табы -->
+                <div class="admin-tabs" id="adminTabs">
+                    <button class="admin-tab active" data-tab="dashboard">📊 Дашборд</button>
+                    <button class="admin-tab" data-tab="users">👥 Пользователи</button>
+                    <button class="admin-tab" data-tab="moderation">🛡️ Модерация</button>
+                    <button class="admin-tab" data-tab="notifications">🔔 Уведомления</button>
+                    <button class="admin-tab" data-tab="minkoServer">🤖 Сервер Minko AI</button>
+                    <button class="admin-tab" data-tab="settings">⚙️ Настройки</button>
+                </div>
+
+                <!-- Дашборд -->
+                <div class="admin-tab-content active" id="tabDashboard">
+                    <div class="admin-stats" id="adminStats">
+                        <!-- Статистика загрузится динамически -->
+                    </div>
+                    
+                    <div class="admin-section">
+                        <h2>📈 Быстрая статистика</h2>
+                        <div id="quickStats" class="quick-stats-grid">
+                            <!-- Быстрая статистика -->
+                        </div>
+                    </div>
+
+                    <div class="admin-section visitor-analytics-section" id="visitorAnalyticsSection">
+                        <h2>🌐 Посетители и страницы</h2>
+                        <p class="admin-inline-hint" style="margin: 0 0 1rem;">
+                            Собираются просмотры с обычных страниц сайта (панель создателя не учитывается). Гость получает стабильный анонимный id в браузере;
+                            у авторизованных фиксируется учётная запись.
+                        </p>
+                        <div class="filters-row visitor-analytics-toolbar">
+                            <label class="visitor-analytics-period-label">
+                                Период
+                                <select id="visitorAnalyticsPeriod" class="filter-select" title="За сколько дней с полуночи (UTC) показывать данные">
+                                    <option value="1">1 день</option>
+                                    <option value="7" selected>7 дней</option>
+                                    <option value="30">30 дней</option>
+                                    <option value="90">90 дней</option>
+                                </select>
+                            </label>
+                            <label class="visitor-analytics-period-label">
+                                Устройство
+                                <select id="visitorAnalyticsDeviceFilter" class="filter-select" title="Фильтр по типу устройства">
+                                    <option value="">Все</option>
+                                    <option value="desktop">Desktop</option>
+                                    <option value="mobile">Mobile</option>
+                                    <option value="tablet">Tablet</option>
+                                    <option value="tv">TV</option>
+                                    <option value="bot">Bot</option>
+                                </select>
+                            </label>
+                            <label class="visitor-analytics-period-label">
+                                Тип события
+                                <select id="visitorAnalyticsEventFilter" class="filter-select" title="Фильтр по событиям">
+                                    <option value="">Все</option>
+                                    <option value="pageview">pageview</option>
+                                    <option value="action">action</option>
+                                    <option value="login">action: login</option>
+                                </select>
+                            </label>
+                            <label class="visitor-analytics-period-label">
+                                Сортировка
+                                <select id="visitorAnalyticsSort" class="filter-select" title="Порядок в ленте и таблицах">
+                                    <option value="time_desc">Сначала новые</option>
+                                    <option value="time_asc">Сначала старые</option>
+                                    <option value="path_asc">Путь A→Я</option>
+                                    <option value="path_desc">Путь Я→A</option>
+                                </select>
+                            </label>
+                            <button type="button" class="admin-btn admin-btn-secondary" id="visitorAnalyticsRefreshBtn">Обновить</button>
+                            <label class="visitor-analytics-period-label">
+                                <input type="checkbox" id="visitorAnalyticsRealtimeToggle" checked>
+                                Live (15с)
+                            </label>
+                        </div>
+                        <div id="visitorAnalyticsContent" class="visitor-analytics-content">
+                            <p class="admin-inline-hint">Загрузка…</p>
+                        </div>
+                        <p class="admin-inline-hint" style="margin-top: 0.75rem;">
+                            События <strong>login</strong> пишутся при входе в аккаунт (включая OAuth): смотрите в ленте ниже и в колонке «Тип» таблицы как <code>action: login</code>.
+                        </p>
+                    </div>
+
+                    <div class="admin-section">
+                        <h2>💬 Чаты пользователей с Minko AI</h2>
+                        <p class="admin-inline-hint" style="margin: 0 0 0.75rem;">
+                            История подгружается из логов БД (сообщения сохраняются при ответах ИИ для залогиненных пользователей).
+                        </p>
+                        <button type="button" class="admin-btn" id="openMinkoAiLogsModalBtn">Открыть окно истории</button>
+                    </div>
+
+                    <div class="admin-section">
+                        <h2>🔔 Последние события</h2>
+                        <div id="recentActivity" class="activity-list">
+                            <!-- Последняя активность -->
+                        </div>
+                    </div>
+
+                    <div class="admin-section">
+                        <h2>🧾 Лог аудита действий создателя</h2>
+                        <p class="admin-inline-hint" style="margin: 0 0 0.8rem;">
+                            Фиксируются критические действия: баны, муты, подписки, уведомления, настройки и полное удаление аккаунта.
+                        </p>
+                        <div class="filters-row" style="margin-bottom:0.8rem;">
+                            <select class="filter-select" id="creatorAuditActionFilter" title="Фильтр по типу действия">
+                                <option value="">Все действия</option>
+                                <option value="user_delete_full">Полное удаление аккаунта</option>
+                                <option value="user_ban_toggle">Бан / разбан</option>
+                                <option value="user_chat_mute">Мут в чате</option>
+                                <option value="chat_message_delete">Удаление сообщения чата</option>
+                                <option value="vip_subscription_manage">VIP подписка</option>
+                                <option value="ai_subscription_manage">AI подписка</option>
+                                <option value="notification_send_single">Уведомление одному</option>
+                                <option value="notification_send_bulk">Массовое уведомление</option>
+                                <option value="chat_automod_settings_save">Автомодерация чата</option>
+                                <option value="chat_automod_state_reset">Сброс автомодерации пользователя</option>
+                                <option value="minko_server_settings_save">Состояние Minko AI</option>
+                                <option value="maintenance_settings_save">Режим разработки</option>
+                            </select>
+                            <button type="button" class="admin-btn" id="creatorAuditRefreshBtn">Обновить лог</button>
+                        </div>
+                        <div id="creatorAuditList" class="activity-list">
+                            <p class="activity-empty">Загрузка лога аудита…</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Пользователи -->
+                <div class="admin-tab-content" id="tabUsers">
+                    <div class="admin-section">
+                        <h2>👥 Управление пользователями</h2>
+                        
+                        <div class="filters-row">
+                            <input type="text" class="filter-input" id="usersSearchInput" placeholder="Поиск по имени или email...">
+                            <select class="filter-select" id="usersBanFilter" title="Фильтр по статусу бана">
+                                <option value="">Все</option>
+                                <option value="false">Не забанены</option>
+                                <option value="true">Забанены</option>
+                            </select>
+                        </div>
+
+                        <div class="users-view-switch" role="tablist" aria-label="Режим списка пользователей">
+                            <button type="button" class="users-view-btn active" id="usersViewCardsBtn">Карточки</button>
+                            <button type="button" class="users-view-btn" id="usersViewTableBtn">Таблица</button>
+                        </div>
+
+                        <div id="usersCardsGrid" class="users-cards-grid">
+                            <div class="users-card-empty">Загрузка...</div>
+                        </div>
+                        <div id="usersTableWrap" style="display:none;overflow-x:auto;">
+                            <table class="users-table">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Email</th>
+                                        <th>Имя</th>
+                                        <th>VIP «Вместе»</th>
+                                        <th>Статус</th>
+                                        <th>Активность</th>
+                                        <th>Действия</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="usersTableBody">
+                                    <tr><td colspan="7" style="text-align: center; padding: 2rem;">Загрузка...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="pagination" id="usersPagination"></div>
+
+                        <p class="admin-hint" style="margin-top: 1rem; font-size: 0.9rem; color: var(--text-secondary, #aaa); line-height: 1.45;">
+                            VIP продаётся только для <strong>«Смотреть вместе»</strong> — в профиле (⚙️ → услуги). Minko AI у всех в режиме <strong>«Сонная Minko»</strong> без отдельной подписки.
+                            Ваша учётка создателя в этом списке <strong>не показывается</strong>; VIP «Вместе» для неё <strong>навсегда</strong> без строки в таблице подписок.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Модерация -->
+                <div class="admin-tab-content" id="tabModeration">
+                    <div class="moderation-tabs">
+                        <button class="mod-tab-btn active" data-mod="chat">💬 Чат</button>
+                    </div>
+
+                    <!-- Модерация чата -->
+                    <div id="modChat" class="mod-section active">
+                        <div class="admin-section">
+                            <h2>🛡️ Автомодерация чата</h2>
+                            <p class="admin-inline-hint" style="margin:0 0 0.75rem;">
+                                Серверная автомодерация работает централизованно для всех устройств пользователя.
+                            </p>
+                            <div class="filters-row" style="align-items:center;">
+                                <label class="visitor-analytics-period-label" style="gap:0.45rem;">
+                                    <input type="checkbox" id="chatAutomodEnabledToggle">
+                                    Автомодерация включена
+                                </label>
+                                <input type="text" class="filter-input" id="chatAutomodRuleSearchInput" placeholder="Поиск по ключу/описанию правила...">
+                                <button type="button" class="admin-btn admin-btn-secondary" id="chatAutomodRefreshBtn">Обновить</button>
+                                <button type="button" class="admin-btn" id="chatAutomodSaveBtn">Сохранить</button>
+                            </div>
+                            <div class="filters-row" style="align-items:center;">
+                                <input type="text" class="filter-input" id="chatAutomodResetUserId" placeholder="UUID пользователя для сброса страйков/авто-мута">
+                                <button type="button" class="admin-btn admin-btn-danger" id="chatAutomodResetUserBtn">Сбросить пользователю</button>
+                            </div>
+                            <div id="chatAutomodSaveStatus" class="admin-inline-hint" style="margin-bottom:0.6rem;"></div>
+                            <div id="chatAutomodRulesList" class="activity-list">
+                                <p class="activity-empty">Загрузка правил автомодерации…</p>
+                            </div>
+                            <h3 class="visitor-analytics-subh">Последние срабатывания</h3>
+                            <div id="chatAutomodEventsList" class="activity-list">
+                                <p class="activity-empty">Загрузка событий автомодерации…</p>
+                            </div>
+                        </div>
+                        <div class="admin-section">
+                            <h2>💬 Модерация чата</h2>
+                            <div class="filters-row">
+                                <input type="text" class="filter-input" id="chatSearchInput" placeholder="Поиск в чате...">
+                                <input type="date" class="filter-input" id="chatDateFrom" placeholder="От" title="Дата начала">
+                                <input type="date" class="filter-input" id="chatDateTo" placeholder="До" title="Дата окончания">
+                            </div>
+                            <div id="chatMessagesMod" class="messages-list"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Уведомления -->
+                <div class="admin-tab-content" id="tabNotifications">
+                    <div class="admin-section">
+                        <h2>🔔 Управление уведомлениями</h2>
+                        
+                        <div class="notification-types">
+                            <button class="admin-btn" onclick="showSendNotificationModal('single')">📨 Отправить одному</button>
+                            <button class="admin-btn" onclick="showSendNotificationModal('bulk')">📢 Массовая рассылка</button>
+                            <button class="admin-btn" onclick="showSendNotificationModal('all')">🌐 Всем пользователям</button>
+                        </div>
+
+                        <div id="notificationsManagement" class="notifications-management">
+                            <!-- Управление уведомлениями -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Удалённый сервер Minko AI (Netlify + Supabase) -->
+                <div class="admin-tab-content" id="tabMinkoServer">
+                    <div class="admin-section">
+                        <h2>🤖 Управление сервером Minko AI</h2>
+                        <p class="admin-inline-hint" style="max-width: 56rem; line-height: 1.55;">
+                            Чат работает через <strong>Netlify Functions</strong> (папка проекта <code>minko-netlify-proxy</code>) — отдельный постоянный сервер не нужен.
+                            Здесь можно <strong>выключить чат для всех</strong> (без деплоя), задать текст посетителям и <strong>перезапустить деплой</strong> на Netlify (Build hook).
+                            Логи ошибок подтягиваются из базы (запись с функции при ошибках, если задан <code>SUPABASE_SERVICE_ROLE_KEY</code> в Netlify).
+                        </p>
+                        <div class="setting-card" style="margin-top: 1rem;">
+                            <label class="setting-item" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                <input type="checkbox" id="minkoSrvEnabled" checked />
+                                <span><strong>Minko AI включена</strong> (снять — чат и прокси недоступны посетителям)</span>
+                            </label>
+                            <label class="setting-item" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; margin-top: 0.55rem;">
+                                <input type="checkbox" id="minkoSrvOfflineExceptCreator" />
+                                <span><strong>Офлайн для всех, кроме создателя</strong> (только создатель сможет пользоваться чатом)</span>
+                            </label>
+                        </div>
+                        <div class="setting-card" style="margin-top: 1rem;">
+                            <label for="minkoSrvMessage" style="display: block; margin-bottom: 0.35rem; font-weight: 600;">Сообщение при отключении</label>
+                            <textarea id="minkoSrvMessage" class="filter-input" rows="3" style="width: 100%; max-width: 40rem; resize: vertical;" placeholder="Например: Технические работы, вернёмся через час 💤"></textarea>
+                        </div>
+                        <div style="margin-top: 1rem; display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;">
+                            <button type="button" class="admin-btn" id="minkoSrvSaveBtn">💾 Сохранить состояние</button>
+                        </div>
+                        <p id="minkoSrvSaveStatus" class="admin-inline-hint" style="margin-top: 0.75rem;"></p>
+                    </div>
+                </div>
+
+                <!-- Настройки: режим «В разработке» -->
+                <div class="admin-tab-content" id="tabSettings">
+                    <div class="admin-section">
+                        <h2>Режим «В разработке»</h2>
+                        <p class="admin-inline-hint" style="max-width: 52rem; line-height: 1.5;">
+                            При включении все посетители, кроме Создателя, видят страницу «Сайт в разработке».
+                            Без ограничений остаются: <strong>каталог аниме</strong> и <strong>страница просмотра аниме</strong>.
+                            Ниже отметьте разделы, которые нужно оставить доступными и остальным пользователям.
+                        </p>
+                        <div class="setting-card" style="margin-top: 1rem;">
+                            <label class="setting-item" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                <input type="checkbox" id="maintEnabled" />
+                                <span>Включить режим «В разработке»</span>
+                            </label>
+                        </div>
+                        <div class="setting-card" style="margin-top: 1rem;">
+                            <h3>Дополнительно открыть для всех</h3>
+                            <div id="maintExtraRoutes" class="settings-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 0.5rem 1rem; margin-top: 0.75rem;"></div>
+                        </div>
+                        <button type="button" class="admin-btn" id="maintSaveBtn" style="margin-top: 1rem;">Сохранить</button>
+                        <p id="maintSaveStatus" class="admin-inline-hint" style="margin-top: 0.75rem;"></p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Скрипты: config.local.js задаёт Supabase и Kodik до config.js -->
+    <script src="scripts/logger.js"></script>
+    <script src="config.local.js" onerror="window.__reminkoNoLocalConfig=true"></script>
+    <script src="scripts/config.js"></script>
+    <script src="scripts/network-utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="scripts/supabase-config.js"></script>
+    <script src="scripts/creator-privileges.js"></script>
+    <script src="scripts/direct-messages.js"></script>
+    <script src="scripts/oauth-auth.js"></script>
+    <script src="scripts/utils.js"></script>
+    <script src="scripts/utils-notifications.js"></script>
+    <script src="scripts/auth.js"></script>
+    <script src="scripts/register.js"></script>
+    <script src="scripts/notifications.js"></script>
+    <script src="scripts/episode-notifications.js"></script>
+    <script src="scripts/navigation.js"></script>
+    <script src="scripts/main.js"></script>
+    <script src="scripts/password-reset.js"></script>
+    <script src="scripts/email-confirm.js"></script>
+    <script src="scripts/remanga-catalog-store.js"></script>
+    <script src="scripts/data.js"></script>
+    <script src="scripts/jikan-api.js"></script>
+    <script src="scripts/shikimori-api.js"></script>
+    <script src="scripts/manga-data.js"></script>
+    <script src="scripts/admin-panel.js"></script>
+    <script src="scripts/admin-panel-creator.js"></script>
+    <script src="scripts/ai-subscription.js"></script>
+    <script src="scripts/loading.js"></script>
+    <script src="scripts/admin-panel-creator-ui.js"></script>
+    <script src="scripts/apply-navigation.js"></script>
+</body>
+</html>

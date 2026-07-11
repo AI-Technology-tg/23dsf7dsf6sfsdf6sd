@@ -1,0 +1,8 @@
+/Fons/Sociale/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/Fons/androids.png
+  Cache-Control: public, max-age=31536000, immutable
+
+/Fons/reminko.png
+  Cache-Control: public, max-age=31536000, immutable

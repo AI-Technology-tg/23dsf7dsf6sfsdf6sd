@@ -1,0 +1,16 @@
+config.local.js
+.env
+.env.*
+node_modules/
+dist/
+logs/
+downloads/
+TESTERSITE/
+_sql_chunks/
+.netlify/
+desktop.ini
+*.tmp
+*.bak
+*.log
+*.import
+kodik base/

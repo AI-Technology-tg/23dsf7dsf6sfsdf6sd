@@ -1,0 +1,12 @@
+{
+  "name": "minko-netlify-proxy",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Minko AI: POST /chat на Netlify Functions для Re-Minko",
+  "scripts": {
+    "dev": "netlify dev"
+  },
+  "devDependencies": {
+    "netlify-cli": "^17.0.0"
+  }
+}

@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /admin.html
+Disallow: /manga/reader.html
+Disallow: /favorites-manga.html
+Disallow: /reset-password.html
+Disallow: /payment-success.html
+Disallow: /cancel-success.html
+
+Sitemap: https://re-minko-anime.com/sitemap.xml

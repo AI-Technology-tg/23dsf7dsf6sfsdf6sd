@@ -1,0 +1,1956 @@
+@import url('neon-accent.css');
+
+/* Общие стили */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --primary-color: #e300ff;
+    --primary-hover: #f04dff;
+    --secondary-color: #ff3bdc;
+    --accent-color: #ff66ff;
+    --neon-glow: 0 0 20px rgba(227, 0, 255, 0.55), 0 0 40px rgba(227, 0, 255, 0.35), 0 0 60px rgba(227, 0, 255, 0.2);
+    --neon-glow-strong: 0 0 30px rgba(227, 0, 255, 0.75), 0 0 60px rgba(227, 0, 255, 0.5), 0 0 90px rgba(227, 0, 255, 0.3);
+    --text-color: #ffffff;
+    --text-primary: #ffffff;
+    --text-secondary: #e5e7eb;
+    --bg-overlay: rgba(0, 0, 0, 0.7);
+    --card-bg: rgba(255, 255, 255, 0.1);
+    --hover-bg: rgba(255, 255, 255, 0.2);
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    color: var(--text-color);
+    min-height: 100vh;
+    position: relative;
+    overflow-x: hidden;
+    background-color: #000;
+    /* Фон: затемнение как у старого ::before (opacity 0.3 картинки на чёрном ≈ 70% чёрной плёнки поверх) */
+    background-image:
+        linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)),
+        url('../Fons/seitFon.jpg');
+    background-size: cover, cover;
+    background-position: center, center;
+    background-repeat: no-repeat, no-repeat;
+    background-attachment: fixed, fixed;
+}
+
+/* Пока навигация не применена — не показываем шапку и лейаут (убирает мелькание при обновлении) */
+body:not(.reminko-ui-ready) .top-navbar,
+body:not(.reminko-ui-ready) .main-layout {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+/* Скрытие scrollbar для всех браузеров */
+body::-webkit-scrollbar {
+    width: 8px;
+}
+
+body::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1);
+}
+
+body::-webkit-scrollbar-thumb {
+    background: rgba(227, 0, 255, 0.45);
+    border-radius: 4px;
+}
+
+body::-webkit-scrollbar-thumb:hover {
+    background: rgba(227, 0, 255, 0.65);
+}
+
+/* Кнопка уведомлений */
+.top-notifications-btn {
+    position: relative;
+    background: none;
+    border: none;
+    color: var(--text-color);
+    cursor: pointer;
+    padding: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+    border-radius: 8px;
+}
+
+.top-notifications-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: scale(1.1);
+}
+
+.notification-badge {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    background: #ef4444;
+    color: white;
+    font-size: 0.7rem;
+    font-weight: bold;
+    min-width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 4px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Для Firefox - используем @supports для проверки поддержки */
+@supports (scrollbar-width: thin) {
+    html {
+        scrollbar-width: thin;
+        scrollbar-color: rgba(99, 102, 241, 0.5) rgba(0, 0, 0, 0.1);
+    }
+}
+
+html {
+    /* Уменьшаем базовый размер для компактности (эквивалент ~80% масштаба) */
+    font-size: 13px;
+}
+
+/* Навигация */
+.navbar {
+    background: rgba(0, 0, 0, 0.2);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    padding: 1rem 0;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.nav-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    text-decoration: none;
+    color: var(--text-color);
+    font-size: 1.5rem;
+    font-weight: bold;
+    transition: opacity 0.3s;
+}
+
+.logo:hover {
+    opacity: 0.8;
+}
+
+.logo-img {
+    height: 50px;
+    width: auto;
+    object-fit: contain;
+    border-radius: 8px;
+}
+
+.logo-text {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.nav-menu {
+    display: flex;
+    list-style: none;
+    gap: 2rem;
+    align-items: center;
+}
+
+.nav-link {
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 1rem;
+    transition: all 0.3s;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    white-space: nowrap;
+    position: relative;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-start;
+    line-height: 1.4;
+}
+
+.nav-link:not(:has(span)) {
+    align-items: center;
+}
+
+.nav-link > span {
+    display: block;
+    font-size: 0.65em;
+    opacity: 0.7;
+    font-weight: normal;
+    margin-top: 0.1rem;
+    line-height: 1.2;
+    white-space: normal;
+}
+
+.nav-link:hover {
+    color: var(--text-color);
+    background: var(--hover-bg);
+}
+
+.nav-link.active {
+    background: rgba(168, 85, 247, 0.2);
+    color: var(--primary-color);
+    box-shadow: 0 0 8px rgba(168, 85, 247, 0.4);
+    border: 1px solid rgba(168, 85, 247, 0.5);
+}
+
+.nav-link.active:hover {
+    background: rgba(168, 85, 247, 0.3);
+    box-shadow: 0 0 12px rgba(168, 85, 247, 0.6), 0 0 20px rgba(217, 70, 239, 0.4);
+}
+
+.btn-login,
+.btn-register {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: var(--text-color);
+    padding: 0.5rem 1.5rem;
+    border-radius: 6px;
+    box-shadow: var(--neon-glow);
+    border: 1px solid rgba(168, 85, 247, 0.5);
+}
+
+.btn-login:hover,
+.btn-register:hover {
+    box-shadow: var(--neon-glow-strong);
+    transform: translateY(-2px);
+}
+
+.btn-register {
+    background: rgba(168, 85, 247, 0.7);
+    margin-right: 0.5rem;
+}
+
+.btn-register:hover {
+    background: rgba(168, 85, 247, 0.9);
+}
+
+.hamburger {
+    display: none;
+    flex-direction: column;
+    cursor: pointer;
+    gap: 4px;
+}
+
+.hamburger span {
+    width: 25px;
+    height: 3px;
+    background: var(--text-color);
+    transition: 0.3s;
+}
+
+/* Главный контент */
+.main-content {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+/* Герой-секция */
+.hero-section {
+    text-align: center;
+    padding: 2.5rem 1.5rem;
+    margin-bottom: 2.5rem;
+}
+
+.hero-title {
+    font-size: 2.25rem;
+    margin-bottom: 1rem;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.hero-description {
+    font-size: 1.2rem;
+    color: var(--text-secondary);
+    max-width: 800px;
+    margin: 0 auto 2rem;
+    line-height: 1.8;
+}
+
+.hero-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+/* Кнопки */
+.btn {
+    padding: 0.75rem 2rem;
+    border: 1px solid rgba(168, 85, 247, 0.5);
+    border-radius: 8px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-decoration: none;
+    display: inline-block;
+    position: relative;
+    font-weight: 500;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: var(--text-color);
+    box-shadow: var(--neon-glow);
+    border: 1px solid rgba(168, 85, 247, 0.5);
+}
+
+.btn-primary:hover {
+    box-shadow: var(--neon-glow-strong);
+    transform: translateY(-2px);
+}
+
+.btn-secondary {
+    background: transparent;
+    color: var(--text-color);
+    border: 2px solid var(--primary-color);
+    box-shadow: 0 0 10px rgba(168, 85, 247, 0.3);
+}
+
+.btn-secondary:hover {
+    background: rgba(168, 85, 247, 0.2);
+    box-shadow: var(--neon-glow);
+    transform: translateY(-2px);
+}
+
+.btn-block {
+    width: 100%;
+}
+
+.btn-google {
+    background: #fff;
+    color: #333;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.btn-google:hover {
+    background: #f5f5f5;
+}
+
+.btn-facebook {
+    background: #1877F2;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.btn-facebook:hover {
+    background: #166fe5;
+}
+
+.btn-discord {
+    background: #5865F2;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.btn-discord:hover {
+    background: #4752c4;
+}
+
+/* Секции контента */
+.content-section {
+    margin-bottom: 2.5rem;
+}
+
+.section-title {
+    font-size: 1.5rem;
+    margin-bottom: 0;
+    padding-bottom: 0.6rem;
+    border-bottom: 2px solid var(--primary-color);
+}
+
+.content-section > .section-title {
+    margin-bottom: 2rem;
+}
+
+/* Сетка аниме */
+.anime-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 1.25rem;
+}
+
+.anime-card {
+    position: relative;
+    background: var(--card-bg);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: transform 0.3s, box-shadow 0.3s;
+    cursor: pointer;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.anime-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.5);
+}
+
+.anime-card-seo-link {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    font-size: 0;
+    line-height: 0;
+    color: transparent;
+    text-decoration: none;
+    overflow: hidden;
+}
+
+.anime-card .anime-poster-go-btn {
+    position: relative;
+    z-index: 3;
+}
+
+/* Анимация появления карточек порциями (по 3) */
+.anime-card.card-enter {
+    opacity: 0;
+    transform: translateY(28px);
+    transition: opacity 0.4s ease-out, transform 0.4s ease-out, box-shadow 0.3s;
+}
+
+.anime-card.card-enter.card-enter-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.anime-card.card-enter-visible:hover {
+    transform: translateY(-8px);
+}
+
+.anime-poster {
+    width: 100%;
+    aspect-ratio: 2/3;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    background-size: cover;
+    background-position: center;
+    transition: opacity 0.3s ease-in-out;
+}
+
+.anime-poster.poster-loaded {
+    opacity: 1;
+    animation: fadeInPoster 0.5s ease-in-out;
+}
+
+.anime-poster.poster-placeholder {
+    opacity: 0.8;
+}
+
+.anime-poster.poster-error {
+    opacity: 0.9;
+}
+
+@keyframes fadeInPoster {
+    from {
+        opacity: 0.7;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.anime-poster.placeholder {
+    color: var(--text-color);
+    font-size: 1.2rem;
+    opacity: 0.7;
+}
+
+.anime-year {
+    position: absolute;
+    top: 0.5rem;
+    left: 0.5rem;
+    z-index: 1;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: bold;
+}
+
+.anime-status {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    left: auto;
+    bottom: auto;
+    z-index: 2;
+    max-width: calc(100% - 1rem);
+    padding: 0.22rem 0.5rem;
+    border-radius: 6px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    line-height: 1.2;
+    text-align: center;
+    color: #fff;
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.95), rgba(227, 0, 255, 0.9));
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow: 0 2px 10px rgba(124, 58, 237, 0.4), 0 0 14px rgba(227, 0, 255, 0.12);
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
+    pointer-events: none;
+}
+
+/* Главная / Jikan-ленты — тот же бейдж, что на карточках каталога */
+.jikan-card-status {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    left: auto;
+    bottom: auto;
+    z-index: 2;
+    max-width: calc(100% - 12px);
+    box-sizing: border-box;
+    padding: 0.2rem 0.45rem;
+    border-radius: 6px;
+    font-size: 0.62rem;
+    font-weight: 700;
+    line-height: 1.2;
+    text-align: center;
+    color: #fff;
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.95), rgba(227, 0, 255, 0.9));
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow: 0 2px 10px rgba(124, 58, 237, 0.4), 0 0 14px rgba(227, 0, 255, 0.12);
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
+    pointer-events: none;
+    text-shadow: none;
+}
+
+.anime-poster-hover {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    transition: opacity 0.22s ease;
+    pointer-events: none;
+    z-index: 3;
+}
+
+.anime-card:hover .anime-poster-hover {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.anime-poster-go-btn {
+    appearance: none;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.88rem;
+    font-weight: 700;
+    padding: 0.55rem 1.15rem;
+    border-radius: 999px;
+    color: #fff;
+    background: linear-gradient(135deg, #7c3aed, #c026d3);
+    box-shadow: 0 6px 20px rgba(124, 58, 237, 0.45);
+    transition: transform 0.15s ease, box-shadow 0.2s ease;
+}
+
+.anime-poster-go-btn:hover {
+    transform: scale(1.04);
+    box-shadow: 0 8px 28px rgba(192, 38, 211, 0.5);
+}
+
+.anime-info {
+    padding: 0.6rem;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.anime-card-actions {
+    margin-top: 0.65rem;
+    padding-top: 0.45rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.anime-card-actions .btn {
+    width: 100%;
+    justify-content: center;
+    font-size: 0.8rem;
+    padding: 0.45rem 0.6rem;
+    border-radius: 10px;
+    font-weight: 600;
+}
+
+.anime-title {
+    font-size: 0.9rem;
+    margin-bottom: 0.35rem;
+    color: var(--text-color);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    line-height: 1.35;
+    min-height: 2.4rem;
+}
+
+.anime-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+    gap: 0.5rem;
+}
+
+.anime-rating {
+    color: #fbbf24;
+    font-weight: bold;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    flex-wrap: wrap;
+}
+
+.rating-count {
+    font-size: 0.75rem;
+    font-weight: normal;
+    opacity: 0.8;
+    color: var(--text-secondary);
+}
+
+.anime-episodes {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    white-space: nowrap;
+}
+
+.anime-stats {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    opacity: 0.8;
+}
+
+.anime-genres {
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    opacity: 0.8;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Поиск */
+.search-section {
+    margin-bottom: 3rem;
+}
+
+.search-container {
+    max-width: 800px;
+    margin: 0 auto;
+    display: flex;
+    gap: 1rem;
+}
+
+.search-input-wrapper {
+    flex: 1;
+    position: relative;
+}
+
+.search-input {
+    width: 100%;
+    padding: 1rem 1rem 1rem 3rem;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.1);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    color: var(--text-color);
+    font-size: 1rem;
+    transition: all 0.3s;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    background: rgba(255, 255, 255, 0.15);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+}
+
+.search-input::placeholder {
+    color: var(--text-secondary);
+}
+
+.search-icon {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-secondary);
+    pointer-events: none;
+}
+
+.search-btn {
+    padding: 1rem 2rem;
+    white-space: nowrap;
+}
+
+/* Жанры */
+.genres-section {
+    margin-bottom: 3rem;
+}
+
+.genres-title {
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+
+.genres-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    justify-content: center;
+}
+
+.genre-btn {
+    padding: 0.5rem 1.25rem;
+    background: rgba(255, 255, 255, 0.1);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
+    color: var(--text-color);
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.genre-btn:hover {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+/* Подвал */
+.footer {
+    background: rgba(0, 0, 0, 0.8);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    padding: 2rem 0;
+    margin-top: 4rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.footer-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.footer-links {
+    display: flex;
+    gap: 2rem;
+}
+
+.footer-links a {
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: color 0.3s;
+}
+
+.footer-links a:hover {
+    color: var(--text-color);
+}
+
+/* Модальное окно */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--bg-overlay);
+    -webkit-backdrop-filter: blur(5px);
+    backdrop-filter: blur(5px);
+}
+
+.modal.active {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background: rgba(20, 20, 30, 0.95);
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
+    padding: 1.5rem;
+    border-radius: 16px;
+    max-width: 420px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    position: relative;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+}
+
+.close {
+    position: absolute;
+    right: 1.5rem;
+    top: 1.5rem;
+    font-size: 2rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: color 0.3s;
+    line-height: 1;
+}
+
+.close:hover {
+    color: var(--text-color);
+}
+
+.modal-title {
+    font-size: 1.8rem;
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.form-group label,
+.form-group .form-label {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.form-group input {
+    padding: 0.75rem;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-color);
+    font-size: 1rem;
+    transition: border-color 0.3s;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
+.form-options {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.9rem;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+
+.forgot-password {
+    color: var(--primary-color);
+    text-decoration: none;
+    transition: color 0.3s;
+}
+
+.forgot-password:hover {
+    color: var(--secondary-color);
+}
+
+.divider {
+    text-align: center;
+    position: relative;
+    margin: 1rem 0;
+}
+
+.divider::before,
+.divider::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    width: 45%;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.divider::before {
+    left: 0;
+}
+
+.divider::after {
+    right: 0;
+}
+
+.divider span {
+    background: rgba(20, 20, 30, 0.95);
+    padding: 0 1rem;
+    color: var(--text-secondary);
+    position: relative;
+    z-index: 1;
+}
+
+.register-link {
+    text-align: center;
+    margin-top: 1rem;
+    color: var(--text-secondary);
+}
+
+.register-link a {
+    color: var(--primary-color);
+    text-decoration: none;
+    transition: color 0.3s;
+}
+
+.register-link a:hover {
+    color: var(--secondary-color);
+}
+
+/* Стили для форм авторизации */
+/* Telegram Login Modal Styles */
+.telegram-login-content {
+    text-align: center;
+    padding: 2rem 0;
+}
+
+.login-code-display {
+    margin: 2rem 0;
+    padding: 2rem;
+    background: rgba(168, 85, 247, 0.1);
+    border: 2px solid rgba(168, 85, 247, 0.3);
+    border-radius: 16px;
+    box-shadow: 0 0 30px rgba(168, 85, 247, 0.3);
+}
+
+.code-number {
+    font-size: 64px;
+    font-weight: 700;
+    color: #a855f7;
+    text-shadow: 0 0 20px rgba(168, 85, 247, 0.8), 0 0 40px rgba(168, 85, 247, 0.4);
+    letter-spacing: 8px;
+    margin-bottom: 1rem;
+    font-family: 'Courier New', monospace;
+}
+
+.code-hint {
+    color: #e5e7eb;
+    font-size: 16px;
+    margin: 0;
+}
+
+.redirect-timer {
+    margin: 2rem 0;
+    padding: 1rem;
+    background: rgba(168, 85, 247, 0.05);
+    border-radius: 12px;
+}
+
+.redirect-timer p {
+    color: #e5e7eb;
+    font-size: 16px;
+    margin: 0;
+}
+
+#timerCountdown {
+    color: #c084fc;
+    font-weight: 700;
+    font-size: 20px;
+}
+
+.telegram-bot-link {
+    margin: 2rem 0;
+}
+
+.login-status {
+    margin-top: 1.5rem;
+    min-height: 30px;
+}
+
+.login-status p {
+    margin: 0;
+    font-size: 15px;
+}
+
+.auth-modal {
+    max-width: 420px;
+    max-height: 90vh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
+.auth-form {
+    display: none;
+}
+
+.auth-form.active {
+    display: block;
+}
+
+.modal-title {
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+
+.login-form {
+    font-size: 0.95rem;
+}
+
+.login-form .form-group {
+    margin-bottom: 1rem;
+}
+
+.login-form .form-group label {
+    font-size: 0.9rem;
+    margin-bottom: 0.4rem;
+}
+
+.login-form input[type="email"],
+.login-form input[type="password"],
+.login-form input[type="text"] {
+    padding: 0.6rem;
+    font-size: 0.9rem;
+}
+
+.error-message {
+    color: #ef4444;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+    padding: 0.5rem;
+    background: rgba(239, 68, 68, 0.1);
+    border-radius: 6px;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    min-height: 0;
+    display: none;
+}
+
+.error-message:not(:empty) {
+    display: block;
+}
+
+/* Заглушка страницы */
+.page-placeholder {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: var(--card-bg);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    border-radius: 16px;
+    margin: 2rem 0;
+}
+
+.page-placeholder h1 {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+}
+
+.page-placeholder p {
+    font-size: 1.2rem;
+    color: var(--text-secondary);
+    margin-bottom: 2rem;
+}
+
+.news-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.news-search-wrapper {
+    width: 100%;
+}
+
+.news-search-input {
+    width: 100%;
+    padding: 0.875rem 1.25rem;
+    background: var(--card-bg);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    color: var(--text-color);
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.news-search-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.1);
+}
+
+.news-categories {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.category-btn {
+    padding: 0.625rem 1.25rem;
+    background: var(--card-bg);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    color: var(--text-color);
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+.category-btn:hover {
+    background: var(--hover-bg);
+    border-color: var(--primary-color);
+    transform: translateY(-2px);
+}
+
+.category-btn.active {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    border-color: var(--primary-color);
+    box-shadow: var(--neon-glow);
+    color: var(--text-color);
+    font-weight: 600;
+}
+
+.news-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 2rem;
+    margin-bottom: 3rem;
+}
+
+.news-card {
+    background: var(--card-bg);
+    border-radius: 16px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    flex-direction: column;
+}
+
+.news-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--neon-glow);
+    border-color: var(--primary-color);
+}
+
+.news-card-image {
+    width: 100%;
+    height: 200px;
+    position: relative;
+    background-size: cover;
+    background-position: center;
+}
+
+.news-category-badge {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    padding: 0.375rem 0.875rem;
+    background: rgba(0, 0, 0, 0.7);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-color);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.news-card-content {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.news-card-meta {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.75rem;
+}
+
+.news-date {
+    display: flex;
+    align-items: center;
+}
+
+.news-author {
+    display: flex;
+    align-items: center;
+}
+
+.news-card-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-color);
+    margin-bottom: 0.75rem;
+    line-height: 1.4;
+}
+
+.news-card-preview {
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin-bottom: 1.25rem;
+    flex: 1;
+}
+
+.news-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: auto;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.news-stats {
+    display: flex;
+    gap: 1rem;
+}
+
+.news-stat-item {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.btn-sm {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+}
+
+.empty-state {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--text-secondary);
+}
+
+.page-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--text-color);
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+/* Пагинация для новостей */
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.pagination-btn {
+    padding: 0.625rem 1rem;
+    background: var(--card-bg);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: var(--text-color);
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 40px;
+}
+
+.pagination-btn:hover:not(.active) {
+    background: var(--hover-bg);
+    border-color: var(--primary-color);
+    transform: translateY(-2px);
+}
+
+.pagination-btn.active {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    border-color: var(--primary-color);
+    box-shadow: var(--neon-glow);
+    color: var(--text-color);
+    font-weight: 600;
+}
+
+.pagination-dots {
+    padding: 0.625rem 0.5rem;
+    color: var(--text-secondary);
+}
+
+/* Адаптивность для новостей */
+@media (max-width: 768px) {
+    .category-btn {
+        font-size: 0.85rem;
+        padding: 0.5rem 1rem;
+    }
+    
+    .news-card-footer {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    
+    .page-title {
+        font-size: 2rem;
+    }
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .hamburger {
+        display: flex;
+    }
+
+    .nav-menu {
+        position: fixed;
+        left: -100%;
+        top: 70px;
+        flex-direction: column;
+        background: rgba(0, 0, 0, 0.95);
+        width: 100%;
+        text-align: center;
+        transition: 0.3s;
+        padding: 2rem 0;
+        gap: 0;
+    }
+
+    .nav-menu.active {
+        left: 0;
+    }
+
+    .nav-link {
+        padding: 1rem;
+        width: 100%;
+        display: block;
+    }
+
+    .hero-title {
+        font-size: 2rem;
+    }
+
+    .hero-description {
+        font-size: 1rem;
+    }
+
+    .anime-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 1rem;
+    }
+
+    .footer-container {
+        flex-direction: column;
+        text-align: center;
+    }
+}
+
+/* Утилитарные классы для замены inline стилей */
+.hidden {
+    display: none !important;
+}
+
+.password-input-wrapper {
+    position: relative;
+}
+
+.password-input {
+    padding-right: 45px;
+}
+
+.password-toggle-btn {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-secondary);
+    padding: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.gender-selection {
+    display: flex;
+    gap: 15px;
+    margin-top: 5px;
+}
+
+.gender-label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.gender-radio {
+    margin-right: 5px;
+}
+
+.text-center {
+    text-align: center;
+}
+
+.mb-1-5 {
+    margin-bottom: 1.5rem;
+}
+
+.mb-1 {
+    margin-bottom: 1rem;
+}
+
+.mb-0-5 {
+    margin-bottom: 0.5rem;
+}
+
+.mt-1 {
+    margin-top: 1rem;
+}
+
+.mt-2 {
+    margin-top: 2rem;
+}
+
+.text-secondary {
+    color: var(--text-secondary);
+}
+
+.text-primary {
+    color: var(--text-primary);
+}
+
+.font-bold {
+    font-weight: bold;
+}
+
+.font-size-3rem {
+    font-size: 3rem;
+}
+
+.font-size-1-1rem {
+    font-size: 1.1rem;
+}
+
+.font-size-1rem {
+    font-size: 1rem;
+}
+
+.font-size-0-85em {
+    font-size: 0.85em;
+}
+
+.line-height-1-6 {
+    line-height: 1.6;
+}
+
+.display-block {
+    display: block;
+}
+
+.flex {
+    display: flex;
+}
+
+.flex-1 {
+    flex: 1;
+}
+
+.gap-1 {
+    gap: 1rem;
+}
+
+.modal-max-width-500 {
+    max-width: 500px;
+}
+
+.modal-max-width-600 {
+    max-width: 600px;
+}
+
+.btn-link-reset {
+    background: none;
+    border: none;
+    color: var(--primary-color);
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+.btn-secondary-custom {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.success-message-custom {
+    padding: 1rem;
+    background: rgba(34, 197, 94, 0.2);
+    border: 1px solid rgba(34, 197, 94, 0.5);
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    color: #4ade80;
+}
+
+.link-primary {
+    color: var(--primary-color);
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.table-loading-cell {
+    text-align: center;
+    padding: 2rem;
+}
+
+.btn-bulk-add {
+    background: linear-gradient(135deg, #10b981, #059669);
+}
+
+.btn-clear-cache {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+}
+
+.table-wrapper {
+    overflow-x: auto;
+}
+
+.info-box {
+    margin-bottom: 1rem;
+    padding: 1rem;
+    background: rgba(168, 85, 247, 0.1);
+    border-radius: 8px;
+    border: 1px solid rgba(168, 85, 247, 0.3);
+}
+
+.info-box-title {
+    margin: 0 0 0.5rem 0;
+    font-weight: bold;
+    color: rgba(255,255,255,0.9);
+}
+
+.info-box-list {
+    margin: 0;
+    padding-left: 1.5rem;
+    color: rgba(255,255,255,0.8);
+    font-size: 0.9rem;
+}
+
+.btn-create-accounts {
+    background: linear-gradient(135deg, #a855f7, #8b5cf6);
+}
+
+.friends-badge {
+    display: none;
+    background: var(--primary-color);
+    color: white;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-size: 0.75rem;
+    margin-left: auto;
+}
+
+.vip-badge {
+    background: linear-gradient(135deg, #f59e0b, #ef4444);
+    color: white;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-size: 0.65rem;
+    margin-left: auto;
+}
+
+.contemplation-badge {
+    background: linear-gradient(135deg, rgba(100, 80, 140, 0.55), rgba(70, 55, 110, 0.7));
+    color: rgba(226, 220, 245, 0.95);
+    padding: 2px 7px;
+    border-radius: 10px;
+    font-size: 0.58rem;
+    font-weight: 600;
+    margin-left: auto;
+    border: 1px solid rgba(167, 139, 250, 0.22);
+    white-space: nowrap;
+}
+
+.notifications-loading {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-secondary);
+}
+
+.notifications-footer {
+    padding: 1rem;
+    border-top: 1px solid rgba(255,255,255,0.1);
+}
+
+.btn-full-width {
+    width: 100%;
+}
+
+/* Утилитарные классы для замены inline стилей */
+.page-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.page-header .section-title {
+    margin-bottom: 0;
+}
+
+.empty-state {
+    display: none;
+    text-align: center;
+    padding: 4rem 2rem;
+}
+
+.empty-state h2 {
+    color: var(--text-color);
+    margin-bottom: 1rem;
+}
+
+.empty-state p {
+    color: var(--text-secondary);
+    margin-bottom: 2rem;
+}
+
+.auth-form-hidden {
+    display: none;
+}
+
+/* История просмотров */
+.history-tabs {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.history-tab-btn {
+    padding: 0.6rem 1.2rem;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(0, 0, 0, 0.3);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.3s;
+    font-size: 0.9rem;
+}
+
+.history-tab-btn.active,
+.history-tab-btn:hover {
+    background: rgba(168, 85, 247, 0.2);
+    border-color: rgba(168, 85, 247, 0.5);
+    color: var(--text-color);
+}
+
+.history-actions {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+.history-item-date {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-top: 0.25rem;
+}
+
+.history-item-progress {
+    width: 100%;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+    margin-top: 0.5rem;
+    overflow: hidden;
+}
+
+.history-item-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+    border-radius: 2px;
+    transition: width 0.3s;
+}
+
+/* Панель для неавторизованных */
+.unauthorized-panel {
+    display: none;
+}
+
+.unauthorized-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 60vh;
+    padding: 2rem;
+    text-align: center;
+}
+
+.unauthorized-emoji {
+    font-size: 4rem;
+    margin-bottom: 1.5rem;
+}
+
+.unauthorized-title {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    color: var(--primary-color);
+}
+
+.unauthorized-desc {
+    font-size: 1.2rem;
+    margin-bottom: 2rem;
+    color: var(--text-secondary);
+    max-width: 600px;
+    line-height: 1.6;
+}
+
+.unauthorized-desc strong {
+    color: var(--primary-color);
+}
+
+.unauthorized-actions {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.unauthorized-btn-disabled {
+    padding: 12px 30px;
+    font-size: 1.1rem;
+    opacity: 0.6;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.unauthorized-btn-disabled.btn-secondary {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.unauthorized-hint {
+    margin-top: 1rem;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    font-style: italic;
+}
+
+/* Режим «в разработке»: полноэкранное уведомление для закрытых разделов */
+body.reminko-maintenance-active {
+    overflow: hidden;
+}
+
+.reminko-maintenance-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 200000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    background: rgba(6, 8, 20, 0.82);
+    backdrop-filter: blur(12px);
+}
+
+.reminko-maintenance-overlay-card {
+    max-width: 420px;
+    padding: 1.75rem 1.5rem;
+    border-radius: 16px;
+    background: linear-gradient(145deg, rgba(30, 27, 50, 0.95), rgba(18, 20, 35, 0.98));
+    border: 1px solid rgba(167, 139, 250, 0.25);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+    text-align: center;
+}
+
+.reminko-maintenance-title {
+    margin: 0 0 0.75rem;
+    font-size: 1.35rem;
+    font-weight: 800;
+    color: #f8fafc;
+}
+
+.reminko-maintenance-text {
+    margin: 0 0 1.25rem;
+    font-size: 0.95rem;
+    line-height: 1.55;
+    color: rgba(226, 232, 240, 0.85);
+}
+
+.reminko-maintenance-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+    justify-content: center;
+}
+
+.reminko-maintenance-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.55rem 1.15rem;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-decoration: none;
+    color: #0f172a;
+    background: linear-gradient(135deg, #c4b5fd, #a78bfa);
+    border: none;
+}
+
+.reminko-maintenance-btn-secondary {
+    background: rgba(148, 163, 184, 0.25);
+    color: #e2e8f0;
+}
+
+/* Постеры и карточки: без перетаскивания ссылки/картинки */
+a[href],
+a[href] *,
+.jikan-card,
+.anime-card,
+.anime-franchise-card,
+.anime-similar-card,
+.home-horizontal-scroll a,
+.anime-franchise-strip__scroll a {
+    -webkit-user-drag: none !important;
+    -khtml-user-drag: none !important;
+    -moz-user-drag: none !important;
+    -o-user-drag: none !important;
+    user-drag: none !important;
+}
+
+/* Любые изображения: без перетаскивания и выделения */
+img,
+picture img,
+svg image {
+    -webkit-user-select: none !important;
+    -moz-user-select: none !important;
+    -ms-user-select: none !important;
+    user-select: none !important;
+    -webkit-user-drag: none !important;
+    -khtml-user-drag: none !important;
+    -moz-user-drag: none !important;
+    -o-user-drag: none !important;
+    user-drag: none !important;
+    -webkit-touch-callout: none;
+    pointer-events: auto;
+}
+
+img::selection,
+picture img::selection {
+    background: transparent;
+}
+
+/* Круглые аватары: ровное масштабирование без «ломаного» aspect и артефактов */
+img.reminko-avatar-img {
+    object-fit: cover;
+    object-position: center;
+    image-rendering: auto;
+    flex-shrink: 0;
+    vertical-align: middle;
+    max-width: 100%;
+    max-height: 100%;
+}
+
+/* Подсказки только для создателя сайта */
+.reminko-dev-only {
+    position: relative;
+    margin-top: 0.5rem;
+    padding: 0.65rem 0.75rem 0.65rem 0.85rem;
+    border-radius: 8px;
+    border: 1px dashed rgba(251, 191, 36, 0.55);
+    background: rgba(251, 191, 36, 0.08);
+    font-size: 0.85rem;
+    line-height: 1.45;
+    color: #fde68a;
+}
+.reminko-dev-only__badge {
+    display: inline-block;
+    margin-bottom: 0.35rem;
+    padding: 0.15rem 0.45rem;
+    border-radius: 4px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #78350f;
+    background: #fbbf24;
+}
+.reminko-dev-only__body code {
+    font-size: 0.82em;
+}

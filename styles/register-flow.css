@@ -1,0 +1,148 @@
+/* Стили для процесса регистрации */
+
+.avatar-selection-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0.75rem;
+    margin: 1rem 0;
+    padding: 0.5rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.avatar-option-small {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    border: 3px solid transparent;
+    cursor: pointer;
+    transition: all 0.3s;
+    margin: 0 auto;
+}
+
+.avatar-option-small:hover {
+    transform: scale(1.1);
+    border-color: var(--primary-color);
+}
+
+.avatar-option-small.selected {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
+    transform: scale(1.1);
+}
+
+@media (max-width: 480px) {
+    .avatar-selection-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+    
+    .avatar-option-small {
+        width: 45px;
+        height: 45px;
+    }
+}
+
+/* Страница смены пароля */
+.reset-password-header {
+    padding: 1rem 2rem;
+    background: rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+.reset-password-logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+    color: var(--text-color);
+    font-weight: bold;
+}
+.reset-password-logo:hover {
+    opacity: 0.9;
+}
+.reset-password-logo-img {
+    height: 28px;
+    border-radius: 6px;
+}
+.reset-password-layout .main-content-wrapper {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+}
+.reset-password-container {
+    max-width: 420px;
+    margin: 4rem auto;
+    padding: 2rem;
+    background: var(--card-bg, rgba(255, 255, 255, 0.1));
+    border-radius: 12px;
+    backdrop-filter: blur(10px);
+}
+.reset-password-title {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+.reset-password-desc {
+    color: var(--text-secondary, #e5e7eb);
+    margin-bottom: 1.5rem;
+}
+.reset-password-back {
+    display: inline-block;
+    margin-top: 1rem;
+    color: var(--secondary-color, #c084fc);
+    text-decoration: none;
+}
+.reset-password-back:hover {
+    text-decoration: underline;
+}
+.password-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+.password-input-wrapper input {
+    flex: 1;
+    padding-right: 2.5rem;
+}
+.password-toggle {
+    position: absolute;
+    right: 0.5rem;
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 0.25rem;
+}
+.success-message {
+    color: #22c55e;
+    margin-bottom: 1rem;
+}
+.reset-password-container .hidden {
+    display: none;
+}
+
+/* Жанры в sidebar */
+.sidebar-genres {
+    padding: 0.5rem 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+}
+.sidebar-genre-link {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: background 0.2s;
+}
+.sidebar-genre-link:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+.sidebar-genre-link-all {
+    font-weight: 600;
+    color: var(--primary-color);
+}

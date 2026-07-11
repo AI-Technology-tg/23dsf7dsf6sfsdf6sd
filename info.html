@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <style id="reminko-critical-first-paint">
+      html { background-color: #0b0b12; }
+      body { margin: 0; background-color: #0b0b12; color: #e5e7eb; }
+      #loadingScreen {
+        position: fixed !important;
+        inset: 0 !important;
+        width: 100% !important;
+        min-height: 100vh !important;
+        z-index: 2147483646 !important;
+        background: #000000 !important;
+        display: flex !important;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        box-sizing: border-box;
+      }
+      body:not(.reminko-content-revealed) .main-layout {
+        opacity: 0 !important;
+        visibility: hidden !important;
+        pointer-events: none !important;
+      }
+    </style>
+    <script src="scripts/desktop-only-guard.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>О Re-Minko — каталог аниме и Minko AI | Re-Minko</title>
+    <meta
+        name="description"
+        content="Re-Minko: русскоязычный каталог аниме с просмотром онлайн, поиском, избранным, историей и Minko AI."
+    />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://re-minko-anime.com/info.html" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="О Re-Minko" />
+    <meta property="og:description" content="Каталог аниме, просмотр онлайн, профиль, история, избранное и Minko AI." />
+    <meta property="og:url" content="https://re-minko-anime.com/info.html" />
+    <meta property="og:image" content="https://re-minko-anime.com/Fons/fonG.jpg" />
+    <link rel="apple-touch-icon" sizes="180x180" href="Fons/vavo/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="Fons/vavo/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="Fons/vavo/favicon-16x16.png">
+    <link rel="manifest" href="Fons/vavo/site.webmanifest">
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/sidebar-layout.css">
+    <link rel="stylesheet" href="styles/loading.css">
+    <link rel="stylesheet" href="styles/register-flow.css">
+    <link rel="stylesheet" href="styles/notifications.css">
+    <link rel="stylesheet" href="styles/info-page.css">
+</head>
+<body>
+    <div class="loading-screen" id="loadingScreen">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Загрузка<span class="loading-dots"></span></div>
+        <div class="loading-character"></div>
+        <div class="loading-anime"></div>
+    </div>
+
+    <div class="main-layout">
+        <main class="main-content-wrapper info-page">
+            <div class="page-container">
+                <div class="page-header">
+                    <a href="index.html" class="btn btn-secondary">← На главную</a>
+                </div>
+
+                <header class="info-hero" id="top">
+                    <div class="info-hero-inner">
+                        <div class="info-hero-top">
+                            <img
+                                src="Fons/reminko.png"
+                                alt="Re-Minko"
+                                class="info-hero-logo"
+                                width="128"
+                                height="128"
+                                decoding="async"
+                                fetchpriority="high"
+                            >
+                            <div class="info-hero-copy">
+                                <span class="info-hero-badge">Re-Minko</span>
+                                <h1>Re-Minko: аниме-каталог с характером</h1>
+                                <p class="info-hero-lead">
+                                    Re-Minko собирает каталог аниме, просмотр онлайн, профиль с историей и помощника Minko AI в одном месте.
+                                    Без лишних обещаний: ниже только то, что реально относится к текущей версии сайта.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </header>
+
+                <nav class="info-tabs" role="tablist" aria-label="Разделы информации">
+                    <button type="button" class="info-tab is-active" role="tab" data-tab="features" aria-selected="true">О сайте</button>
+                    <button type="button" class="info-tab" role="tab" data-tab="watch" aria-selected="false">Как смотреть</button>
+                    <button type="button" class="info-tab" role="tab" data-tab="ai" aria-selected="false">Minko AI</button>
+                    <button type="button" class="info-tab" role="tab" data-tab="status" aria-selected="false">Статус</button>
+                    <button type="button" class="info-tab" role="tab" data-tab="contacts" aria-selected="false">Контакты</button>
+                </nav>
+
+                <div class="info-panels">
+                    <section class="info-panel is-active" data-tab-panel="features" role="tabpanel" id="tab-features">
+                        <h2 class="info-section-title">Что такое Re-Minko</h2>
+                        <p class="info-section-lead">
+                            <strong>re-minko-anime.com</strong> — сайт для поиска и просмотра аниме на русском языке.
+                            Основной фокус сейчас: каталог, страницы тайтлов, избранное, история просмотра и Minko AI.
+                        </p>
+                        <div class="info-grid">
+                            <article class="info-card">
+                                <h2>Каталог аниме</h2>
+                                <p>Поиск по названию, фильтры, карточки тайтлов, страницы просмотра и данные по сериям.</p>
+                            </article>
+                            <article class="info-card">
+                                <h2>Личный аккаунт</h2>
+                                <p>После входа доступны избранное, история просмотра и базовые настройки профиля.</p>
+                            </article>
+                            <article class="info-card">
+                                <h2>Minko AI</h2>
+                                <p>Помощник по аниме и сайту: можно спросить про тайтлы, подборки и навигацию.</p>
+                            </article>
+                            <article class="info-card">
+                                <h2>Бета-версия</h2>
+                                <p>Проект развивается постепенно. Закрытые или недоделанные разделы не продвигаются как публичные функции.</p>
+                            </article>
+                        </div>
+                        <div class="info-links">
+                            <a class="info-link-btn" href="catalog/anime.html">Каталог аниме</a>
+                            <a class="info-link-btn info-link-btn--ghost" href="minko-ai.html">Minko AI</a>
+                        </div>
+                    </section>
+
+                    <section class="info-panel" data-tab-panel="watch" role="tabpanel" id="tab-watch" hidden>
+                        <h2 class="info-section-title">Как начать смотреть</h2>
+                        <div class="info-grid">
+                            <article class="info-card">
+                                <h2>1. Откройте каталог</h2>
+                                <p>Используйте поиск и фильтры, чтобы найти тайтл по названию, году, жанру или статусу.</p>
+                            </article>
+                            <article class="info-card">
+                                <h2>2. Перейдите на страницу аниме</h2>
+                                <p>На странице тайтла отображаются постер, описание, серии и доступный плеер.</p>
+                            </article>
+                            <article class="info-card">
+                                <h2>3. Сохраните прогресс</h2>
+                                <p>Войдите в аккаунт, чтобы пользоваться избранным и историей просмотра.</p>
+                            </article>
+                            <article class="info-card">
+                                <h2>4. Следите за обновлениями</h2>
+                                <p>Сайт обновляется вместе с каталогом, а уведомления помогают не пропускать новые серии.</p>
+                            </article>
+                        </div>
+                        <div class="info-links">
+                            <a class="info-link-btn" href="catalog/anime.html">Перейти в каталог</a>
+                            <a class="info-link-btn info-link-btn--ghost" href="profile.html">Профиль</a>
+                        </div>
+                    </section>
+
+                    <section class="info-panel" data-tab-panel="ai" role="tabpanel" id="tab-ai" hidden>
+                        <h2 class="info-section-title">Что умеет Minko AI</h2>
+                        <p class="info-section-text">
+                            Minko AI — помощник внутри Re-Minko. Он помогает ориентироваться по сайту и обсуждать аниме без необходимости искать всё вручную.
+                        </p>
+                        <div class="info-grid">
+                            <article class="info-card">
+                                <h2>Подбор тайтлов</h2>
+                                <p>Можно описать настроение, жанр или пример любимого аниме и получить идеи для просмотра.</p>
+                            </article>
+                            <article class="info-card">
+                                <h2>Помощь по сайту</h2>
+                                <p>Можно спросить, где искать каталог, историю, профиль или настройки.</p>
+                            </article>
+                            <article class="info-card info-card--wide">
+                                <h2>Важно</h2>
+                                <p>Minko AI не заменяет официальные источники и может ошибаться в деталях. Для точной информации по тайтлу лучше сверяться со страницей аниме.</p>
+                            </article>
+                        </div>
+                        <div class="info-links">
+                            <a class="info-link-btn" href="minko-ai.html">Открыть Minko AI</a>
+                        </div>
+                    </section>
+
+                    <section class="info-panel" data-tab-panel="status" role="tabpanel" id="tab-status" hidden>
+                        <h2 class="info-section-title">Статус функций</h2>
+                        <p class="info-section-lead">
+                            Ниже указано, что можно считать публичной частью сайта, а что пока не нужно воспринимать как готовую функцию.
+                        </p>
+                        <div class="info-grid">
+                            <article class="info-card">
+                                <h2>Работает публично</h2>
+                                <ul>
+                                    <li>Главная страница</li>
+                                    <li>Каталог аниме</li>
+                                    <li>Страницы просмотра аниме</li>
+                                    <li>Minko AI</li>
+                                    <li>Профиль, избранное и история</li>
+                                </ul>
+                            </article>
+                            <article class="info-card">
+                                <h2>В разработке</h2>
+                                <ul>
+                                    <li>Раздел манги</li>
+                                    <li>Совместные функции просмотра</li>
+                                    <li>Экспериментальные социальные возможности</li>
+                                </ul>
+                            </article>
+                        </div>
+                        <div class="info-note">
+                            Разделы в разработке могут быть недоступны, закрыты или изменены без отдельного объявления. В поиске продвигаются только готовые публичные страницы.
+                        </div>
+                    </section>
+
+                    <section class="info-panel" data-tab-panel="contacts" role="tabpanel" id="tab-contacts" hidden>
+                        <h2 class="info-section-title">Контакты и документы</h2>
+                        <p class="info-section-text">
+                            Новости и обновления проекта публикуются в соцсетях. Юридические документы доступны отдельными страницами.
+                        </p>
+                        <div class="info-links info-links--large">
+                            <a class="info-link-btn" href="https://t.me/re_minko" target="_blank" rel="noopener noreferrer">Telegram</a>
+                            <a class="info-link-btn" href="https://www.instagram.com/re.minko/" target="_blank" rel="noopener noreferrer">Instagram</a>
+                            <a class="info-link-btn" href="https://www.facebook.com/share/1ayMx4Pi6F/" target="_blank" rel="noopener noreferrer">Facebook</a>
+                            <a class="info-link-btn" href="https://www.tiktok.com/@re.minko" target="_blank" rel="noopener noreferrer">TikTok</a>
+                            <a class="info-link-btn" href="https://x.com/re_minko" target="_blank" rel="noopener noreferrer">Twitter (X)</a>
+                            <span class="info-link-btn info-link-btn--soon" aria-disabled="true">ВКонтакте — скоро</span>
+                        </div>
+                        <p class="info-section-text" style="margin-top: 1.5rem;">
+                            Юридическая информация:
+                            <a href="privacy-policy.html">Политика конфиденциальности</a>
+                            ·
+                            <a href="terms-of-service.html">Условия использования</a>
+                            ·
+                            <a href="account-deletion.html">Удаление аккаунта</a>
+                            ·
+                            <a href="privacy-policy.html#mobile-app">Приложение Android</a>
+                        </p>
+                    </section>
+                </div>
+
+                <p class="info-footer-note">
+                    Re-Minko · re-minko-anime.com · Политика конфиденциальности и условия — в подвале бокового меню.
+                </p>
+            </div>
+        </main>
+    </div>
+
+    <script src="scripts/data.js"></script>
+    <script src="scripts/anilist-api.js"></script>
+    <script src="scripts/api.js"></script>
+    <script src="scripts/utils.js"></script>
+    <script src="scripts/utils-notifications.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="scripts/supabase-config.js"></script>
+    <script src="scripts/direct-messages.js"></script>
+    <script src="scripts/oauth-auth.js"></script>
+    <script src="scripts/navigation.js"></script>
+    <script src="scripts/auth.js"></script>
+    <script src="scripts/loading-phrases.js"></script>
+    <script src="scripts/notifications.js"></script>
+    <script src="scripts/episode-notifications.js"></script>
+    <script src="scripts/register.js"></script>
+    <script src="scripts/main.js"></script>
+    <script src="scripts/loading.js"></script>
+    <script src="scripts/info-page.js"></script>
+    <script src="scripts/apply-navigation.js"></script>
+</body>
+</html>

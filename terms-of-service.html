@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <style id="reminko-critical-first-paint">
+      /* Первый кадр до загрузки внешних CSS: тёмный фон и полноэкранный лоадер (антимигание FOUC) */
+      html { background-color: #0b0b12; }
+      body { margin: 0; background-color: #0b0b12; color: #e5e7eb; }
+      #loadingScreen {
+        position: fixed !important;
+        inset: 0 !important;
+        width: 100% !important;
+        min-height: 100vh !important;
+        z-index: 2147483646 !important;
+        background: #000000 !important;
+        display: flex !important;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        box-sizing: border-box;
+      }
+      body:not(.reminko-content-revealed) .main-layout {
+        opacity: 0 !important;
+        visibility: hidden !important;
+        pointer-events: none !important;
+      }
+    </style>
+    <script src="scripts/desktop-only-guard.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Условия использования | Re-Minko</title>
+    <meta
+        name="description"
+        content="Условия использования сайта Re-Minko (re-minko-anime.com): правила аккаунта, контента, ограничение ответственности."
+    />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://re-minko-anime.com/terms-of-service.html" />
+    <link rel="apple-touch-icon" sizes="180x180" href="Fons/vavo/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="Fons/vavo/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="Fons/vavo/favicon-16x16.png">
+    <link rel="manifest" href="Fons/vavo/site.webmanifest">
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/sidebar-layout.css">
+    <link rel="stylesheet" href="styles/loading.css">
+    <link rel="stylesheet" href="styles/register-flow.css">
+    <link rel="stylesheet" href="styles/notifications.css">
+    <link rel="stylesheet" href="styles/info-page.css">
+</head>
+<body>
+    <div class="loading-screen" id="loadingScreen">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Загрузка<span class="loading-dots"></span></div>
+        <div class="loading-character"></div>
+        <div class="loading-anime"></div>
+    </div>
+
+    <div class="main-layout">
+        <main class="main-content-wrapper info-page">
+            <div class="page-container">
+                <div class="page-header">
+                    <a href="info.html" class="btn btn-secondary">← Информация о проекте</a>
+                </div>
+
+                <header class="info-hero">
+                    <div class="info-hero-inner">
+                        <span class="info-hero-badge">Юридическая информация</span>
+                        <h1>Условия использования</h1>
+                        <p class="info-hero-lead">
+                            Настоящие Условия использования («Соглашение») регулируют доступ к сайту
+                            <strong>re-minko-anime.com</strong> и мобильному приложению <strong>Re-Minko</strong> (Android,
+                            <code>com.reminko.mobile</code>) — далее «Сервис», «Re-Minko».
+                            Используя Сервис, вы принимаете это Соглашение и
+                            <a href="privacy-policy.html">Политику конфиденциальности</a>.
+                        </p>
+                        <p class="info-hero-lead" style="margin-top: 0.75rem;">
+                            <a href="privacy-policy.html">Политика конфиденциальности</a>
+                            ·
+                            <a href="info.html">О проекте</a>
+                        </p>
+                    </div>
+                </header>
+
+                <div class="info-grid">
+                    <article class="info-card info-card--wide">
+                        <h2>1. Предмет соглашения</h2>
+                        <p>
+                            Re-Minko предоставляет доступ к каталогу аниме и манги, инструментам просмотра и чтения,
+                            избранному, чатам, функции «Смотреть вместе» (на сайте), ИИ-помощнику Minko AI и иным функциям.
+                            Состав и доступность функций может меняться без предварительного уведомления.
+                            Сервис предоставляется «как есть» в рамках возможностей проекта.
+                        </p>
+                    </article>
+
+                    <article class="info-card info-card--wide">
+                        <h2>2. Учётная запись</h2>
+                        <ul>
+                            <li>Для части функций требуется регистрация (email и пароль) или вход через Google (на сайте).</li>
+                            <li>Один аккаунт используется на сайте и в мобильном приложении.</li>
+                            <li>Вы обязуетесь указывать достоверные данные и хранить пароль в тайне.</li>
+                            <li>Вы несёте ответственность за действия, совершённые под вашей учётной записью.</li>
+                            <li>Администрация вправе ограничить, временно заблокировать или удалить аккаунт при нарушении Соглашения, закона или злоупотреблениях.</li>
+                            <li>Удаление аккаунта можно запросить на <a href="account-deletion.html">re-minko-anime.com/account-deletion.html</a> или на <a href="mailto:re.minko.anime.com@gmail.com">re.minko.anime.com@gmail.com</a>.</li>
+                        </ul>
+                    </article>
+
+                    <article class="info-card info-card--wide">
+                        <h2>3. Допустимое использование</h2>
+                        <p>Запрещается:</p>
+                        <ul>
+                            <li>Нарушать законодательство РФ и иных применимых юрисдикций, права третьих лиц.</li>
+                            <li>Размещать незаконный, оскорбительный, экстремистский, порнографический или вредоносный контент.</li>
+                            <li>Спамить, флудить, преследовать пользователей, выдавать себя за других лиц.</li>
+                            <li>Взламывать, обходить ограничения, использовать ботов и парсеры без разрешения.</li>
+                            <li>Распространять вредоносное ПО, перегружать инфраструктуру Сервиса.</li>
+                            <li>Использовать Minko AI для генерации незаконного контента или обхода ограничений других сервисов.</li>
+                        </ul>
+                    </article>
+
+                    <article class="info-card info-card--wide">
+                        <h2>4. Контент и интеллектуальная собственность</h2>
+                        <p>
+                            Метаданные каталога (названия, описания, постеры) могут поступать из открытых API
+                            (Jikan, Shikimori, AniList, Kodik, ReManga и др.). Права на аниме, мангу и связанные материалы
+                            принадлежат правообладателям. Re-Minko не заявляет прав на произведения третьих лиц.
+                        </p>
+                        <p>
+                            Видеопотоки и плеер предоставляются через сторонние сервисы (в том числе Kodik).
+                            Re-Minko не является официальным представителем правообладателей и не гарантирует
+                            легальность контента в вашей юрисдикции. Использование — на ваш риск и ответственность.
+                        </p>
+                        <p>
+                            Тексты, которые вы публикуете в чатах и сообщениях, остаются вашими; размещая их,
+                            вы предоставляете Re-Minko неисключительное право хранить, отображать и модерировать их
+                            в рамках работы Сервиса.
+                        </p>
+                    </article>
+
+                    <article class="info-card info-card--wide">
+                        <h2>5. Minko AI</h2>
+                        <p>
+                            Minko AI — экспериментальный ИИ-помощник. Ответы могут быть неточными, устаревшими или некорректными.
+                            Не полагайтесь на них как на профессиональную консультацию. Не передавайте ИИ пароли,
+                            платёжные данные и персональные документы. Лимиты использования (в том числе «режим сна»)
+                            могут применяться без предупреждения.
+                        </p>
+                    </article>
+
+                    <article class="info-card info-card--wide">
+                        <h2>6. Сторонние сервисы</h2>
+                        <p>
+                            Сервис интегрирован с Supabase, Kodik, ReManga, Netlify, OpenAI, Google и другими платформами.
+                            Их использование также регулируется их собственными условиями. Re-Minko не контролирует
+                            и не несёт ответственности за работу сторонних сервисов, ссылки на которые могут содержаться в Сервисе.
+                        </p>
+                    </article>
+
+                    <article class="info-card info-card--wide">
+                        <h2>7. Реклама</h2>
+                        <p>
+                            На сайте может отображаться реклама (в том числе через рекламную сеть Яндекса — РСЯ).
+                            В мобильном приложении рекламные блоки могут отсутствовать. Переход по рекламным ссылкам —
+                            на ваш риск; условия рекламных сетей применяются дополнительно.
+                        </p>
+                    </article>
+
+                    <article class="info-card info-card--wide">
+                        <h2>8. Мобильное приложение</h2>
+                        <p>
+                            Приложение распространяется через Google Play. Установка и обновления регулируются также
+                            правилами Google. Вы соглашаетесь, что Google не несёт ответственности за содержание приложения
+                            и его поддержку — ответственность несёт администрация Re-Minko в пределах настоящего Соглашения.
+                        </p>
+                    </article>
+
+                    <article class="info-card info-card--wide">
+                        <h2>9. Отказ от гарантий</h2>
+                        <p>
+                            Сервис предоставляется «как есть» и «по мере доступности». Мы не гарантируем бесперебойную работу,
+                            отсутствие ошибок, сохранность всех данных и соответствие вашим ожиданиям.
+                            Контент третьих лиц может быть недоступен по техническим или правовым причинам.
+                        </p>
+                    </article>
+
+                    <article class="info-card info-card--wide">
+                        <h2>10. Ограничение ответственности</h2>
+                        <p>
+                            В максимальной степени, допустимой применимым правом, администрация Re-Minko не несёт ответственности
+                            за косвенные, случайные или штрафные убытки, упущенную выгоду, потерю данных,
+                            действия других пользователей и сбоев сторонних сервисов.
+                            Совокупная ответственность по претензиям, связанным с бесплатным использованием Сервиса,
+                            ограничивается минимально допустимой законом суммой.
+                        </p>
+                    </article>
+
+                    <article class="info-card info-card--wide">
+                        <h2>11. Изменения условий</h2>
+                        <p>
+                            Мы можем изменять Соглашение. Актуальная версия публикуется на
+                            <a href="https://re-minko-anime.com/terms-of-service.html">re-minko-anime.com/terms-of-service.html</a>.
+                            Продолжение использования после публикации изменений означает принятие новой редакции,
+                            если иное не запрещено законом.
+                        </p>
+                        <p class="info-footer-note" style="margin-top: 1rem;">
+                            Последнее обновление: <strong>27 мая 2026 г.</strong>
+                        </p>
+                    </article>
+
+                    <article class="info-card info-card--wide">
+                        <h2>12. Контакт</h2>
+                        <p>
+                            Вопросы по Соглашению:
+                            <a href="mailto:re.minko.anime.com@gmail.com">re.minko.anime.com@gmail.com</a>.
+                        </p>
+                    </article>
+                </div>
+
+                <p class="info-footer-note">
+                    Re-Minko · re-minko-anime.com · приложение com.reminko.mobile
+                </p>
+            </div>
+        </main>
+    </div>
+
+    <script src="scripts/data.js"></script>
+    <script src="scripts/anilist-api.js"></script>
+    <script src="scripts/api.js"></script>
+    <script src="scripts/utils.js"></script>
+    <script src="scripts/utils-notifications.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="scripts/supabase-config.js"></script>
+    <script src="scripts/direct-messages.js"></script>
+    <script src="scripts/oauth-auth.js"></script>
+    <script src="scripts/navigation.js"></script>
+    <script src="scripts/auth.js"></script>
+    <script src="scripts/loading-phrases.js"></script>
+    <script src="scripts/notifications.js"></script>
+    <script src="scripts/register.js"></script>
+    <script src="scripts/main.js"></script>
+    <script src="scripts/loading.js"></script>
+    <script src="scripts/apply-navigation.js"></script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Minko AI — прокси (Netlify)</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 42rem; margin: 2rem auto; padding: 0 1rem; background: #0f0f14; color: #e8e0ee; }
+    a { color: #e879f9; }
+    code { background: #1a1a24; padding: 0.15rem 0.4rem; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <h1>Minko AI — облачный прокси</h1>
+  <p>Этот сайт на Netlify отдаёт <strong>POST /chat</strong> для страницы Minko AI на Re-Minko.</p>
+  <p>Проверка «в сети» в чате использует <strong>GET /</strong> (эта страница — ответ <code>200</code>).</p>
+  <p>В <code>config.local.js</code> основного сайта задайте:</p>
+  <p><code>window.APP_CONFIG.minkoChatProxy = 'https://<ваш-поддомен>.netlify.app/chat';</code></p>
+  <p>Переменные окружения задаются в Netlify → Site settings → Environment variables (см. README в этой папке).</p>
+</body>
+</html>

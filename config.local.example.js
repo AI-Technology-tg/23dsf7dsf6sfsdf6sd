@@ -1,0 +1,16 @@
+/**
+ * Скопируйте в config.local.js и заполните своими значениями.
+ * config.local.js не должен попадать в Netlify / публичный репозиторий (.gitignore, .netlifyignore).
+ * На Netlify: KODIK_API_TOKEN в Environment variables (прокси /.netlify/functions/kodik-proxy).
+ * В файлы репозитория токен не кладите — иначе сборка Netlify упадёт на secrets scan.
+ */
+window.APP_CONFIG = {
+    // siteOrigin: 'https://re-minko-anime.com',
+    // supabase: { url: '...', anonKey: '...' },
+    // ИИ-аватар на localhost (без BOT :3334):
+    // minkoAvatarGrokUrl: 'https://re-minko-anime.com/.netlify/functions/minko-avatar-grok',
+    kodik: {
+        /** Токен Kodik API — для поиска плеера и скачивания дампов */
+        apiToken: 'ВАШ_KODIK_API_TOKEN',
+    },
+};

@@ -1,0 +1,1966 @@
+-- ============================================
+-- БАЗА ДАННЫХ RE-MINKO — ЕДИНЫЙ ИСТОЧНИК ИСТИНЫ
+-- ============================================
+-- Все изменения схемы (таблицы, колонки, RLS, функции, триггеры) вносятся
+-- ТОЛЬКО в этот файл. Папки sql/, supabase/migrations/ — справочные заглушки;
+-- при правке проекта дописывайте сюда и прогоняйте файл в Supabase SQL Editor.
+--
+-- Выполните в Supabase SQL Editor (целиком или после точечных правок).
+-- Скрипт идемпотентный: можно запускать повторно.
+-- Таблицы создаются/обновляются, лишние удаляются.
+--
+-- ВАЖНО (приватность):
+--   • watch_history: SELECT разрешён всем (USING true) — так фронт читает историю
+--     чужого профиля. Если нужна только «своя» история — смените политику и уберите
+--     выборку чужих строк в profile.js.
+--   • notifications: INSERT с auth.uid() IS NOT NULL — любой залогиненный может
+--     вставить строку с любым user_id (заявки в друзья и т.д.). Спам снижайте в коде.
+--
+-- ОПАСНО: блок «УДАЛЕНИЕ ТАБЛИЦ» ниже удаляет ЛЮБЫЕ public-таблицы не из списка.
+-- Если добавляли свои таблицы — допишите их в _allowed или закомментируйте блок.
+-- Схема синхронизирована с фронтом: таблиц соцленты (posts, fans и т.д.) в проекте нет — в БД они не создаются и при прогоне удаляются.
+--
+-- НОВЫЙ ПРОЕКТ SUPABASE: URL/ключи в этом файле НЕ хранятся. После создания проекта:
+--   1) Выполните весь скрипт здесь (SQL Editor нового проекта).
+--   2) Пропишите URL и anon JWT в scripts/config.js (или config.local.js) — см. SUPABASE_CHECKLIST.md
+-- ============================================
+
+-- ============================================
+-- 1. СОЗДАНИЕ ТАБЛИЦ (IF NOT EXISTS)
+-- ============================================
+
+CREATE TABLE IF NOT EXISTS public.profiles (
+  id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
+  username TEXT NOT NULL,
+  avatar TEXT,
+  gender TEXT CHECK (gender IN ('male', 'female')) DEFAULT 'male',
+  telegram_id TEXT,
+  last_online TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS public.favorites_anime (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  anime_id TEXT NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+  UNIQUE(user_id, anime_id)
+);
+
+CREATE TABLE IF NOT EXISTS public.favorites_manga (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  manga_id TEXT NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+  UNIQUE(user_id, manga_id)
+);
+
+CREATE TABLE IF NOT EXISTS public.watch_history (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  anime_id TEXT NOT NULL,
+  episode_number INTEGER NOT NULL,
+  watched_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS public.user_settings (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE UNIQUE NOT NULL,
+  ads_enabled BOOLEAN DEFAULT true,
+  notifications_enabled BOOLEAN DEFAULT true,
+  auto_play_next_episode BOOLEAN DEFAULT false,
+  show_recommendations BOOLEAN DEFAULT true,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS public.minko_ai_state (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE UNIQUE NOT NULL,
+  is_angry BOOLEAN DEFAULT false,
+  angry_until TIMESTAMP WITH TIME ZONE,
+  blocked_forever BOOLEAN DEFAULT false,
+  unauth_attempts INTEGER DEFAULT 0,
+  trial_messages INTEGER DEFAULT 0,
+  wrong_gender_count INTEGER DEFAULT 0,
+  swear_count INTEGER DEFAULT 0,
+  forgiven_count INTEGER DEFAULT 0,
+  last_interaction TIMESTAMP WITH TIME ZONE DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.ai_subscriptions (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL UNIQUE,
+  subscription_type TEXT CHECK (subscription_type IN ('free', 'premium', 'unlimited')) DEFAULT 'free',
+  messages_limit INTEGER DEFAULT 50,
+  messages_used INTEGER DEFAULT 0,
+  last_reset_date TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  expires_at TIMESTAMP WITH TIME ZONE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS public.vip_subscriptions (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL UNIQUE,
+  is_active BOOLEAN DEFAULT false,
+  expires_at TIMESTAMP WITH TIME ZONE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS public.watch_together_sessions (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  host_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  anime_id TEXT,
+  manga_id TEXT,
+  type TEXT CHECK (type IN ('anime', 'manga')) NOT NULL,
+  current_episode INTEGER,
+  current_chapter INTEGER,
+  playback_position INTEGER DEFAULT 0,
+  is_playing BOOLEAN DEFAULT false,
+  playback_time FLOAT DEFAULT 0,
+  video_source TEXT,
+  is_active BOOLEAN DEFAULT true,
+  session_code TEXT UNIQUE NOT NULL,
+  max_participants INTEGER DEFAULT 4,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS public.watch_together_participants (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  session_id UUID REFERENCES watch_together_sessions(id) ON DELETE CASCADE NOT NULL,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  has_vip BOOLEAN DEFAULT false,
+  player_ready BOOLEAN DEFAULT false,
+  player_ready_at TIMESTAMP WITH TIME ZONE,
+  joined_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+  UNIQUE(session_id, user_id)
+);
+
+CREATE TABLE IF NOT EXISTS public.watch_together_chat (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  session_id UUID REFERENCES watch_together_sessions(id) ON DELETE CASCADE NOT NULL,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  message TEXT NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+-- Сигнaling WebRTC для голосового чата «Смотреть вместе» (mesh, только при всех VIP в комнате — проверка в UI)
+CREATE TABLE IF NOT EXISTS public.watch_together_voice_signals (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  session_id UUID REFERENCES public.watch_together_sessions(id) ON DELETE CASCADE NOT NULL,
+  from_user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  to_user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  signal_type TEXT NOT NULL CHECK (signal_type IN ('offer', 'answer', 'candidate', 'hangup', 'mod_mute')),
+  payload JSONB NOT NULL DEFAULT '{}'::jsonb,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS public.friends (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  friend_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  status TEXT CHECK (status IN ('pending', 'accepted', 'blocked')) DEFAULT 'pending',
+  accepted_at TIMESTAMP WITH TIME ZONE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+  UNIQUE(user_id, friend_id)
+);
+
+CREATE TABLE IF NOT EXISTS public.global_chat_messages (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  message TEXT NOT NULL,
+  reply_to UUID REFERENCES public.global_chat_messages(id) ON DELETE SET NULL,
+  deleted_at TIMESTAMP WITH TIME ZONE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS public.global_chat_likes (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  message_id UUID REFERENCES public.global_chat_messages(id) ON DELETE CASCADE NOT NULL,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+  UNIQUE(message_id, user_id)
+);
+
+CREATE TABLE IF NOT EXISTS public.notifications (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  title TEXT NOT NULL,
+  message TEXT NOT NULL,
+  type TEXT DEFAULT 'info',
+  link TEXT,
+  data JSONB,
+  read BOOLEAN DEFAULT false,
+  read_at TIMESTAMP WITH TIME ZONE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS public.user_achievements (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  achievement_type TEXT NOT NULL,
+  earned_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+  UNIQUE(user_id, achievement_type)
+);
+
+CREATE TABLE IF NOT EXISTS public.custom_anime (
+  id SERIAL PRIMARY KEY,
+  title TEXT NOT NULL,
+  title_alt TEXT NOT NULL,
+  type TEXT DEFAULT 'Сериал',
+  year INTEGER DEFAULT EXTRACT(YEAR FROM CURRENT_DATE),
+  total_episodes INTEGER DEFAULT 12,
+  status TEXT DEFAULT 'Онгоинг',
+  genres TEXT[] DEFAULT '{}',
+  description TEXT,
+  studio TEXT,
+  rating DECIMAL(3,1) DEFAULT 0,
+  added_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+-- Глобальный каталог: тайтлы с MyAnimeList (Jikan), добавленные создателем; на сайте id = 10_000_000 + mal_id
+CREATE TABLE IF NOT EXISTS public.catalog_site_anime (
+  mal_id INTEGER PRIMARY KEY,
+  jikan JSONB NOT NULL,
+  added_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+ALTER TABLE public.catalog_site_anime ADD COLUMN IF NOT EXISTS title_ru TEXT;
+ALTER TABLE public.catalog_site_anime ADD COLUMN IF NOT EXISTS description_ru TEXT;
+
+-- Публичный флаг Minko AI (удалённое вкл/выкл чата). Строка id=1 — читают все с сайта и Netlify.
+CREATE TABLE IF NOT EXISTS public.minko_ai_public_state (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  chat_enabled BOOLEAN NOT NULL DEFAULT true,
+  offline_except_creator BOOLEAN NOT NULL DEFAULT false,
+  maintenance_message TEXT NOT NULL DEFAULT '',
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+INSERT INTO public.minko_ai_public_state (id, chat_enabled, maintenance_message)
+VALUES (1, true, '')
+ON CONFLICT (id) DO NOTHING;
+
+ALTER TABLE public.minko_ai_public_state
+ADD COLUMN IF NOT EXISTS offline_except_creator BOOLEAN NOT NULL DEFAULT false;
+
+-- Логи серверной функции чата (Netlify + SUPABASE_SERVICE_ROLE_KEY — INSERT обходит RLS)
+CREATE TABLE IF NOT EXISTS public.minko_ai_server_logs (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  level TEXT NOT NULL DEFAULT 'info',
+  message TEXT NOT NULL,
+  details JSONB,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+  CONSTRAINT minko_ai_server_logs_level_len CHECK (char_length(level) <= 32),
+  CONSTRAINT minko_ai_server_logs_message_len CHECK (char_length(message) <= 4000)
+);
+
+CREATE INDEX IF NOT EXISTS idx_minko_ai_server_logs_created ON public.minko_ai_server_logs(created_at DESC);
+
+-- Лимит генераций аватара (ИИ / Grok): записи только с сервера (service_role), RLS без политик — доступ запрещён для anon/authenticated
+CREATE TABLE IF NOT EXISTS public.avatar_ai_generations (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_avatar_ai_generations_user_created ON public.avatar_ai_generations(user_id, created_at DESC);
+
+-- События посещений (дашборд создателя): просмотры страниц, гости и залогиненные
+CREATE TABLE IF NOT EXISTS public.site_visit_events (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  visitor_id TEXT NOT NULL,
+  user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  path TEXT NOT NULL,
+  page_title TEXT,
+  referrer TEXT,
+  user_agent TEXT,
+  event_kind TEXT NOT NULL DEFAULT 'pageview',
+  event_label TEXT,
+  meta JSONB,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+  CONSTRAINT site_visit_visitor_len CHECK (char_length(visitor_id) >= 8 AND char_length(visitor_id) <= 64),
+  CONSTRAINT site_visit_path_len CHECK (char_length(path) <= 2048)
+);
+
+-- История чата Minko AI (панель создателя; INSERT — свой user_id)
+CREATE TABLE IF NOT EXISTS public.minko_ai_chat_logs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  role TEXT NOT NULL CHECK (role IN ('user', 'assistant')),
+  content TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT minko_ai_chat_logs_content_len CHECK (char_length(content) <= 12000)
+);
+
+CREATE INDEX IF NOT EXISTS idx_minko_ai_chat_logs_user_created
+  ON public.minko_ai_chat_logs(user_id, created_at DESC);
+
+-- Шёпот в общем чате: текст только у отправителя и адресата
+CREATE TABLE IF NOT EXISTS public.global_chat_whisper_secrets (
+  message_id UUID PRIMARY KEY REFERENCES public.global_chat_messages(id) ON DELETE CASCADE,
+  body TEXT NOT NULL,
+  CONSTRAINT gc_whisper_body_len CHECK (char_length(body) <= 2000)
+);
+
+-- Секреты создателя Minko AI (build hook Netlify и т.п.)
+CREATE TABLE IF NOT EXISTS public.minko_ai_creator_secrets (
+  id SMALLINT PRIMARY KEY DEFAULT 1 CHECK (id = 1),
+  netlify_build_hook_url TEXT,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT TIMEZONE('utc'::text, NOW())
+);
+
+INSERT INTO public.minko_ai_creator_secrets (id)
+VALUES (1)
+ON CONFLICT (id) DO NOTHING;
+
+-- Режим «В разработке» + метка выката на главной (баннер бета)
+CREATE TABLE IF NOT EXISTS public.site_maintenance_config (
+  id SMALLINT PRIMARY KEY DEFAULT 1 CHECK (id = 1),
+  maintenance_enabled BOOLEAN NOT NULL DEFAULT false,
+  extra_allowed_routes TEXT[] NOT NULL DEFAULT ARRAY[]::text[],
+  deploy_status_marked_at TIMESTAMPTZ
+);
+
+INSERT INTO public.site_maintenance_config (id, maintenance_enabled, extra_allowed_routes)
+VALUES (1, false, ARRAY[]::text[])
+ON CONFLICT (id) DO NOTHING;
+
+-- ============================================
+-- 2. МИГРАЦИЯ СУЩЕСТВУЮЩИХ ТАБЛИЦ
+--    Добавление колонок которых может не быть
+--    Изменение типов/дефолтов
+-- ============================================
+
+-- profiles: добавить колонки если их нет
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS telegram_id TEXT;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS last_online TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW());
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS gender TEXT DEFAULT 'male';
+
+-- minko_ai_state: убедиться что все поля на месте
+ALTER TABLE public.minko_ai_state ADD COLUMN IF NOT EXISTS wrong_gender_count INTEGER DEFAULT 0;
+ALTER TABLE public.minko_ai_state ADD COLUMN IF NOT EXISTS swear_count INTEGER DEFAULT 0;
+ALTER TABLE public.minko_ai_state ADD COLUMN IF NOT EXISTS forgiven_count INTEGER DEFAULT 0;
+ALTER TABLE public.minko_ai_state ADD COLUMN IF NOT EXISTS trial_messages INTEGER DEFAULT 0;
+
+-- ai_subscriptions: миграция с 10 на 50 лимит и DATE → TIMESTAMP
+ALTER TABLE public.ai_subscriptions ADD COLUMN IF NOT EXISTS expires_at TIMESTAMP WITH TIME ZONE;
+ALTER TABLE public.ai_subscriptions ALTER COLUMN messages_limit SET DEFAULT 50;
+
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_schema = 'public' AND table_name = 'ai_subscriptions' AND column_name = 'last_reset_date' AND data_type = 'date'
+  ) THEN
+    ALTER TABLE public.ai_subscriptions ALTER COLUMN last_reset_date TYPE TIMESTAMP WITH TIME ZONE USING last_reset_date::TIMESTAMP WITH TIME ZONE;
+    ALTER TABLE public.ai_subscriptions ALTER COLUMN last_reset_date SET DEFAULT NOW();
+  END IF;
+END $$;
+
+-- Обновить старые записи с лимитом 10 на 50 (бесплатные пользователи)
+UPDATE public.ai_subscriptions
+SET messages_limit = 50
+WHERE subscription_type = 'free' AND messages_limit < 50;
+
+-- watch_together_sessions: все колонки
+ALTER TABLE public.watch_together_sessions ADD COLUMN IF NOT EXISTS manga_id TEXT;
+ALTER TABLE public.watch_together_sessions ADD COLUMN IF NOT EXISTS current_chapter INTEGER;
+ALTER TABLE public.watch_together_sessions ADD COLUMN IF NOT EXISTS playback_time FLOAT DEFAULT 0;
+ALTER TABLE public.watch_together_sessions ADD COLUMN IF NOT EXISTS video_source TEXT;
+ALTER TABLE public.watch_together_sessions ADD COLUMN IF NOT EXISTS max_participants INTEGER DEFAULT 4;
+
+-- watch_together_participants: has_vip
+ALTER TABLE public.watch_together_participants ADD COLUMN IF NOT EXISTS has_vip BOOLEAN DEFAULT false;
+ALTER TABLE public.watch_together_participants ADD COLUMN IF NOT EXISTS player_ready BOOLEAN DEFAULT false;
+ALTER TABLE public.watch_together_participants ADD COLUMN IF NOT EXISTS player_ready_at TIMESTAMP WITH TIME ZONE;
+-- «Смотреть вместе»: глобальная пауза + поколение синхронизации + пинги
+ALTER TABLE public.watch_together_sessions ADD COLUMN IF NOT EXISTS sync_hold BOOLEAN DEFAULT false;
+ALTER TABLE public.watch_together_sessions ADD COLUMN IF NOT EXISTS sync_hold_reason TEXT;
+ALTER TABLE public.watch_together_sessions ADD COLUMN IF NOT EXISTS sync_generation INTEGER DEFAULT 0;
+ALTER TABLE public.watch_together_sessions ADD COLUMN IF NOT EXISTS host_screen_broadcast BOOLEAN DEFAULT false;
+ALTER TABLE public.watch_together_participants ADD COLUMN IF NOT EXISTS last_ping_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW());
+
+UPDATE public.watch_together_participants
+SET last_ping_at = COALESCE(last_ping_at, TIMEZONE('utc'::text, NOW()))
+WHERE last_ping_at IS NULL;
+
+UPDATE public.watch_together_participants
+SET player_ready = false
+WHERE player_ready IS NULL;
+
+-- profiles: текущая активность (что смотрит) и флаг создателя (опционально, дублирует email)
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS current_activity JSONB;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS is_site_creator BOOLEAN DEFAULT false;
+
+-- site_maintenance_config: колонка выката (если таблица создана до объединения схемы)
+ALTER TABLE public.site_maintenance_config ADD COLUMN IF NOT EXISTS deploy_status_marked_at TIMESTAMPTZ;
+
+-- global_chat: шёпот
+ALTER TABLE public.global_chat_messages ADD COLUMN IF NOT EXISTS whisper_to_user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL;
+
+-- watch_together: активность комнаты для авто-закрытия
+ALTER TABLE public.watch_together_sessions ADD COLUMN IF NOT EXISTS last_room_activity_at TIMESTAMPTZ;
+
+UPDATE public.watch_together_sessions
+SET last_room_activity_at = COALESCE(last_room_activity_at, updated_at, created_at, TIMEZONE('utc'::text, NOW()))
+WHERE last_room_activity_at IS NULL AND is_active = true;
+
+-- ============================================
+-- ЛИЧНЫЕ СООБЩЕНИЯ
+-- ============================================
+CREATE TABLE IF NOT EXISTS public.direct_messages (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  sender_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  receiver_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  message TEXT NOT NULL,
+  read BOOLEAN DEFAULT false,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_dm_sender ON public.direct_messages(sender_id);
+CREATE INDEX IF NOT EXISTS idx_dm_receiver ON public.direct_messages(receiver_id);
+CREATE INDEX IF NOT EXISTS idx_dm_created ON public.direct_messages(created_at);
+
+ALTER TABLE public.direct_messages ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "dm_select" ON public.direct_messages;
+DROP POLICY IF EXISTS "dm_insert" ON public.direct_messages;
+DROP POLICY IF EXISTS "dm_update" ON public.direct_messages;
+CREATE POLICY "dm_select" ON public.direct_messages FOR SELECT USING (
+  auth.uid() = sender_id OR auth.uid() = receiver_id
+);
+CREATE POLICY "dm_insert" ON public.direct_messages FOR INSERT WITH CHECK (auth.uid() = sender_id);
+CREATE POLICY "dm_update" ON public.direct_messages FOR UPDATE USING (auth.uid() = receiver_id);
+
+-- ============================================
+-- АДМИНЫ И МОДЕРАЦИЯ ЧАТА (используются admin-panel.js, admin-panel-creator.js)
+-- ============================================
+
+CREATE TABLE IF NOT EXISTS public.admins (
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
+  role TEXT NOT NULL DEFAULT 'admin',
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS public.chat_mutes (
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
+  muted_until TIMESTAMP WITH TIME ZONE NOT NULL,
+  reason TEXT,
+  created_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS public.chat_automod_rules (
+  id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  rule_key TEXT UNIQUE NOT NULL,
+  pattern TEXT NOT NULL,
+  match_mode TEXT NOT NULL DEFAULT 'substring' CHECK (match_mode IN ('substring', 'regex')),
+  strike_weight INTEGER NOT NULL DEFAULT 1 CHECK (strike_weight >= 1),
+  mute_minutes INTEGER NOT NULL DEFAULT 15 CHECK (mute_minutes >= 1),
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  note TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT TIMEZONE('utc'::text, NOW())
+);
+
+CREATE TABLE IF NOT EXISTS public.chat_automod_state (
+  user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  strikes INTEGER NOT NULL DEFAULT 0 CHECK (strikes >= 0),
+  muted_until TIMESTAMPTZ,
+  last_violation_at TIMESTAMPTZ,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT TIMEZONE('utc'::text, NOW())
+);
+
+CREATE TABLE IF NOT EXISTS public.chat_automod_events (
+  id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT TIMEZONE('utc'::text, NOW()),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  matched_rule_id BIGINT REFERENCES public.chat_automod_rules(id) ON DELETE SET NULL,
+  action TEXT NOT NULL,
+  message_preview TEXT,
+  details JSONB NOT NULL DEFAULT '{}'::jsonb
+);
+
+-- Аудит действий создателя (критические действия панели: удаления, блокировки, смена подписок и т.д.)
+CREATE TABLE IF NOT EXISTS public.creator_audit_logs (
+  id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT TIMEZONE('utc'::text, NOW()),
+  actor_user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  action TEXT NOT NULL,
+  target_user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  target_type TEXT,
+  reason TEXT,
+  details JSONB NOT NULL DEFAULT '{}'::jsonb
+);
+
+CREATE INDEX IF NOT EXISTS idx_chat_mutes_muted_until ON public.chat_mutes(muted_until);
+
+ALTER TABLE public.admins ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.chat_mutes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.chat_automod_rules ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.chat_automod_state ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.chat_automod_events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.creator_audit_logs ENABLE ROW LEVEL SECURITY;
+
+-- Политики admins / chat_mutes и site_visit_events ниже зависят от is_site_creator_user_id — см. блок перед ними.
+
+-- global_chat_messages: reply_to и deleted_at
+ALTER TABLE public.global_chat_messages ADD COLUMN IF NOT EXISTS reply_to UUID REFERENCES public.global_chat_messages(id) ON DELETE SET NULL;
+ALTER TABLE public.global_chat_messages ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP WITH TIME ZONE;
+
+-- notifications: дополнительные поля
+ALTER TABLE public.notifications ADD COLUMN IF NOT EXISTS link TEXT;
+ALTER TABLE public.notifications ADD COLUMN IF NOT EXISTS data JSONB;
+ALTER TABLE public.notifications ADD COLUMN IF NOT EXISTS read_at TIMESTAMP WITH TIME ZONE;
+
+-- vip_subscriptions
+ALTER TABLE public.vip_subscriptions ADD COLUMN IF NOT EXISTS expires_at TIMESTAMP WITH TIME ZONE;
+
+-- friends
+ALTER TABLE public.friends ADD COLUMN IF NOT EXISTS accepted_at TIMESTAMP WITH TIME ZONE;
+
+-- profiles: модерация и админ-панель (раньше role дропали — возвращаем опциональные поля)
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS role TEXT;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS is_banned BOOLEAN DEFAULT false;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS ban_reason TEXT;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS banned_at TIMESTAMPTZ;
+
+-- user_settings: дополнительные поля
+ALTER TABLE public.user_settings ADD COLUMN IF NOT EXISTS auto_play_next_episode BOOLEAN DEFAULT false;
+ALTER TABLE public.user_settings ADD COLUMN IF NOT EXISTS show_recommendations BOOLEAN DEFAULT true;
+
+-- ============================================
+-- 3. УДАЛЕНИЕ ТАБЛИЦ КОТОРЫХ НЕТ В СХЕМЕ
+-- ============================================
+
+DO $$
+DECLARE
+  _tbl TEXT;
+  _allowed TEXT[] := ARRAY[
+    'profiles',
+    'favorites_anime',
+    'favorites_manga',
+    'watch_history',
+    'user_settings',
+    'minko_ai_state',
+    'ai_subscriptions',
+    'vip_subscriptions',
+    'watch_together_sessions',
+    'watch_together_participants',
+    'watch_together_chat',
+    'watch_together_voice_signals',
+    'friends',
+    'global_chat_messages',
+    'global_chat_likes',
+    'notifications',
+    'user_achievements',
+    'custom_anime',
+    'catalog_site_anime',
+    'minko_ai_public_state',
+    'minko_ai_server_logs',
+    'avatar_ai_generations',
+    'site_visit_events',
+    'direct_messages',
+    'admins',
+    'chat_mutes',
+    'chat_automod_rules',
+    'chat_automod_state',
+    'chat_automod_events',
+    'creator_audit_logs',
+    'site_maintenance_config',
+    'minko_ai_chat_logs',
+    'global_chat_whisper_secrets',
+    'minko_ai_creator_secrets'
+  ];
+BEGIN
+  FOR _tbl IN
+    SELECT tablename FROM pg_tables
+    WHERE schemaname = 'public' AND tablename != ALL(_allowed)
+  LOOP
+    RAISE NOTICE 'Удаление лишней таблицы: public.%', _tbl;
+    EXECUTE format('DROP TABLE IF EXISTS public.%I CASCADE', _tbl);
+  END LOOP;
+END $$;
+
+-- ============================================
+-- 4. ИНДЕКСЫ (IF NOT EXISTS)
+-- ============================================
+
+CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON public.notifications(user_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_user_read ON public.notifications(user_id, read);
+
+CREATE INDEX IF NOT EXISTS idx_global_chat_messages_user_id ON public.global_chat_messages(user_id);
+CREATE INDEX IF NOT EXISTS idx_global_chat_messages_created_at ON public.global_chat_messages(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_global_chat_messages_deleted ON public.global_chat_messages(deleted_at) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_global_chat_messages_whisper_to
+  ON public.global_chat_messages(whisper_to_user_id)
+  WHERE whisper_to_user_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_global_chat_likes_message_id ON public.global_chat_likes(message_id);
+CREATE INDEX IF NOT EXISTS idx_chat_automod_state_muted_until ON public.chat_automod_state(muted_until);
+CREATE INDEX IF NOT EXISTS idx_chat_automod_events_user_created ON public.chat_automod_events(user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_chat_automod_events_created ON public.chat_automod_events(created_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_favorites_anime_user_id ON public.favorites_anime(user_id);
+CREATE INDEX IF NOT EXISTS idx_favorites_manga_user_id ON public.favorites_manga(user_id);
+CREATE INDEX IF NOT EXISTS idx_watch_history_user_id ON public.watch_history(user_id);
+
+CREATE INDEX IF NOT EXISTS idx_friends_user_id ON public.friends(user_id);
+CREATE INDEX IF NOT EXISTS idx_friends_friend_id ON public.friends(friend_id);
+CREATE INDEX IF NOT EXISTS idx_friends_status ON public.friends(status);
+
+CREATE INDEX IF NOT EXISTS idx_profiles_last_online ON public.profiles(last_online DESC);
+CREATE INDEX IF NOT EXISTS idx_wt_voice_sig_session_created ON public.watch_together_voice_signals(session_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_custom_anime_title ON public.custom_anime(title);
+CREATE INDEX IF NOT EXISTS idx_site_visit_created ON public.site_visit_events(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_site_visit_visitor ON public.site_visit_events(visitor_id);
+CREATE INDEX IF NOT EXISTS idx_site_visit_user_created ON public.site_visit_events(user_id, created_at DESC) WHERE user_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_creator_audit_logs_created_at ON public.creator_audit_logs(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_creator_audit_logs_action_created ON public.creator_audit_logs(action, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_creator_audit_logs_target_user
+  ON public.creator_audit_logs(target_user_id, created_at DESC)
+  WHERE target_user_id IS NOT NULL;
+
+-- ============================================
+-- 5. ROW LEVEL SECURITY
+-- ============================================
+
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.custom_anime ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.catalog_site_anime ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.favorites_anime ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.favorites_manga ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.watch_history ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.user_settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.minko_ai_state ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.ai_subscriptions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.vip_subscriptions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.watch_together_sessions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.watch_together_participants ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.watch_together_chat ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.watch_together_voice_signals ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.friends ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.global_chat_messages ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.global_chat_likes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.user_achievements ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.site_visit_events ENABLE ROW LEVEL SECURITY;
+
+ALTER TABLE public.minko_ai_public_state ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.minko_ai_server_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.minko_ai_creator_secrets ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.minko_ai_chat_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.global_chat_whisper_secrets ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.avatar_ai_generations ENABLE ROW LEVEL SECURITY;
+
+ALTER TABLE public.admins ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.chat_mutes ENABLE ROW LEVEL SECURITY;
+
+-- ЛС (повторное ENABLE безопасно — состояние «уже включено»)
+ALTER TABLE public.direct_messages ENABLE ROW LEVEL SECURITY;
+
+-- ============================================
+-- 6. RLS ПОЛИТИКИ (DROP IF EXISTS + CREATE)
+-- ============================================
+
+-- profiles
+DROP POLICY IF EXISTS "profiles_select" ON public.profiles;
+DROP POLICY IF EXISTS "profiles_update" ON public.profiles;
+DROP POLICY IF EXISTS "profiles_insert" ON public.profiles;
+CREATE POLICY "profiles_select" ON public.profiles FOR SELECT USING (true);
+CREATE POLICY "profiles_update" ON public.profiles FOR UPDATE USING (auth.uid() = id);
+CREATE POLICY "profiles_insert" ON public.profiles FOR INSERT WITH CHECK (auth.uid() = id);
+
+-- favorites_anime
+DROP POLICY IF EXISTS "favorites_anime_all" ON public.favorites_anime;
+DROP POLICY IF EXISTS "Пользователи могут управлять своим избранным аниме" ON public.favorites_anime;
+CREATE POLICY "favorites_anime_all" ON public.favorites_anime FOR ALL USING (auth.uid() = user_id);
+
+-- favorites_manga
+DROP POLICY IF EXISTS "favorites_manga_all" ON public.favorites_manga;
+DROP POLICY IF EXISTS "Пользователи могут управлять своим избранным мангой" ON public.favorites_manga;
+CREATE POLICY "favorites_manga_all" ON public.favorites_manga FOR ALL USING (auth.uid() = user_id);
+
+-- watch_history
+DROP POLICY IF EXISTS "watch_history_all" ON public.watch_history;
+DROP POLICY IF EXISTS "watch_history_select" ON public.watch_history;
+DROP POLICY IF EXISTS "watch_history_insert" ON public.watch_history;
+DROP POLICY IF EXISTS "watch_history_update" ON public.watch_history;
+DROP POLICY IF EXISTS "watch_history_delete" ON public.watch_history;
+CREATE POLICY "watch_history_select" ON public.watch_history FOR SELECT USING (true);
+CREATE POLICY "watch_history_insert" ON public.watch_history FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "watch_history_update" ON public.watch_history FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "watch_history_delete" ON public.watch_history FOR DELETE USING (auth.uid() = user_id);
+
+-- user_settings
+DROP POLICY IF EXISTS "user_settings_all" ON public.user_settings;
+CREATE POLICY "user_settings_all" ON public.user_settings FOR ALL USING (auth.uid() = user_id);
+
+-- minko_ai_state
+DROP POLICY IF EXISTS "minko_ai_state_all" ON public.minko_ai_state;
+CREATE POLICY "minko_ai_state_all" ON public.minko_ai_state FOR ALL USING (auth.uid() = user_id);
+
+-- ai_subscriptions
+DROP POLICY IF EXISTS "ai_subscriptions_select" ON public.ai_subscriptions;
+DROP POLICY IF EXISTS "ai_subscriptions_insert" ON public.ai_subscriptions;
+DROP POLICY IF EXISTS "ai_subscriptions_update" ON public.ai_subscriptions;
+DROP POLICY IF EXISTS "ai_subscriptions_site_creator_all" ON public.ai_subscriptions;
+CREATE POLICY "ai_subscriptions_select" ON public.ai_subscriptions FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "ai_subscriptions_insert" ON public.ai_subscriptions FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "ai_subscriptions_update" ON public.ai_subscriptions FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "ai_subscriptions_site_creator_all" ON public.ai_subscriptions FOR ALL TO authenticated
+  USING (lower(trim(coalesce(auth.jwt() ->> 'email', ''))) = 'creator@reminko.com')
+  WITH CHECK (lower(trim(coalesce(auth.jwt() ->> 'email', ''))) = 'creator@reminko.com');
+
+-- vip_subscriptions
+DROP POLICY IF EXISTS "vip_subscriptions_select" ON public.vip_subscriptions;
+DROP POLICY IF EXISTS "vip_subscriptions_insert" ON public.vip_subscriptions;
+DROP POLICY IF EXISTS "vip_subscriptions_update" ON public.vip_subscriptions;
+DROP POLICY IF EXISTS "vip_subscriptions_site_creator_all" ON public.vip_subscriptions;
+CREATE POLICY "vip_subscriptions_select" ON public.vip_subscriptions FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "vip_subscriptions_insert" ON public.vip_subscriptions FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "vip_subscriptions_update" ON public.vip_subscriptions FOR UPDATE USING (auth.uid() = user_id);
+-- Учётная запись создателя (email в JWT): выдача/снятие VIP «Вместе» любому user_id из панели
+CREATE POLICY "vip_subscriptions_site_creator_all" ON public.vip_subscriptions FOR ALL TO authenticated
+  USING (lower(trim(coalesce(auth.jwt() ->> 'email', ''))) = 'creator@reminko.com')
+  WITH CHECK (lower(trim(coalesce(auth.jwt() ->> 'email', ''))) = 'creator@reminko.com');
+
+-- watch_together_sessions
+DROP POLICY IF EXISTS "wt_sessions_select" ON public.watch_together_sessions;
+DROP POLICY IF EXISTS "wt_sessions_insert" ON public.watch_together_sessions;
+DROP POLICY IF EXISTS "wt_sessions_update" ON public.watch_together_sessions;
+CREATE POLICY "wt_sessions_select" ON public.watch_together_sessions FOR SELECT USING (true);
+CREATE POLICY "wt_sessions_insert" ON public.watch_together_sessions FOR INSERT WITH CHECK (auth.uid() = host_id);
+CREATE POLICY "wt_sessions_update" ON public.watch_together_sessions FOR UPDATE USING (auth.uid() = host_id);
+
+-- watch_together_participants
+DROP POLICY IF EXISTS "wt_participants_select" ON public.watch_together_participants;
+DROP POLICY IF EXISTS "wt_participants_insert" ON public.watch_together_participants;
+DROP POLICY IF EXISTS "wt_participants_delete" ON public.watch_together_participants;
+CREATE POLICY "wt_participants_select" ON public.watch_together_participants FOR SELECT USING (true);
+CREATE POLICY "wt_participants_insert" ON public.watch_together_participants FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "wt_participants_delete" ON public.watch_together_participants FOR DELETE USING (
+  auth.uid() = user_id
+  OR EXISTS (
+    SELECT 1 FROM public.watch_together_sessions s
+    WHERE s.id = watch_together_participants.session_id
+      AND s.host_id = auth.uid()
+      AND watch_together_participants.user_id <> s.host_id
+  )
+);
+DROP POLICY IF EXISTS "wt_participants_update_own" ON public.watch_together_participants;
+CREATE POLICY "wt_participants_update_own" ON public.watch_together_participants FOR UPDATE TO authenticated
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+
+-- watch_together_chat (хост видит и пишет чат, даже если строка в participants утеряна у старых комнат)
+DROP POLICY IF EXISTS "wt_chat_select" ON public.watch_together_chat;
+DROP POLICY IF EXISTS "wt_chat_insert" ON public.watch_together_chat;
+CREATE POLICY "wt_chat_select" ON public.watch_together_chat FOR SELECT USING (
+  EXISTS (
+    SELECT 1 FROM watch_together_participants p
+    WHERE p.session_id = watch_together_chat.session_id AND p.user_id = auth.uid()
+  )
+  OR EXISTS (
+    SELECT 1 FROM watch_together_sessions s
+    WHERE s.id = watch_together_chat.session_id AND s.host_id = auth.uid()
+  )
+);
+CREATE POLICY "wt_chat_insert" ON public.watch_together_chat FOR INSERT WITH CHECK (
+  auth.uid() = user_id
+  AND (
+    EXISTS (
+      SELECT 1 FROM watch_together_participants p
+      WHERE p.session_id = watch_together_chat.session_id AND p.user_id = auth.uid()
+    )
+    OR EXISTS (
+      SELECT 1 FROM watch_together_sessions s
+      WHERE s.id = watch_together_chat.session_id AND s.host_id = auth.uid()
+    )
+  )
+);
+
+-- Голос Watch Together: видим только сигналы, адресованные нам или отправленные нами
+DROP POLICY IF EXISTS "wt_voice_sig_select" ON public.watch_together_voice_signals;
+DROP POLICY IF EXISTS "wt_voice_sig_insert" ON public.watch_together_voice_signals;
+CREATE POLICY "wt_voice_sig_select" ON public.watch_together_voice_signals FOR SELECT USING (
+  (
+    EXISTS (
+      SELECT 1 FROM watch_together_participants p
+      WHERE p.session_id = watch_together_voice_signals.session_id AND p.user_id = auth.uid()
+    )
+    OR EXISTS (
+      SELECT 1 FROM watch_together_sessions s
+      WHERE s.id = watch_together_voice_signals.session_id AND s.host_id = auth.uid()
+    )
+  )
+  AND (to_user_id = auth.uid() OR from_user_id = auth.uid())
+);
+CREATE POLICY "wt_voice_sig_insert" ON public.watch_together_voice_signals FOR INSERT WITH CHECK (
+  auth.uid() = from_user_id
+  AND (
+    EXISTS (
+      SELECT 1 FROM watch_together_participants p
+      WHERE p.session_id = watch_together_voice_signals.session_id AND p.user_id = auth.uid()
+    )
+    OR EXISTS (
+      SELECT 1 FROM watch_together_sessions s
+      WHERE s.id = watch_together_voice_signals.session_id AND s.host_id = auth.uid()
+    )
+  )
+  AND (
+    EXISTS (
+      SELECT 1 FROM watch_together_participants p
+      WHERE p.session_id = watch_together_voice_signals.session_id AND p.user_id = watch_together_voice_signals.to_user_id
+    )
+    OR EXISTS (
+      SELECT 1 FROM watch_together_sessions s
+      WHERE s.id = watch_together_voice_signals.session_id AND s.host_id = watch_together_voice_signals.to_user_id
+    )
+  )
+  AND (
+    signal_type <> 'mod_mute'
+    OR EXISTS (
+      SELECT 1 FROM watch_together_sessions s
+      WHERE s.id = watch_together_voice_signals.session_id AND s.host_id = auth.uid()
+    )
+  )
+);
+
+-- global_chat_messages
+DROP POLICY IF EXISTS "chat_select" ON public.global_chat_messages;
+DROP POLICY IF EXISTS "chat_insert" ON public.global_chat_messages;
+DROP POLICY IF EXISTS "chat_update_own" ON public.global_chat_messages;
+DROP POLICY IF EXISTS "chat_delete" ON public.global_chat_messages;
+DROP POLICY IF EXISTS "chat_update_creator" ON public.global_chat_messages;
+CREATE POLICY "chat_select" ON public.global_chat_messages FOR SELECT USING (deleted_at IS NULL);
+CREATE POLICY "chat_insert" ON public.global_chat_messages FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "chat_update_own" ON public.global_chat_messages FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "chat_update_creator" ON public.global_chat_messages FOR UPDATE TO authenticated
+  USING (public.is_site_creator_user_id(auth.uid()))
+  WITH CHECK (public.is_site_creator_user_id(auth.uid()));
+CREATE POLICY "chat_delete" ON public.global_chat_messages FOR DELETE USING (auth.uid() = user_id);
+
+-- global_chat_likes
+DROP POLICY IF EXISTS "chat_likes_select" ON public.global_chat_likes;
+DROP POLICY IF EXISTS "chat_likes_insert" ON public.global_chat_likes;
+DROP POLICY IF EXISTS "chat_likes_delete" ON public.global_chat_likes;
+CREATE POLICY "chat_likes_select" ON public.global_chat_likes FOR SELECT USING (true);
+CREATE POLICY "chat_likes_insert" ON public.global_chat_likes FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "chat_likes_delete" ON public.global_chat_likes FOR DELETE USING (auth.uid() = user_id);
+
+-- notifications
+DROP POLICY IF EXISTS "notifications_select" ON public.notifications;
+DROP POLICY IF EXISTS "notifications_update" ON public.notifications;
+DROP POLICY IF EXISTS "notifications_insert" ON public.notifications;
+CREATE POLICY "notifications_select" ON public.notifications FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "notifications_update" ON public.notifications FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "notifications_insert" ON public.notifications FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
+DROP POLICY IF EXISTS "notifications_delete" ON public.notifications;
+CREATE POLICY "notifications_delete" ON public.notifications FOR DELETE USING (auth.uid() = user_id);
+
+-- friends
+DROP POLICY IF EXISTS "friends_select" ON public.friends;
+DROP POLICY IF EXISTS "friends_insert" ON public.friends;
+DROP POLICY IF EXISTS "friends_update" ON public.friends;
+DROP POLICY IF EXISTS "friends_delete" ON public.friends;
+CREATE POLICY "friends_select" ON public.friends FOR SELECT USING (auth.uid() = user_id OR auth.uid() = friend_id);
+CREATE POLICY "friends_insert" ON public.friends FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "friends_update" ON public.friends FOR UPDATE USING (auth.uid() = user_id OR auth.uid() = friend_id);
+CREATE POLICY "friends_delete" ON public.friends FOR DELETE USING (auth.uid() = user_id OR auth.uid() = friend_id);
+
+-- custom_anime
+DROP POLICY IF EXISTS "custom_anime_select" ON public.custom_anime;
+CREATE POLICY "custom_anime_select" ON public.custom_anime FOR SELECT USING (true);
+
+-- catalog_site_anime (читать всем; INSERT — гости added_by NULL или пользователи со своим uid; правки/удаление — создатель по email в JWT)
+DROP POLICY IF EXISTS "catalog_site_anime_select" ON public.catalog_site_anime;
+DROP POLICY IF EXISTS "catalog_site_anime_insert" ON public.catalog_site_anime;
+DROP POLICY IF EXISTS "catalog_site_anime_update" ON public.catalog_site_anime;
+DROP POLICY IF EXISTS "catalog_site_anime_delete" ON public.catalog_site_anime;
+CREATE POLICY "catalog_site_anime_select" ON public.catalog_site_anime FOR SELECT USING (true);
+DROP POLICY IF EXISTS "catalog_site_anime_insert_authenticated" ON public.catalog_site_anime;
+DROP POLICY IF EXISTS "catalog_site_anime_insert_anon" ON public.catalog_site_anime;
+CREATE POLICY "catalog_site_anime_insert_authenticated" ON public.catalog_site_anime FOR INSERT TO authenticated
+  WITH CHECK (added_by IS NOT NULL AND auth.uid() = added_by);
+CREATE POLICY "catalog_site_anime_insert_anon" ON public.catalog_site_anime FOR INSERT TO anon
+  WITH CHECK (added_by IS NULL);
+CREATE POLICY "catalog_site_anime_update" ON public.catalog_site_anime FOR UPDATE TO authenticated
+  USING (lower(trim(coalesce(auth.jwt() ->> 'email', ''))) = 'creator@reminko.com')
+  WITH CHECK (lower(trim(coalesce(auth.jwt() ->> 'email', ''))) = 'creator@reminko.com');
+CREATE POLICY "catalog_site_anime_delete" ON public.catalog_site_anime FOR DELETE TO authenticated
+  USING (lower(trim(coalesce(auth.jwt() ->> 'email', ''))) = 'creator@reminko.com');
+
+-- user_achievements
+DROP POLICY IF EXISTS "achievements_select_all" ON public.user_achievements;
+DROP POLICY IF EXISTS "achievements_select_own" ON public.user_achievements;
+CREATE POLICY "achievements_select_all" ON public.user_achievements FOR SELECT USING (true);
+
+-- Функции для политик (должны существовать до CREATE POLICY, где они используются)
+CREATE OR REPLACE FUNCTION public.get_user_email(user_id uuid)
+RETURNS text
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  caller_id uuid := auth.uid();
+  em text;
+  caller_lower text;
+BEGIN
+  IF caller_id IS NULL THEN
+    RETURN NULL;
+  END IF;
+  IF caller_id = user_id THEN
+    SELECT u.email::text INTO em FROM auth.users u WHERE u.id = user_id;
+    RETURN em;
+  END IF;
+  SELECT lower(trim(coalesce(u.email::text, ''))) INTO caller_lower FROM auth.users u WHERE u.id = caller_id;
+  IF caller_lower IS NOT NULL AND caller_lower = 'creator@reminko.com' THEN
+    SELECT u.email::text INTO em FROM auth.users u WHERE u.id = user_id;
+    RETURN em;
+  END IF;
+  RETURN NULL;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.get_user_email(uuid) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.get_user_email(uuid) FROM anon;
+GRANT EXECUTE ON FUNCTION public.get_user_email(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.get_user_email(uuid) TO service_role;
+
+CREATE OR REPLACE FUNCTION public.is_site_creator_user_id(user_id uuid)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1
+    FROM auth.users u
+    LEFT JOIN public.profiles p ON p.id = u.id
+    WHERE u.id = user_id
+      AND (
+        lower(trim(coalesce(u.email::text, ''))) = 'creator@reminko.com'
+        OR COALESCE(p.is_site_creator, false) = true
+      )
+  );
+$$;
+
+REVOKE ALL ON FUNCTION public.is_site_creator_user_id(uuid) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.is_site_creator_user_id(uuid) FROM anon;
+GRANT EXECUTE ON FUNCTION public.is_site_creator_user_id(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.is_site_creator_user_id(uuid) TO service_role;
+
+CREATE OR REPLACE FUNCTION public.creator_full_delete_user(
+  p_user_id UUID,
+  p_reason TEXT DEFAULT NULL
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, auth
+AS $$
+DECLARE
+  v_actor UUID := auth.uid();
+  v_reason TEXT := NULLIF(trim(COALESCE(p_reason, '')), '');
+  v_deleted_auth INTEGER := 0;
+BEGIN
+  IF v_actor IS NULL OR NOT public.is_site_creator_user_id(v_actor) THEN
+    RAISE EXCEPTION 'creator_full_delete_user: access denied';
+  END IF;
+
+  IF p_user_id IS NULL THEN
+    RAISE EXCEPTION 'creator_full_delete_user: p_user_id is required';
+  END IF;
+
+  DELETE FROM public.notifications WHERE user_id = p_user_id;
+  DELETE FROM public.chat_mutes WHERE user_id = p_user_id OR created_by = p_user_id;
+  DELETE FROM public.global_chat_likes WHERE user_id = p_user_id;
+  DELETE FROM public.global_chat_whisper_secrets
+  WHERE message_id IN (
+    SELECT id
+    FROM public.global_chat_messages
+    WHERE user_id = p_user_id OR whisper_to_user_id = p_user_id
+  );
+  DELETE FROM public.global_chat_messages WHERE user_id = p_user_id OR whisper_to_user_id = p_user_id;
+  DELETE FROM public.watch_together_voice_signals WHERE from_user_id = p_user_id OR to_user_id = p_user_id;
+  DELETE FROM public.watch_together_participants WHERE user_id = p_user_id;
+  DELETE FROM public.watch_together_sessions WHERE host_id = p_user_id;
+  DELETE FROM public.watch_together_chat WHERE user_id = p_user_id;
+  DELETE FROM public.direct_messages WHERE sender_id = p_user_id OR receiver_id = p_user_id;
+  DELETE FROM public.friends WHERE user_id = p_user_id OR friend_id = p_user_id;
+  DELETE FROM public.site_visit_events WHERE user_id = p_user_id;
+  DELETE FROM public.avatar_ai_generations WHERE user_id = p_user_id;
+  DELETE FROM public.minko_ai_chat_logs WHERE user_id = p_user_id;
+  DELETE FROM public.ai_subscriptions WHERE user_id = p_user_id;
+  DELETE FROM public.vip_subscriptions WHERE user_id = p_user_id;
+  DELETE FROM public.watch_history WHERE user_id = p_user_id;
+  DELETE FROM public.favorites_anime WHERE user_id = p_user_id;
+  DELETE FROM public.favorites_manga WHERE user_id = p_user_id;
+  DELETE FROM public.user_achievements WHERE user_id = p_user_id;
+  DELETE FROM public.user_settings WHERE user_id = p_user_id;
+  DELETE FROM public.admins WHERE user_id = p_user_id;
+  DELETE FROM public.profiles WHERE id = p_user_id;
+
+  DELETE FROM auth.users WHERE id = p_user_id;
+  GET DIAGNOSTICS v_deleted_auth = ROW_COUNT;
+
+  INSERT INTO public.creator_audit_logs (
+    actor_user_id,
+    action,
+    target_user_id,
+    target_type,
+    reason,
+    details
+  ) VALUES (
+    v_actor,
+    'user_delete_full',
+    p_user_id,
+    'user',
+    v_reason,
+    jsonb_build_object(
+      'auth_deleted', (v_deleted_auth > 0),
+      'at', NOW()
+    )
+  );
+
+  RETURN jsonb_build_object(
+    'success', true,
+    'auth_deleted', (v_deleted_auth > 0),
+    'target_user_id', p_user_id
+  );
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.creator_full_delete_user(UUID, TEXT) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.creator_full_delete_user(UUID, TEXT) FROM anon;
+GRANT EXECUTE ON FUNCTION public.creator_full_delete_user(UUID, TEXT) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.creator_full_delete_user(UUID, TEXT) TO service_role;
+
+DROP VIEW IF EXISTS public.profiles_with_email;
+CREATE VIEW public.profiles_with_email
+WITH (security_invoker = true)
+AS
+SELECT p.*, public.get_user_email(p.id) AS email
+FROM public.profiles p;
+
+REVOKE ALL ON public.profiles_with_email FROM PUBLIC;
+REVOKE ALL ON public.profiles_with_email FROM anon;
+GRANT SELECT ON public.profiles_with_email TO authenticated;
+
+-- Minko AI: публичное состояние читают все; логи — только создатель (JWT); INSERT логов с сервера — через service_role
+DROP POLICY IF EXISTS "minko_public_state_select_anon" ON public.minko_ai_public_state;
+DROP POLICY IF EXISTS "minko_public_state_creator_update" ON public.minko_ai_public_state;
+DROP POLICY IF EXISTS "minko_public_state_creator_insert" ON public.minko_ai_public_state;
+DROP POLICY IF EXISTS "minko_ai_public_state_select" ON public.minko_ai_public_state;
+DROP POLICY IF EXISTS "minko_ai_public_state_update_creator" ON public.minko_ai_public_state;
+DROP POLICY IF EXISTS "minko_ai_public_state_insert_creator" ON public.minko_ai_public_state;
+CREATE POLICY "minko_ai_public_state_select" ON public.minko_ai_public_state
+  FOR SELECT TO anon, authenticated
+  USING (true);
+CREATE POLICY "minko_ai_public_state_update_creator" ON public.minko_ai_public_state FOR UPDATE TO authenticated
+  USING ((SELECT public.is_site_creator_user_id(auth.uid())))
+  WITH CHECK ((SELECT public.is_site_creator_user_id(auth.uid())));
+CREATE POLICY "minko_ai_public_state_insert_creator" ON public.minko_ai_public_state FOR INSERT TO authenticated
+  WITH CHECK ((SELECT public.is_site_creator_user_id(auth.uid())) AND id = 1);
+
+DROP POLICY IF EXISTS "minko_logs_creator_select" ON public.minko_ai_server_logs;
+DROP POLICY IF EXISTS "minko_logs_creator_insert" ON public.minko_ai_server_logs;
+DROP POLICY IF EXISTS "minko_logs_creator_delete" ON public.minko_ai_server_logs;
+DROP POLICY IF EXISTS "minko_ai_server_logs_creator_select" ON public.minko_ai_server_logs;
+DROP POLICY IF EXISTS "minko_ai_server_logs_creator_insert" ON public.minko_ai_server_logs;
+DROP POLICY IF EXISTS "minko_ai_server_logs_creator_delete" ON public.minko_ai_server_logs;
+CREATE POLICY "minko_ai_server_logs_creator_select" ON public.minko_ai_server_logs FOR SELECT TO authenticated
+  USING ((SELECT public.is_site_creator_user_id(auth.uid())));
+CREATE POLICY "minko_ai_server_logs_creator_insert" ON public.minko_ai_server_logs FOR INSERT TO authenticated
+  WITH CHECK ((SELECT public.is_site_creator_user_id(auth.uid())));
+CREATE POLICY "minko_ai_server_logs_creator_delete" ON public.minko_ai_server_logs FOR DELETE TO authenticated
+  USING ((SELECT public.is_site_creator_user_id(auth.uid())));
+
+DROP POLICY IF EXISTS "minko_ai_creator_secrets_creator_all" ON public.minko_ai_creator_secrets;
+CREATE POLICY "minko_ai_creator_secrets_creator_all" ON public.minko_ai_creator_secrets FOR ALL TO authenticated
+  USING (public.is_site_creator_user_id(auth.uid()))
+  WITH CHECK (public.is_site_creator_user_id(auth.uid()));
+
+DROP POLICY IF EXISTS "minko_ai_chat_logs_insert_own" ON public.minko_ai_chat_logs;
+CREATE POLICY "minko_ai_chat_logs_insert_own" ON public.minko_ai_chat_logs
+  FOR INSERT TO authenticated
+  WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "minko_ai_chat_logs_select_creator" ON public.minko_ai_chat_logs;
+CREATE POLICY "minko_ai_chat_logs_select_creator" ON public.minko_ai_chat_logs
+  FOR SELECT TO authenticated
+  USING (public.is_site_creator_user_id(auth.uid()));
+
+GRANT SELECT, INSERT ON public.minko_ai_chat_logs TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.minko_ai_creator_secrets TO authenticated;
+GRANT SELECT ON public.minko_ai_public_state TO anon, authenticated;
+
+DROP POLICY IF EXISTS "gc_whisper_secret_insert_sender" ON public.global_chat_whisper_secrets;
+CREATE POLICY "gc_whisper_secret_insert_sender" ON public.global_chat_whisper_secrets
+  FOR INSERT TO authenticated
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM public.global_chat_messages m
+      WHERE m.id = message_id AND m.user_id = auth.uid()
+    )
+  );
+
+DROP POLICY IF EXISTS "gc_whisper_secret_select_parties" ON public.global_chat_whisper_secrets;
+CREATE POLICY "gc_whisper_secret_select_parties" ON public.global_chat_whisper_secrets
+  FOR SELECT TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.global_chat_messages m
+      WHERE m.id = message_id
+        AND (m.user_id = auth.uid() OR m.whisper_to_user_id = auth.uid())
+    )
+  );
+
+GRANT SELECT, INSERT ON public.global_chat_whisper_secrets TO authenticated;
+
+DROP POLICY IF EXISTS "admins_select" ON public.admins;
+DROP POLICY IF EXISTS "admins_insert" ON public.admins;
+DROP POLICY IF EXISTS "admins_update" ON public.admins;
+DROP POLICY IF EXISTS "admins_delete" ON public.admins;
+CREATE POLICY "admins_select" ON public.admins FOR SELECT USING (
+  auth.uid() = user_id OR public.is_site_creator_user_id(auth.uid())
+);
+CREATE POLICY "admins_insert" ON public.admins FOR INSERT WITH CHECK (
+  public.is_site_creator_user_id(auth.uid())
+);
+CREATE POLICY "admins_update" ON public.admins FOR UPDATE USING (
+  public.is_site_creator_user_id(auth.uid())
+) WITH CHECK (public.is_site_creator_user_id(auth.uid()));
+CREATE POLICY "admins_delete" ON public.admins FOR DELETE USING (
+  public.is_site_creator_user_id(auth.uid())
+);
+
+DROP POLICY IF EXISTS "chat_mutes_select" ON public.chat_mutes;
+DROP POLICY IF EXISTS "chat_mutes_insert" ON public.chat_mutes;
+DROP POLICY IF EXISTS "chat_mutes_update" ON public.chat_mutes;
+DROP POLICY IF EXISTS "chat_mutes_delete" ON public.chat_mutes;
+CREATE POLICY "chat_mutes_select" ON public.chat_mutes FOR SELECT USING (
+  auth.uid() = user_id OR public.is_site_creator_user_id(auth.uid())
+);
+CREATE POLICY "chat_mutes_insert" ON public.chat_mutes FOR INSERT WITH CHECK (
+  public.is_site_creator_user_id(auth.uid())
+);
+CREATE POLICY "chat_mutes_update" ON public.chat_mutes FOR UPDATE USING (
+  public.is_site_creator_user_id(auth.uid())
+) WITH CHECK (public.is_site_creator_user_id(auth.uid()));
+CREATE POLICY "chat_mutes_delete" ON public.chat_mutes FOR DELETE USING (
+  public.is_site_creator_user_id(auth.uid())
+);
+
+DROP POLICY IF EXISTS "chat_automod_rules_select_creator" ON public.chat_automod_rules;
+DROP POLICY IF EXISTS "chat_automod_rules_manage_creator" ON public.chat_automod_rules;
+CREATE POLICY "chat_automod_rules_select_creator" ON public.chat_automod_rules
+  FOR SELECT TO authenticated
+  USING (public.is_site_creator_user_id(auth.uid()));
+CREATE POLICY "chat_automod_rules_manage_creator" ON public.chat_automod_rules
+  FOR ALL TO authenticated
+  USING (public.is_site_creator_user_id(auth.uid()))
+  WITH CHECK (public.is_site_creator_user_id(auth.uid()));
+
+DROP POLICY IF EXISTS "chat_automod_state_select_owner_or_creator" ON public.chat_automod_state;
+DROP POLICY IF EXISTS "chat_automod_state_manage_creator" ON public.chat_automod_state;
+CREATE POLICY "chat_automod_state_select_owner_or_creator" ON public.chat_automod_state
+  FOR SELECT TO authenticated
+  USING (auth.uid() = user_id OR public.is_site_creator_user_id(auth.uid()));
+CREATE POLICY "chat_automod_state_manage_creator" ON public.chat_automod_state
+  FOR ALL TO authenticated
+  USING (public.is_site_creator_user_id(auth.uid()))
+  WITH CHECK (public.is_site_creator_user_id(auth.uid()));
+
+DROP POLICY IF EXISTS "chat_automod_events_select_creator" ON public.chat_automod_events;
+DROP POLICY IF EXISTS "chat_automod_events_manage_creator" ON public.chat_automod_events;
+CREATE POLICY "chat_automod_events_select_creator" ON public.chat_automod_events
+  FOR SELECT TO authenticated
+  USING (public.is_site_creator_user_id(auth.uid()));
+CREATE POLICY "chat_automod_events_manage_creator" ON public.chat_automod_events
+  FOR ALL TO authenticated
+  USING (public.is_site_creator_user_id(auth.uid()))
+  WITH CHECK (public.is_site_creator_user_id(auth.uid()));
+
+DROP POLICY IF EXISTS "creator_audit_logs_creator_select" ON public.creator_audit_logs;
+DROP POLICY IF EXISTS "creator_audit_logs_creator_insert" ON public.creator_audit_logs;
+CREATE POLICY "creator_audit_logs_creator_select" ON public.creator_audit_logs
+  FOR SELECT TO authenticated
+  USING (public.is_site_creator_user_id(auth.uid()));
+CREATE POLICY "creator_audit_logs_creator_insert" ON public.creator_audit_logs
+  FOR INSERT TO authenticated
+  WITH CHECK (
+    public.is_site_creator_user_id(auth.uid())
+    AND (actor_user_id IS NULL OR actor_user_id = auth.uid())
+  );
+
+-- site_visit_events: запись с сайта (anon/auth); просмотр и удаление старых записей — только создатель
+DROP POLICY IF EXISTS "site_visit_events_insert" ON public.site_visit_events;
+DROP POLICY IF EXISTS "site_visit_events_select_creator" ON public.site_visit_events;
+DROP POLICY IF EXISTS "site_visit_events_delete_creator" ON public.site_visit_events;
+CREATE POLICY "site_visit_events_insert" ON public.site_visit_events
+  FOR INSERT
+  WITH CHECK (
+    length(visitor_id) BETWEEN 8 AND 64
+    AND length(path) BETWEEN 1 AND 2048
+    AND (user_id IS NULL OR user_id = auth.uid())
+  );
+CREATE POLICY "site_visit_events_select_creator" ON public.site_visit_events
+  FOR SELECT TO authenticated
+  USING (public.is_site_creator_user_id(auth.uid()));
+CREATE POLICY "site_visit_events_delete_creator" ON public.site_visit_events
+  FOR DELETE TO authenticated
+  USING (public.is_site_creator_user_id(auth.uid()));
+
+GRANT SELECT, INSERT ON public.site_visit_events TO anon;
+GRANT SELECT, INSERT ON public.site_visit_events TO authenticated;
+GRANT SELECT, INSERT ON public.creator_audit_logs TO authenticated;
+GRANT SELECT, INSERT ON public.creator_audit_logs TO service_role;
+
+-- ============================================
+-- 7. ТРИГГЕРЫ И ФУНКЦИИ
+-- ============================================
+
+-- get_user_email / is_site_creator_user_id — выше (перед политиками site_visit и admins).
+
+-- Сводка посещений для дашборда создателя (одна RPC вместо тяжёлых выборок с клиента)
+CREATE OR REPLACE FUNCTION public.site_visit_creator_bundle(p_since timestamptz)
+RETURNS jsonb
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  j jsonb;
+BEGIN
+  IF auth.uid() IS NULL OR NOT public.is_site_creator_user_id(auth.uid()) THEN
+    RAISE EXCEPTION 'forbidden' USING ERRCODE = '42501';
+  END IF;
+
+  SELECT jsonb_build_object(
+    'summary', COALESCE((
+      SELECT jsonb_build_object(
+        'total_events', COUNT(*)::bigint,
+        'pageviews', COUNT(*) FILTER (WHERE event_kind = 'pageview')::bigint,
+        'unique_visitors', COUNT(DISTINCT visitor_id)::bigint,
+        'unique_logged_accounts', COUNT(DISTINCT user_id)::bigint,
+        'events_by_logged_in', COUNT(*) FILTER (WHERE user_id IS NOT NULL)::bigint
+      )
+      FROM public.site_visit_events
+      WHERE created_at >= p_since
+    ), '{"total_events":0,"pageviews":0,"unique_visitors":0,"unique_logged_accounts":0,"events_by_logged_in":0}'::jsonb),
+    'top_paths', COALESCE((
+      SELECT jsonb_agg(to_jsonb(t) ORDER BY t.cnt DESC)
+      FROM (
+        SELECT path, COUNT(*)::bigint AS cnt
+        FROM public.site_visit_events
+        WHERE created_at >= p_since AND event_kind = 'pageview' AND path IS NOT NULL AND path <> ''
+        GROUP BY path
+        ORDER BY cnt DESC
+        LIMIT 30
+      ) t
+    ), '[]'::jsonb),
+    'by_day', COALESCE((
+      SELECT jsonb_agg(to_jsonb(t) ORDER BY t.day)
+      FROM (
+        SELECT (created_at AT TIME ZONE 'UTC')::date AS day, COUNT(*)::bigint AS cnt
+        FROM public.site_visit_events
+        WHERE created_at >= p_since
+        GROUP BY 1
+        ORDER BY 1
+      ) t
+    ), '[]'::jsonb)
+  ) INTO j;
+
+  RETURN j;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.site_visit_creator_bundle(timestamptz) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.site_visit_creator_bundle(timestamptz) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.site_visit_creator_bundle(timestamptz) TO service_role;
+
+-- Живой блок аналитики для панели создателя (последние N минут).
+CREATE OR REPLACE FUNCTION public.site_visit_creator_live(p_window_minutes integer DEFAULT 15)
+RETURNS jsonb
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_minutes integer := LEAST(60, GREATEST(1, COALESCE(p_window_minutes, 15)));
+  v_since timestamptz := now() - make_interval(mins => v_minutes);
+  j jsonb;
+BEGIN
+  IF auth.uid() IS NULL OR NOT public.is_site_creator_user_id(auth.uid()) THEN
+    RAISE EXCEPTION 'forbidden' USING ERRCODE = '42501';
+  END IF;
+
+  SELECT jsonb_build_object(
+    'window_minutes', v_minutes,
+    'events', COUNT(*)::bigint,
+    'pageviews', COUNT(*) FILTER (WHERE event_kind = 'pageview')::bigint,
+    'logins', COUNT(*) FILTER (WHERE event_kind = 'action' AND event_label = 'login')::bigint,
+    'unique_visitors', COUNT(DISTINCT visitor_id)::bigint
+  )
+  INTO j
+  FROM public.site_visit_events
+  WHERE created_at >= v_since;
+
+  RETURN COALESCE(j, jsonb_build_object(
+    'window_minutes', v_minutes,
+    'events', 0,
+    'pageviews', 0,
+    'logins', 0,
+    'unique_visitors', 0
+  ));
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.site_visit_creator_live(integer) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.site_visit_creator_live(integer) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.site_visit_creator_live(integer) TO service_role;
+
+-- Глобальная пауза комнаты: любой участник (плеер/сеть); снимает только хост.
+CREATE OR REPLACE FUNCTION public.wt_raise_sync_hold(p_session_id uuid, p_reason text DEFAULT 'issue')
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF auth.uid() IS NULL THEN
+    RAISE EXCEPTION 'Требуется вход';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM public.watch_together_participants wtp
+    WHERE wtp.session_id = p_session_id AND wtp.user_id = auth.uid()
+  ) THEN
+    RAISE EXCEPTION 'Вы не в этой комнате';
+  END IF;
+
+  UPDATE public.watch_together_sessions
+  SET
+    sync_hold = true,
+    sync_hold_reason = LEFT(COALESCE(NULLIF(trim(p_reason), ''), 'issue'), 240),
+    is_playing = false,
+    updated_at = TIMEZONE('utc'::text, NOW())
+  WHERE id = p_session_id
+    AND is_active = true
+    AND COALESCE(sync_hold, false) = false;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.wt_raise_sync_hold(uuid, text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.wt_raise_sync_hold(uuid, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.wt_raise_sync_hold(uuid, text) TO service_role;
+
+CREATE OR REPLACE FUNCTION public.wt_clear_sync_hold(
+  p_session_id uuid,
+  p_episode integer DEFAULT NULL,
+  p_playback_sec double precision DEFAULT NULL
+)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF auth.uid() IS NULL THEN
+    RAISE EXCEPTION 'Требуется вход';
+  END IF;
+
+  UPDATE public.watch_together_sessions
+  SET
+    sync_hold = false,
+    sync_hold_reason = NULL,
+    sync_generation = COALESCE(sync_generation, 0) + 1,
+    current_episode = CASE WHEN p_episode IS NOT NULL THEN p_episode ELSE current_episode END,
+    playback_time = CASE WHEN p_playback_sec IS NOT NULL THEN p_playback_sec ELSE playback_time END,
+    updated_at = TIMEZONE('utc'::text, NOW())
+  WHERE id = p_session_id
+    AND host_id = auth.uid()
+    AND is_active = true;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.wt_clear_sync_hold(uuid, integer, double precision) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.wt_clear_sync_hold(uuid, integer, double precision) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.wt_clear_sync_hold(uuid, integer, double precision) TO service_role;
+
+-- «Смотреть вместе»: сдвиг метки активности комнаты (участник, не только хост)
+CREATE OR REPLACE FUNCTION public.wt_bump_room_activity(p_session_id uuid)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF auth.uid() IS NULL THEN
+    RETURN;
+  END IF;
+  UPDATE public.watch_together_sessions s
+  SET last_room_activity_at = TIMEZONE('utc'::text, NOW()),
+      updated_at = TIMEZONE('utc'::text, NOW())
+  WHERE s.id = p_session_id
+    AND s.is_active = true
+    AND EXISTS (
+      SELECT 1 FROM public.watch_together_participants p
+      WHERE p.session_id = s.id
+        AND p.user_id = auth.uid()
+    );
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.wt_bump_room_activity(uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.wt_bump_room_activity(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.wt_bump_room_activity(uuid) TO service_role;
+
+-- «Смотреть вместе»: закрыть одну комнату при 30+ мин без чата, bumps и воспроизведения (не только с клиента хоста)
+CREATE OR REPLACE FUNCTION public.wt_close_idle_session_if_needed(p_session_id uuid)
+RETURNS boolean
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_row public.watch_together_sessions%ROWTYPE;
+  v_last timestamptz;
+  v_chat_last timestamptz;
+BEGIN
+  SELECT * INTO v_row
+  FROM public.watch_together_sessions
+  WHERE id = p_session_id;
+
+  IF NOT FOUND OR NOT COALESCE(v_row.is_active, false) THEN
+    RETURN false;
+  END IF;
+
+  IF COALESCE(v_row.is_playing, false) THEN
+    RETURN false;
+  END IF;
+
+  SELECT MAX(c.created_at) INTO v_chat_last
+  FROM public.watch_together_chat c
+  WHERE c.session_id = p_session_id;
+
+  v_last := GREATEST(
+    v_row.created_at,
+    COALESCE(v_row.last_room_activity_at, v_row.created_at),
+    COALESCE(v_chat_last, v_row.created_at)
+  );
+
+  IF v_last >= TIMEZONE('utc'::text, NOW()) - interval '30 minutes' THEN
+    RETURN false;
+  END IF;
+
+  UPDATE public.watch_together_sessions
+  SET is_active = false,
+      updated_at = TIMEZONE('utc'::text, NOW())
+  WHERE id = p_session_id
+    AND is_active = true;
+
+  RETURN true;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.wt_close_idle_session_if_needed(uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.wt_close_idle_session_if_needed(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.wt_close_idle_session_if_needed(uuid) TO anon;
+GRANT EXECUTE ON FUNCTION public.wt_close_idle_session_if_needed(uuid) TO service_role;
+
+-- Массовое закрытие простаивших комнат (вызывается с сайта по таймеру / при открытии друзей)
+CREATE OR REPLACE FUNCTION public.wt_close_idle_sessions()
+RETURNS integer
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_closed integer := 0;
+  v_rec record;
+BEGIN
+  FOR v_rec IN
+    SELECT s.id
+    FROM public.watch_together_sessions s
+    WHERE s.is_active = true
+      AND COALESCE(s.is_playing, false) = false
+  LOOP
+    IF public.wt_close_idle_session_if_needed(v_rec.id) THEN
+      v_closed := v_closed + 1;
+    END IF;
+  END LOOP;
+  RETURN v_closed;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.wt_close_idle_sessions() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.wt_close_idle_sessions() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.wt_close_idle_sessions() TO anon;
+GRANT EXECUTE ON FUNCTION public.wt_close_idle_sessions() TO service_role;
+
+INSERT INTO public.chat_automod_rules (rule_key, pattern, match_mode, strike_weight, mute_minutes, is_active, note)
+VALUES
+  ('badword_blya', 'бля', 'substring', 1, 15, true, 'Нецензурная лексика'),
+  ('badword_eban', 'ебан', 'substring', 1, 15, true, 'Нецензурная лексика'),
+  ('badword_huy', 'хуй', 'substring', 1, 15, true, 'Нецензурная лексика'),
+  ('badword_pizd', 'пизд', 'substring', 1, 15, true, 'Нецензурная лексика'),
+  ('badword_suka', 'сука', 'substring', 1, 15, true, 'Оскорбления'),
+  ('badword_nahuy', 'нахуй', 'substring', 1, 15, true, 'Нецензурная лексика'),
+  ('badword_dolboeb', 'долбоеб', 'substring', 1, 15, true, 'Оскорбления'),
+  ('badword_uebal', 'уеб', 'substring', 1, 15, true, 'Оскорбления')
+ON CONFLICT (rule_key) DO NOTHING;
+
+CREATE OR REPLACE FUNCTION public.enforce_global_chat_automod(p_user_id uuid, p_message text)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_uid uuid := p_user_id;
+  v_msg text := COALESCE(p_message, '');
+  v_norm text := lower(COALESCE(p_message, ''));
+  v_rule public.chat_automod_rules%ROWTYPE;
+  v_state public.chat_automod_state%ROWTYPE;
+  v_now timestamptz := TIMEZONE('utc'::text, NOW());
+  v_new_strikes integer := 0;
+  v_mute_until timestamptz;
+  v_block text := null;
+BEGIN
+  IF v_uid IS NULL THEN
+    RETURN jsonb_build_object('ok', false, 'action', 'error', 'message', 'Пользователь не определён');
+  END IF;
+  IF v_msg IS NULL OR length(trim(v_msg)) = 0 THEN
+    RETURN jsonb_build_object('ok', false, 'action', 'error', 'message', 'Пустое сообщение');
+  END IF;
+  IF length(v_msg) > 300 THEN
+    RETURN jsonb_build_object('ok', false, 'action', 'error', 'message', 'Слишком длинное сообщение');
+  END IF;
+
+  IF public.is_site_creator_user_id(v_uid) THEN
+    RETURN jsonb_build_object('ok', true, 'action', 'allow', 'bypass', 'creator');
+  END IF;
+
+  SELECT * INTO v_state FROM public.chat_automod_state WHERE user_id = v_uid;
+
+  IF v_state.user_id IS NOT NULL AND v_state.muted_until IS NOT NULL AND v_state.muted_until > v_now THEN
+    v_block := 'Автомодерация: отправка временно заблокирована.';
+    INSERT INTO public.chat_automod_events(user_id, action, message_preview, details)
+    VALUES (
+      v_uid,
+      'blocked_mute',
+      left(v_msg, 180),
+      jsonb_build_object('muted_until', v_state.muted_until)
+    );
+    RETURN jsonb_build_object(
+      'ok', false,
+      'action', 'blocked_mute',
+      'message', v_block,
+      'muted_until', v_state.muted_until
+    );
+  END IF;
+
+  SELECT *
+  INTO v_rule
+  FROM public.chat_automod_rules r
+  WHERE r.is_active = true
+    AND (
+      (r.match_mode = 'substring' AND position(lower(r.pattern) in v_norm) > 0)
+      OR (r.match_mode = 'regex' AND v_norm ~ r.pattern)
+    )
+  ORDER BY r.strike_weight DESC, r.id ASC
+  LIMIT 1;
+
+  IF v_rule.id IS NULL THEN
+    IF v_state.user_id IS NOT NULL AND v_state.strikes > 0 THEN
+      UPDATE public.chat_automod_state
+      SET strikes = GREATEST(0, strikes - 1), updated_at = v_now
+      WHERE user_id = v_uid;
+    END IF;
+    RETURN jsonb_build_object('ok', true, 'action', 'allow');
+  END IF;
+
+  INSERT INTO public.chat_automod_state(user_id, strikes, muted_until, last_violation_at, updated_at)
+  VALUES (v_uid, v_rule.strike_weight, null, v_now, v_now)
+  ON CONFLICT (user_id) DO UPDATE
+    SET strikes = public.chat_automod_state.strikes + EXCLUDED.strikes,
+        last_violation_at = v_now,
+        updated_at = v_now
+  RETURNING * INTO v_state;
+
+  v_new_strikes := COALESCE(v_state.strikes, 0);
+
+  IF v_new_strikes >= 2 THEN
+    v_mute_until := v_now + make_interval(mins => GREATEST(1, COALESCE(v_rule.mute_minutes, 15)));
+
+    INSERT INTO public.chat_mutes(user_id, muted_until, reason, created_by)
+    VALUES (v_uid, v_mute_until, 'automod:toxic_language', null)
+    ON CONFLICT (user_id) DO UPDATE
+      SET muted_until = GREATEST(public.chat_mutes.muted_until, EXCLUDED.muted_until),
+          reason = EXCLUDED.reason,
+          created_by = null,
+          created_at = v_now;
+
+    UPDATE public.chat_automod_state
+    SET muted_until = v_mute_until, updated_at = v_now
+    WHERE user_id = v_uid;
+
+    INSERT INTO public.chat_automod_events(user_id, matched_rule_id, action, message_preview, details)
+    VALUES (
+      v_uid,
+      v_rule.id,
+      'mute',
+      left(v_msg, 180),
+      jsonb_build_object('strikes', v_new_strikes, 'mute_minutes', v_rule.mute_minutes, 'muted_until', v_mute_until)
+    );
+
+    RETURN jsonb_build_object(
+      'ok', false,
+      'action', 'mute',
+      'message', 'Обнаружена ругань. Чат временно заблокирован автоматической модерацией.',
+      'muted_until', v_mute_until,
+      'strikes', v_new_strikes
+    );
+  END IF;
+
+  INSERT INTO public.chat_automod_events(user_id, matched_rule_id, action, message_preview, details)
+  VALUES (
+    v_uid,
+    v_rule.id,
+    'warn',
+    left(v_msg, 180),
+    jsonb_build_object('strikes', v_new_strikes)
+  );
+
+  RETURN jsonb_build_object(
+    'ok', false,
+    'action', 'warn',
+    'message', 'Пожалуйста, без ругани. Следующее нарушение временно отключит отправку сообщений.',
+    'strikes', v_new_strikes
+  );
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.enforce_global_chat_automod(uuid, text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.enforce_global_chat_automod(uuid, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.enforce_global_chat_automod(uuid, text) TO service_role;
+
+CREATE OR REPLACE FUNCTION public.trg_global_chat_automod_before_insert()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_check jsonb;
+  v_action text;
+BEGIN
+  v_check := public.enforce_global_chat_automod(NEW.user_id, NEW.message);
+  IF COALESCE((v_check->>'ok')::boolean, false) THEN
+    RETURN NEW;
+  END IF;
+
+  v_action := COALESCE(v_check->>'action', 'error');
+
+  IF v_action = 'warn' THEN
+    RAISE EXCEPTION '%', 'AUTOMOD_WARN|' || COALESCE(v_check->>'message', 'Предупреждение модерации');
+  ELSIF v_action IN ('mute', 'blocked_mute') THEN
+    RAISE EXCEPTION '%', 'AUTOMOD_BLOCK|' || COALESCE(v_check->>'message', 'Чат временно заблокирован') || '|' || COALESCE(v_check->>'muted_until', '');
+  ELSE
+    RAISE EXCEPTION '%', 'AUTOMOD_ERROR|' || COALESCE(v_check->>'message', 'Сообщение отклонено модерацией');
+  END IF;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS tr_global_chat_automod_before_insert ON public.global_chat_messages;
+CREATE TRIGGER tr_global_chat_automod_before_insert
+  BEFORE INSERT ON public.global_chat_messages
+  FOR EACH ROW
+  EXECUTE FUNCTION public.trg_global_chat_automod_before_insert();
+
+CREATE OR REPLACE FUNCTION public.send_global_chat_message_safe(
+  p_message text,
+  p_reply_to uuid DEFAULT NULL
+)
+RETURNS public.global_chat_messages
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_uid uuid := auth.uid();
+  v_row public.global_chat_messages;
+BEGIN
+  IF v_uid IS NULL THEN
+    RAISE EXCEPTION 'auth_required' USING ERRCODE = '42501';
+  END IF;
+
+  INSERT INTO public.global_chat_messages (user_id, message, reply_to)
+  VALUES (v_uid, trim(COALESCE(p_message, '')), p_reply_to)
+  RETURNING * INTO v_row;
+
+  RETURN v_row;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.send_global_chat_message_safe(text, uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.send_global_chat_message_safe(text, uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.send_global_chat_message_safe(text, uuid) TO service_role;
+
+-- Общий чат: хранить не более 50 неудалённых сообщений
+CREATE OR REPLACE FUNCTION public._trim_global_chat_to_50()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  surplus uuid[];
+BEGIN
+  SELECT array_agg(id) INTO surplus
+  FROM (
+    SELECT id
+    FROM public.global_chat_messages
+    WHERE deleted_at IS NULL
+    ORDER BY created_at DESC
+    OFFSET 50
+  ) x;
+
+  IF surplus IS NOT NULL AND array_length(surplus, 1) > 0 THEN
+    DELETE FROM public.global_chat_messages WHERE id = ANY(surplus);
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS tr_global_chat_retention_50 ON public.global_chat_messages;
+CREATE TRIGGER tr_global_chat_retention_50
+  AFTER INSERT ON public.global_chat_messages
+  FOR EACH ROW
+  EXECUTE FUNCTION public._trim_global_chat_to_50();
+
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  profile_username TEXT;
+  telegram_id_val TEXT;
+BEGIN
+  -- Анонимный вход (messages.html): профиль создаёт клиент через upsert
+  IF
+    (NEW.email IS NULL OR length(trim(NEW.email)) = 0)
+    AND (
+      COALESCE(NEW.raw_app_meta_data->>'provider', '') = 'anonymous'
+      OR (NEW.raw_app_meta_data->'providers')::text ILIKE '%"anonymous"%'
+    )
+  THEN
+    RETURN NEW;
+  END IF;
+
+  telegram_id_val := NEW.raw_user_meta_data->>'telegram_id';
+
+  IF telegram_id_val IS NOT NULL THEN
+    profile_username := COALESCE(
+      NEW.raw_user_meta_data->>'telegram_username',
+      NEW.raw_user_meta_data->>'first_name',
+      'Пользователь_' || substring(telegram_id_val from 1 for 8)
+    );
+  ELSE
+    profile_username := COALESCE(
+      NEW.raw_user_meta_data->>'username',
+      split_part(NEW.email, '@', 1)
+    );
+  END IF;
+
+  INSERT INTO public.profiles (id, username, avatar, gender, telegram_id)
+  VALUES (
+    NEW.id,
+    profile_username,
+    COALESCE(
+      NEW.raw_user_meta_data->>'photo_url',
+      NEW.raw_user_meta_data->>'avatar_url',
+      NEW.raw_user_meta_data->>'picture',
+      NEW.raw_user_meta_data->>'avatar',
+      'Fons/1 b.jpg'
+    ),
+    COALESCE(NEW.raw_user_meta_data->>'gender', 'male'),
+    telegram_id_val
+  )
+  ON CONFLICT (id) DO UPDATE SET
+    telegram_id = COALESCE(EXCLUDED.telegram_id, profiles.telegram_id),
+    updated_at = TIMEZONE('utc'::text, NOW());
+
+  INSERT INTO public.user_settings (user_id) VALUES (NEW.id) ON CONFLICT (user_id) DO NOTHING;
+  INSERT INTO public.ai_subscriptions (user_id, subscription_type, messages_limit, messages_used, last_reset_date)
+  VALUES (NEW.id, 'free', 50, 0, NOW()) ON CONFLICT (user_id) DO NOTHING;
+
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+CREATE OR REPLACE FUNCTION public.reset_cooldown_messages()
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  UPDATE public.ai_subscriptions
+  SET messages_used = 0, last_reset_date = NOW()
+  WHERE subscription_type = 'free'
+    AND messages_used >= 50
+    AND last_reset_date < NOW() - INTERVAL '12 hours';
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.generate_session_code()
+RETURNS TEXT
+LANGUAGE plpgsql
+SET search_path = public
+AS $$
+DECLARE
+  code TEXT;
+  exists_check INTEGER;
+BEGIN
+  LOOP
+    code := UPPER(SUBSTRING(MD5(RANDOM()::TEXT) FROM 1 FOR 8));
+    SELECT COUNT(*) INTO exists_check FROM public.watch_together_sessions WHERE session_code = code;
+    EXIT WHEN exists_check = 0;
+  END LOOP;
+  RETURN code;
+END;
+$$;
+
+-- ============================================
+-- 7.1. ПРАВА НА RPC-ФУНКЦИИ
+-- ============================================
+
+-- Служебные SECURITY DEFINER-функции нужны триггерам/серверу, но не должны быть публичными RPC.
+REVOKE ALL ON FUNCTION public._trim_global_chat_to_50() FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.trg_global_chat_automod_before_insert() FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.handle_new_user() FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.enforce_global_chat_automod(uuid, text) FROM PUBLIC, anon, authenticated;
+
+-- Клиентские RPC: только авторизованные пользователи и service_role.
+REVOKE ALL ON FUNCTION public.send_global_chat_message_safe(text, uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.send_global_chat_message_safe(text, uuid) TO authenticated, service_role;
+
+REVOKE ALL ON FUNCTION public.site_visit_creator_bundle(timestamptz) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.site_visit_creator_bundle(timestamptz) TO authenticated, service_role;
+
+REVOKE ALL ON FUNCTION public.site_visit_creator_live(integer) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.site_visit_creator_live(integer) TO authenticated, service_role;
+
+REVOKE ALL ON FUNCTION public.wt_raise_sync_hold(uuid, text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.wt_raise_sync_hold(uuid, text) TO authenticated, service_role;
+
+REVOKE ALL ON FUNCTION public.wt_clear_sync_hold(uuid, integer, double precision) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.wt_clear_sync_hold(uuid, integer, double precision) TO authenticated, service_role;
+
+REVOKE ALL ON FUNCTION public.wt_bump_room_activity(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.wt_bump_room_activity(uuid) TO authenticated, service_role;
+
+REVOKE ALL ON FUNCTION public.wt_close_idle_session_if_needed(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.wt_close_idle_session_if_needed(uuid) TO authenticated, service_role;
+
+REVOKE ALL ON FUNCTION public.wt_close_idle_sessions() FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.wt_close_idle_sessions() TO authenticated, service_role;
+
+-- Legacy helpers retained for compatibility but not exposed to browser clients.
+REVOKE ALL ON FUNCTION public.reset_cooldown_messages() FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.reset_cooldown_messages() TO service_role;
+
+REVOKE ALL ON FUNCTION public.generate_session_code() FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.generate_session_code() TO service_role;
+
+-- ============================================
+-- 8. REALTIME
+-- ============================================
+
+DO $$ 
+BEGIN 
+    BEGIN
+        ALTER PUBLICATION supabase_realtime ADD TABLE public.notifications;
+  EXCEPTION WHEN duplicate_object THEN NULL;
+    END;
+    BEGIN
+        ALTER PUBLICATION supabase_realtime ADD TABLE public.global_chat_messages;
+  EXCEPTION WHEN duplicate_object THEN NULL;
+    END;
+    BEGIN
+        ALTER PUBLICATION supabase_realtime ADD TABLE public.global_chat_likes;
+  EXCEPTION WHEN duplicate_object THEN NULL;
+    END;
+    -- ЛС: без этого Realtime-подписка в direct-messages.js (postgres_changes INSERT) не получает события
+    BEGIN
+        ALTER PUBLICATION supabase_realtime ADD TABLE public.direct_messages;
+  EXCEPTION WHEN duplicate_object THEN NULL;
+    END;
+    -- «Смотреть вместе»: мгновенный эфир/пауза у гостей (watch-together.js postgres_changes UPDATE)
+    BEGIN
+        ALTER PUBLICATION supabase_realtime ADD TABLE public.watch_together_sessions;
+  EXCEPTION WHEN duplicate_object THEN NULL;
+    END;
+    -- Опционально: мгновенный голосовой сигналинг (сейчас клиент опрашивает таблицу)
+    BEGIN
+        ALTER PUBLICATION supabase_realtime ADD TABLE public.watch_together_voice_signals;
+  EXCEPTION WHEN duplicate_object THEN NULL;
+    END;
+END $$;
+
+-- ============================================
+-- 8b. RLS: site_maintenance_config (таблица создана в §1)
+-- ============================================
+
+ALTER TABLE public.site_maintenance_config ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "site_maintenance_select" ON public.site_maintenance_config;
+DROP POLICY IF EXISTS "site_maintenance_update" ON public.site_maintenance_config;
+
+CREATE POLICY "site_maintenance_select" ON public.site_maintenance_config FOR SELECT USING (true);
+
+CREATE POLICY "site_maintenance_update" ON public.site_maintenance_config FOR UPDATE TO authenticated
+  USING (public.is_site_creator_user_id(auth.uid()))
+  WITH CHECK (public.is_site_creator_user_id(auth.uid()));
+
+DROP POLICY IF EXISTS "site_maintenance_insert" ON public.site_maintenance_config;
+CREATE POLICY "site_maintenance_insert" ON public.site_maintenance_config FOR INSERT TO authenticated
+  WITH CHECK (public.is_site_creator_user_id(auth.uid()));
+
+-- REST API (anon): без GRANT PostgREST отдаёт 401/permission; колонки — только реальные
+GRANT SELECT ON public.site_maintenance_config TO anon, authenticated;
+GRANT SELECT ON public.profiles TO anon, authenticated;
+
+-- ============================================
+-- 9. ОЧИСТКА УСТАРЕВШИХ ФУНКЦИЙ
+-- ============================================
+
+DROP FUNCTION IF EXISTS reset_daily_messages();
+
+-- ============================================
+-- ГОТОВО
+-- ============================================
+
+DO $$ 
+BEGIN 
+  RAISE NOTICE '✅ База данных Re-Minko готова! Таблицы обновлены, лишние удалены.';
+END $$;

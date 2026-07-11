@@ -1,0 +1,9 @@
+# Не публиковать на сайт (секреты и локальные настройки)
+config.local.js
+**/config.local.js
+.env
+.env.*
+
+# Сырые дампы Kodik (~150+ MB) — на сайте только data/kodik-anime-catalog.json
+kodik base/anime-serial.json
+kodik base/anime.json

@@ -1,0 +1,25 @@
+# Деплой: корень сайта = эта папка (netlify-minko)
+# Сайт Re-Minko: в config.local.js укажите
+#   window.APP_CONFIG.minkoChatProxy = 'https://ВАШ-САЙТ.netlify.app/chat';
+
+[build]
+  publish = "public"
+  functions = "netlify/functions"
+
+[functions]
+  node_bundler = "esbuild"
+  # Бесплатный тариф Netlify: 10 с — тяжёлые цепочки API могут не успеть; при таймаутах см. план Pro или упростите ключи.
+  # external_node_modules = []
+
+[[redirects]]
+  from = "/chat"
+  to = "/.netlify/functions/minko-chat"
+  status = 200
+  force = true
+
+[[headers]]
+  for = "/.netlify/functions/*"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Headers = "Content-Type"
+    Access-Control-Allow-Methods = "POST, OPTIONS, GET, HEAD"

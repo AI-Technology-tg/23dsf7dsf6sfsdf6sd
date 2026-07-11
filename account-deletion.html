@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <style id="reminko-critical-first-paint">
+      html { background-color: #0b0b12; }
+      body { margin: 0; background-color: #0b0b12; color: #e5e7eb; }
+      #loadingScreen {
+        position: fixed !important;
+        inset: 0 !important;
+        width: 100% !important;
+        min-height: 100vh !important;
+        z-index: 2147483646 !important;
+        background: #000000 !important;
+        display: flex !important;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        box-sizing: border-box;
+      }
+      body:not(.reminko-content-revealed) .main-layout {
+        opacity: 0 !important;
+        visibility: hidden !important;
+        pointer-events: none !important;
+      }
+    </style>
+    <script src="scripts/desktop-only-guard.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Удаление аккаунта | Re-Minko</title>
+    <meta
+        name="description"
+        content="Как запросить удаление аккаунта Re-Minko и связанных данных на сайте re-minko-anime.com и в приложении Android."
+    />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://re-minko-anime.com/account-deletion.html" />
+    <link rel="apple-touch-icon" sizes="180x180" href="Fons/vavo/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="Fons/vavo/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="Fons/vavo/favicon-16x16.png">
+    <link rel="manifest" href="Fons/vavo/site.webmanifest">
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/sidebar-layout.css">
+    <link rel="stylesheet" href="styles/loading.css">
+    <link rel="stylesheet" href="styles/register-flow.css">
+    <link rel="stylesheet" href="styles/notifications.css">
+    <link rel="stylesheet" href="styles/info-page.css">
+</head>
+<body>
+    <div class="loading-screen" id="loadingScreen">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Загрузка<span class="loading-dots"></span></div>
+        <div class="loading-character"></div>
+        <div class="loading-anime"></div>
+    </div>
+
+    <div class="main-layout">
+        <main class="main-content-wrapper info-page">
+            <div class="page-container">
+                <div class="page-header">
+                    <a href="privacy-policy.html" class="btn btn-secondary">← Политика конфиденциальности</a>
+                </div>
+
+                <header class="info-hero">
+                    <div class="info-hero-inner">
+                        <span class="info-hero-badge">Re-Minko · com.reminko.mobile</span>
+                        <h1>Удаление аккаунта и данных</h1>
+                        <p class="info-hero-lead">
+                            На этой странице описано, как пользователи сайта <strong>re-minko-anime.com</strong>
+                            и мобильного приложения <strong>Re-Minko</strong> (Android) могут запросить удаление
+                            учётной записи и связанных персональных данных.
+                        </p>
+                        <p class="info-hero-lead" style="margin-top: 0.75rem;">
+                            <a href="privacy-policy.html">Политика конфиденциальности</a>
+                            ·
+                            <a href="terms-of-service.html">Условия использования</a>
+                        </p>
+                    </div>
+                </header>
+
+                <div class="info-grid">
+                    <article class="info-card info-card--wide">
+                        <h2>1. Как подать запрос</h2>
+                        <p>Отправьте письмо на адрес:</p>
+                        <p style="font-size: 1.1rem; margin: 1rem 0;">
+                            <a href="mailto:re.minko.anime.com@gmail.com?subject=%D0%97%D0%B0%D0%BF%D1%80%D0%BE%D1%81%20%D0%BD%D0%B0%20%D1%83%D0%B4%D0%B0%D0%BB%D0%B5%D0%BD%D0%B8%D0%B5%20%D0%B0%D0%BA%D0%BA%D0%B0%D1%83%D0%BD%D1%82%D0%B0%20Re-Minko">
+                                re.minko.anime.com@gmail.com
+                            </a>
+                        </p>
+                        <p>В теме письма укажите: <strong>«Запрос на удаление аккаунта Re-Minko»</strong>.</p>
+                        <p>В тексте письма укажите:</p>
+                        <ul>
+                            <li>адрес электронной почты, с которым зарегистрирован аккаунт;</li>
+                            <li>отображаемое имя пользователя (username), если помните;</li>
+                            <li>что вы использовали — сайт, приложение Android или оба;</li>
+                            <li>подтверждение, что вы хотите безвозвратно удалить аккаунт и связанные данные.</li>
+                        </ul>
+                        <p>
+                            Мы можем запросить дополнительное подтверждение владения аккаунтом (ответ с той же почты
+                            или иным способом), чтобы защитить ваши данные от удаления третьими лицами.
+                        </p>
+                    </article>
+
+                    <article class="info-card info-card--wide">
+                        <h2>2. Какие данные будут удалены</h2>
+                        <p>После обработки запроса мы удаляем или обезличиваем, в том числе:</p>
+                        <ul>
+                            <li>учётную запись Supabase (email, идентификатор пользователя);</li>
+                            <li>профиль (username, аватар, настройки профиля);</li>
+                            <li>избранное аниме и манги;</li>
+                            <li>историю просмотра, привязанную к аккаунту;</li>
+                            <li>личные и общие сообщения, друзей, уведомления (на сайте);</li>
+                            <li>логи чата Minko AI, связанные с вашим user id (на сайте);</li>
+                            <li>настройки пользователя и прочие записи в базе данных, привязанные к аккаунту.</li>
+                        </ul>
+                    </article>
+
+                    <article class="info-card info-card--wide">
+                        <h2>3. Что может остаться</h2>
+                        <ul>
+                            <li>
+                                <strong>Локально на устройстве:</strong> кэш постеров, история чата Minko AI и избранное
+                                в памяти приложения или браузера — удалите их, переустановив приложение или очистив данные сайта в браузере.
+                            </li>
+                            <li>
+                                <strong>Резервные копии:</strong> данные в резервных копиях Supabase/хостинга могут храниться
+                                ограниченное время и затем перезаписываться по политике провайдера.
+                            </li>
+                            <li>
+                                <strong>Обязательное хранение по закону:</strong> минимальный набор записей, если его требует закон
+                                (например, журналы безопасности или ответы на обращения).
+                            </li>
+                            <li>
+                                <strong>Обезличенная аналитика:</strong> агрегированная статистика без привязки к личности
+                                может сохраняться.
+                            </li>
+                        </ul>
+                    </article>
+
+                    <article class="info-card info-card--wide">
+                        <h2>4. Срок обработки</h2>
+                        <p>
+                            Мы рассмотрим запрос в течение <strong>30 календарных дней</strong> с момента получения письма
+                            и подтверждения владения аккаунтом. После удаления вход с этим email станет невозможен;
+                            для повторного использования сервиса потребуется новая регистрация.
+                        </p>
+                    </article>
+
+                    <article class="info-card info-card--wide">
+                        <h2>5. Контакт</h2>
+                        <p>
+                            Вопросы по удалению данных:
+                            <a href="mailto:re.minko.anime.com@gmail.com">re.minko.anime.com@gmail.com</a>
+                        </p>
+                        <p class="info-footer-note" style="margin-top: 1rem;">
+                            Последнее обновление: <strong>27 мая 2026 г.</strong>
+                        </p>
+                    </article>
+                </div>
+
+                <p class="info-footer-note">
+                    Re-Minko · re-minko-anime.com · приложение com.reminko.mobile
+                </p>
+            </div>
+        </main>
+    </div>
+
+    <script src="scripts/data.js"></script>
+    <script src="scripts/anilist-api.js"></script>
+    <script src="scripts/api.js"></script>
+    <script src="scripts/utils.js"></script>
+    <script src="scripts/utils-notifications.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="scripts/supabase-config.js"></script>
+    <script src="scripts/direct-messages.js"></script>
+    <script src="scripts/oauth-auth.js"></script>
+    <script src="scripts/navigation.js"></script>
+    <script src="scripts/auth.js"></script>
+    <script src="scripts/loading-phrases.js"></script>
+    <script src="scripts/notifications.js"></script>
+    <script src="scripts/register.js"></script>
+    <script src="scripts/main.js"></script>
+    <script src="scripts/loading.js"></script>
+    <script src="scripts/apply-navigation.js"></script>
+</body>
+</html>

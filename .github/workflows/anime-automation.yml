@@ -1,0 +1,41 @@
+name: Anime Automation
+
+on:
+  schedule:
+    - cron: "10 1 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-anime-data:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Update Kodik catalog
+        env:
+          KODIK_API_TOKEN: ${{ secrets.KODIK_API_TOKEN }}
+        run: npm run automate:anime:api:enrich
+
+      - name: Commit updated data
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "update anime catalog data"
+          file_pattern: |
+            data/kodik-anime-catalog.json
+            data/kodik-calendar.json
+            data/anime-automation-report.json
+            data/anime-enrichment-cache.json
+            sitemap.xml

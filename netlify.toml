@@ -1,0 +1,27 @@
+# Один деплой: весь фронт Re-Minko + функция Minko AI на том же домене (POST /chat).
+# В Netlify: корень репозитория = эта папка (где лежит index.html).
+# Переменные окружения — как в minko-netlify-proxy/README.md (MINKO_*, OPENAI_*, XAI_*, SUPABASE_*).
+
+[build]
+  publish = "."
+  functions = "minko-netlify-proxy/netlify/functions"
+
+[build.environment]
+  # config.local.js — только для ПК; на Netlify секреты в Environment variables
+  SECRETS_SCAN_OMIT_PATHS = "config.local.js"
+
+[functions]
+  node_bundler = "esbuild"
+
+[[redirects]]
+  from = "/chat"
+  to = "/.netlify/functions/minko-chat"
+  status = 200
+  force = true
+
+[[headers]]
+  for = "/.netlify/functions/*"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Headers = "Content-Type"
+    Access-Control-Allow-Methods = "POST, OPTIONS, GET, HEAD"
