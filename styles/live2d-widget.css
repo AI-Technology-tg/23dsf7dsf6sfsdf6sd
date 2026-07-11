@@ -5,10 +5,28 @@
     max-width: min(280px, 100vw) !important;
     max-height: min(520px, 70vh) !important;
     overflow: hidden !important;
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    outline: 0 !important;
 }
 
-#live2d-widget.live2d-widget-container #live2dcanvas {
+#live2d-widget.live2d-widget-container *,
+#live2d-widget.live2d-widget-container *::before,
+#live2d-widget.live2d-widget-container *::after {
+    background: transparent !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+    outline: 0 !important;
+}
+
+#live2d-widget.live2d-widget-container #live2dcanvas,
+#live2d-widget.live2d-widget-container canvas {
     transition: opacity 0.45s ease;
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    outline: 0 !important;
 }
 
 #live2d-widget .live2d-widget-dialog-container {
