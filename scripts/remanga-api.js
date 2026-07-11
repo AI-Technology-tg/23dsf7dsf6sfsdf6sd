@@ -12,7 +12,23 @@ const ReManga = (() => {
     };
 
     const RATE_LIMIT_MS = 350;
+    const REMANGA_PROXY_STORAGE_KEY = 'reminko_remanga_proxy_url';
     let lastRequest = 0;
+
+    function cleanProxyUrl(value) {
+        const url = String(value || '').trim();
+        if (!url) return '';
+        if (!/^https?:\/\//i.test(url)) return '';
+        return url.replace(/\/$/, '');
+    }
+
+    function storedProxyBase() {
+        try {
+            return cleanProxyUrl(localStorage.getItem(REMANGA_PROXY_STORAGE_KEY));
+        } catch (_) {
+            return '';
+        }
+    }
 
     function remangaProxyBase() {
         const cfg =
@@ -20,7 +36,9 @@ const ReManga = (() => {
             window.APP_CONFIG &&
             typeof window.APP_CONFIG.remanga?.apiProxyUrl === 'string' &&
             window.APP_CONFIG.remanga.apiProxyUrl.trim();
-        if (cfg) return cfg.trim().replace(/\/$/, '');
+        if (cfg) return cleanProxyUrl(cfg);
+        const stored = storedProxyBase();
+        if (stored) return stored;
         try {
             const h = window.location?.hostname || '';
             const proto = window.location?.protocol || '';
@@ -42,6 +60,21 @@ const ReManga = (() => {
 
     function publicCorsProxyUrl(url) {
         return `https://corsproxy.io/?${encodeURIComponent(url)}`;
+    }
+
+    function setProxyUrl(url) {
+        const cleaned = cleanProxyUrl(url);
+        try {
+            if (cleaned) localStorage.setItem(REMANGA_PROXY_STORAGE_KEY, cleaned);
+            else localStorage.removeItem(REMANGA_PROXY_STORAGE_KEY);
+        } catch (_) {
+            /* ignore */
+        }
+        return cleaned;
+    }
+
+    function getProxyUrl() {
+        return remangaProxyBase();
     }
 
     async function rateLimitedFetch(url) {
@@ -231,8 +264,12 @@ const ReManga = (() => {
         searchTitles,
         coverUrl,
         normalizeCover,
+        setProxyUrl,
+        getProxyUrl,
         SITE,
     };
 })();
 
 window.ReManga = ReManga;
+window.reminkoSetRemangaProxyUrl = (url) => ReManga.setProxyUrl(url);
+window.reminkoGetRemangaProxyUrl = () => ReManga.getProxyUrl();
