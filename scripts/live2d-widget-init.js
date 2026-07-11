@@ -14,7 +14,7 @@
 
     var REM_MOBILE_PREVIEW = {
         scale: 1.22,
-        display: { width: 232, height: 464, vOffset: 0 },
+        display: { width: 348, height: 696, vOffset: 0 },
         opacity: 0.68
     };
 
