@@ -157,7 +157,7 @@ class NavigationManager {
                         </svg>
                         <span>Minko AI</span>
                     </a>
-                    <a href="${this.basePath}minko-edit.html" class="sidebar-link ${activeClass('minko-edit')}" data-page="minko-edit">
+                    <a href="#" class="sidebar-link sidebar-link-disabled" data-page="minko-edit" data-reminko-disabled-link="true" aria-disabled="true" title="Minko Edit пока перенесён в Тесты Создателя">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <rect x="2" y="3" width="20" height="18" rx="3"></rect>
                             <polygon points="10 8 16 12 10 16 10 8"></polygon>
@@ -507,6 +507,7 @@ class NavigationManager {
         this.initMobileMenu();
         this.initNavigationPrefetch();
         this.initProtectedLinks();
+        this.initDisabledNavLinks();
         this.updateAuthLinks();
 
         const navManagerInstance = this;
@@ -539,6 +540,17 @@ class NavigationManager {
         } catch (e) {
             /* ignore */
         }
+    }
+
+    initDisabledNavLinks() {
+        document.querySelectorAll('[data-reminko-disabled-link="true"]').forEach((link) => {
+            if (link.dataset.reminkoDisabledBound === '1') return;
+            link.dataset.reminkoDisabledBound = '1';
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+            });
+        });
     }
 
     /** Только шапка и сайдбар — без пересборки main через innerHTML (нет «второй перезагрузки») */

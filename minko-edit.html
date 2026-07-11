@@ -193,9 +193,8 @@
             const publicView = document.getElementById('minkoEditPublicView');
             const creatorView = document.getElementById('minkoEditCreatorView');
             if (!publicView || !creatorView) return;
-            const isCreator = await isCurrentUserCreator();
-            publicView.hidden = isCreator;
-            creatorView.hidden = !isCreator;
+            publicView.hidden = false;
+            creatorView.hidden = true;
         }
 
         document.addEventListener('DOMContentLoaded', () => {

@@ -39,6 +39,7 @@
     <link rel="stylesheet" href="styles/notifications.css">
     <link rel="stylesheet" href="styles/register-flow.css">
     <link rel="stylesheet" href="styles/admin-panel.css">
+    <link rel="stylesheet" href="styles/minko-edit.css">
 </head>
 <body>
     <!-- Экран загрузки -->
@@ -69,6 +70,7 @@
                     <button class="admin-tab" data-tab="notifications">🔔 Уведомления</button>
                     <button class="admin-tab" data-tab="minkoServer">🤖 Сервер Minko AI</button>
                     <button class="admin-tab" data-tab="settings">⚙️ Настройки</button>
+                    <button class="admin-tab" data-tab="tests">🧪 Тесты</button>
                 </div>
 
                 <!-- Дашборд -->
@@ -352,6 +354,175 @@
                         </div>
                         <button type="button" class="admin-btn" id="maintSaveBtn" style="margin-top: 1rem;">Сохранить</button>
                         <p id="maintSaveStatus" class="admin-inline-hint" style="margin-top: 0.75rem;"></p>
+                    </div>
+                </div>
+
+                <!-- Тесты и прототипы только для Создателя -->
+                <div class="admin-tab-content" id="tabTests">
+                    <div class="admin-section admin-tests-shell">
+                        <div class="admin-tests-head">
+                            <div>
+                                <p class="admin-tests-kicker">Лаборатория интерфейса</p>
+                                <h2>Тесты</h2>
+                                <p class="admin-inline-hint">
+                                    Здесь собраны черновики будущих функций и визуальные макеты. Посетители сайта эту вкладку не видят.
+                                </p>
+                            </div>
+                            <span class="admin-tests-badge">Creator only</span>
+                        </div>
+
+                        <div class="admin-tests-subtabs" role="tablist" aria-label="Разделы тестов">
+                            <button type="button" class="admin-tests-subtab active" data-test-tab="mobile" aria-selected="true">Мобильный вид</button>
+                            <button type="button" class="admin-tests-subtab" data-test-tab="minkoEdit" aria-selected="false">Minko Edit</button>
+                        </div>
+
+                        <section class="admin-tests-panel active" id="testPanelMobile" data-test-panel="mobile">
+                            <div class="mobile-design-hero">
+                                <div class="mobile-design-copy">
+                                    <p class="admin-tests-kicker">Как я бы сделал адаптив</p>
+                                    <h3>Телефон без урезания функций ПК-версии</h3>
+                                    <p>
+                                        На телефоне остаются каталог, поиск, профиль, друзья, сообщения, Minko AI и просмотр.
+                                        Меняется только подача: нижняя навигация, крупные карточки, липкий поиск и быстрые действия большим пальцем.
+                                    </p>
+                                    <div class="mobile-design-tags">
+                                        <span>Bottom nav</span>
+                                        <span>Карточки 2 в ряд</span>
+                                        <span>Поиск сверху</span>
+                                        <span>Плеер 16:9</span>
+                                        <span>Планшетная сетка</span>
+                                    </div>
+                                </div>
+                                <div class="mobile-device-row" aria-label="Макет мобильного и планшетного вида">
+                                    <div class="mobile-phone-frame">
+                                        <div class="mobile-phone-status"><span>9:41</span><span>5G</span></div>
+                                        <div class="mobile-phone-search">Поиск аниме...</div>
+                                        <div class="mobile-phone-feature">
+                                            <span>Сейчас выходит</span>
+                                            <strong>Жизнь в альтернативном мире с нуля</strong>
+                                        </div>
+                                        <div class="mobile-phone-grid">
+                                            <div></div><div></div><div></div><div></div>
+                                        </div>
+                                        <div class="mobile-phone-player">
+                                            <span></span>
+                                        </div>
+                                        <div class="mobile-bottom-nav">
+                                            <span>⌂</span><span>⌕</span><span>▶</span><span>✉</span><span>☻</span>
+                                        </div>
+                                    </div>
+                                    <div class="tablet-frame">
+                                        <div class="tablet-sidebar"></div>
+                                        <div class="tablet-content">
+                                            <div class="tablet-search"></div>
+                                            <div class="tablet-hero"></div>
+                                            <div class="tablet-grid"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mobile-design-grid">
+                                <article class="mobile-design-card">
+                                    <h4>Главная</h4>
+                                    <p>Секции идут вертикально: анонсы, онгоинги, популярное. У каждой секции горизонтальная прокрутка карточек.</p>
+                                </article>
+                                <article class="mobile-design-card">
+                                    <h4>Каталог</h4>
+                                    <p>Фильтры открываются отдельным bottom sheet, карточки становятся 2 в ряд на телефоне и 3-4 на планшете.</p>
+                                </article>
+                                <article class="mobile-design-card">
+                                    <h4>Просмотр</h4>
+                                    <p>Плеер сверху, ниже крупный выбор серии, описание сворачивается, франшиза и похожее идут каруселями.</p>
+                                </article>
+                                <article class="mobile-design-card">
+                                    <h4>Навигация</h4>
+                                    <p>На телефоне боковое меню заменяется нижней панелью: главная, поиск, смотреть, сообщения, профиль.</p>
+                                </article>
+                            </div>
+
+                            <div class="mobile-design-roadmap">
+                                <h4>Что потом реально редактировать</h4>
+                                <ol>
+                                    <li>Переписать `sidebar-layout.css` под mobile-first: нижняя навигация до 768px, компактный topbar.</li>
+                                    <li>Сделать единые размеры карточек каталога, чтобы сетка не прыгала от разных постеров и названий.</li>
+                                    <li>Добавить mobile bottom sheet для фильтров, сортировки, жанров и статуса выхода.</li>
+                                    <li>Оптимизировать страницу просмотра: липкий плеер, крупные кнопки серий, меньше длинных блоков подряд.</li>
+                                    <li>Проверить планшеты отдельно: там лучше оставить боковое меню, но сделать контент шире и сетки плотнее.</li>
+                                </ol>
+                            </div>
+                        </section>
+
+                        <section class="admin-tests-panel" id="testPanelMinkoEdit" data-test-panel="minkoEdit" hidden>
+                            <div class="minko-edit-creator" id="minkoEditCreatorViewInTests">
+                                <header class="minko-edit-creator-head">
+                                    <p class="minko-edit-creator-kicker">Перенесено в Тесты</p>
+                                    <h2>Minko Edit — шаблон коротких видео</h2>
+                                    <p>Вертикальная лента как в TikTok, но внутри Re-Minko: аниме-эдиты, лайки, сохранения, комментарии, подборки и переход к тайтлу.</p>
+                                </header>
+
+                                <div class="minko-edit-creator-layout">
+                                    <section class="minko-edit-phone-mock" aria-label="Превью ленты Minko Edit">
+                                        <div class="minko-edit-phone-top">
+                                            <span class="active">Для вас</span>
+                                            <span>Подписки</span>
+                                        </div>
+                                        <div class="minko-edit-phone-video">
+                                            <div class="minko-edit-video-gradient"></div>
+                                            <div class="minko-edit-video-caption">
+                                                <strong>@akira.editz</strong>
+                                                <p>AMV: Solo Leveling x Night Drive</p>
+                                                <small>#amv #sololeveling #edits</small>
+                                            </div>
+                                            <div class="minko-edit-video-actions">
+                                                <button type="button">❤️<span>12.4K</span></button>
+                                                <button type="button">💬<span>842</span></button>
+                                                <button type="button">🔖<span>3.1K</span></button>
+                                                <button type="button">↗<span>Поделиться</span></button>
+                                            </div>
+                                        </div>
+                                        <div class="minko-edit-phone-bottom">
+                                            <span>🏠</span><span>🔍</span><span class="plus">＋</span><span>🔔</span><span>👤</span>
+                                        </div>
+                                    </section>
+
+                                    <section class="minko-edit-creator-grid">
+                                        <article class="minko-edit-creator-card">
+                                            <h3>Функционал ленты</h3>
+                                            <ul>
+                                                <li>Свайп вверх/вниз, автоплей, бесконечный фид.</li>
+                                                <li>Привязка ролика к аниме, сезону и эпизоду.</li>
+                                                <li>Кнопка «Смотреть тайтл» прямо из видео.</li>
+                                            </ul>
+                                        </article>
+                                        <article class="minko-edit-creator-card">
+                                            <h3>Кабинет публикации</h3>
+                                            <ul>
+                                                <li>Загрузка видео, превью и обложки.</li>
+                                                <li>Описание, хэштеги, музыка/звук, отметка спойлера.</li>
+                                                <li>Планировщик публикаций и черновики.</li>
+                                            </ul>
+                                        </article>
+                                        <article class="minko-edit-creator-card">
+                                            <h3>Ваш контроль</h3>
+                                            <ul>
+                                                <li>Жёсткая модерация: скрыть, удалить, ограничить автора.</li>
+                                                <li>Режимы доступа: только creator / beta / public.</li>
+                                                <li>Лимиты на длину, вес и тип файла.</li>
+                                            </ul>
+                                        </article>
+                                        <article class="minko-edit-creator-card">
+                                            <h3>Аналитика</h3>
+                                            <ul>
+                                                <li>Досмотры 25/50/95%, удержание и повторные просмотры.</li>
+                                                <li>Топ роликов, топ авторов, топ звуков за период.</li>
+                                                <li>Сигналы в рекомендации по интересам пользователя.</li>
+                                            </ul>
+                                        </article>
+                                    </section>
+                                </div>
+                            </div>
+                        </section>
                     </div>
                 </div>
             </div>

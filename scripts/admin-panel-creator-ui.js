@@ -1003,6 +1003,27 @@ function initMinkoAiServerPanel() {
     document.getElementById('minkoSrvSaveBtn')?.addEventListener('click', () => void saveMinkoAiServerPanel());
 }
 
+function initTestsSection() {
+    if (window.__reminkoTestsSectionBound) return;
+    window.__reminkoTestsSectionBound = true;
+
+    document.querySelectorAll('.admin-tests-subtab').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const name = btn.dataset.testTab || 'mobile';
+            document.querySelectorAll('.admin-tests-subtab').forEach((item) => {
+                const active = item.dataset.testTab === name;
+                item.classList.toggle('active', active);
+                item.setAttribute('aria-selected', active ? 'true' : 'false');
+            });
+            document.querySelectorAll('.admin-tests-panel').forEach((panel) => {
+                const active = panel.dataset.testPanel === name;
+                panel.classList.toggle('active', active);
+                panel.hidden = !active;
+            });
+        });
+    });
+}
+
 async function loadMinkoAiServerPanel() {
     const statusEl = document.getElementById('minkoSrvSaveStatus');
     const en = document.getElementById('minkoSrvEnabled');
@@ -1358,6 +1379,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     initNotificationsSection();
     initMaintenanceSettingsSection();
     initMinkoAiServerPanel();
+    initTestsSection();
 
     await loadDashboard();
     hideAdminPageLoading();

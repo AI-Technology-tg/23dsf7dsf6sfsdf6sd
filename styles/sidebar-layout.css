@@ -473,6 +473,20 @@
     border: 1px solid rgba(168, 85, 247, 0.5);
 }
 
+.sidebar-link-disabled,
+.sidebar-link-disabled:hover {
+    opacity: 0.58;
+    cursor: not-allowed;
+    color: var(--text-secondary);
+    background: transparent;
+    box-shadow: none;
+    border-color: transparent;
+}
+
+.sidebar-link-disabled svg {
+    opacity: 0.7;
+}
+
 .sidebar-link svg {
     flex-shrink: 0;
     width: 20px;
