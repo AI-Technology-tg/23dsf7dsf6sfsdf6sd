@@ -14,3 +14,50 @@
 #live2d-widget .live2d-widget-dialog-container {
     transition: opacity 0.4s ease !important;
 }
+
+/* Только тестовая мобильная версия: Rem крупнее и прижата к правому нижнему краю. */
+@media (max-width: 900px) {
+    html.reminko-mobile-preview #live2d-widget.live2d-widget-container {
+        position: fixed !important;
+        right: -18px !important;
+        bottom: calc(var(--reminko-mobile-nav-h, 94px) + env(safe-area-inset-bottom, 0px) - 18px) !important;
+        left: auto !important;
+        top: auto !important;
+        z-index: 1290 !important;
+        width: 464px !important;
+        height: 928px !important;
+        max-width: none !important;
+        max-height: none !important;
+        overflow: visible !important;
+        pointer-events: none !important;
+        transform: translate3d(0, 0, 0) scale(1) !important;
+        transform-origin: right bottom !important;
+    }
+
+    html.reminko-mobile-preview #live2d-widget.live2d-widget-container #live2dcanvas,
+    html.reminko-mobile-preview #live2d-widget.live2d-widget-container canvas {
+        width: 464px !important;
+        height: 928px !important;
+        max-width: none !important;
+        max-height: none !important;
+    }
+
+    html.reminko-mobile-preview #live2d-widget .live2d-widget-dialog-container {
+        display: none !important;
+    }
+}
+
+@media (max-width: 420px) {
+    html.reminko-mobile-preview #live2d-widget.live2d-widget-container {
+        right: -42px !important;
+        bottom: calc(var(--reminko-mobile-nav-h, 94px) + env(safe-area-inset-bottom, 0px) - 22px) !important;
+        width: 420px !important;
+        height: 840px !important;
+    }
+
+    html.reminko-mobile-preview #live2d-widget.live2d-widget-container #live2dcanvas,
+    html.reminko-mobile-preview #live2d-widget.live2d-widget-container canvas {
+        width: 420px !important;
+        height: 840px !important;
+    }
+}
