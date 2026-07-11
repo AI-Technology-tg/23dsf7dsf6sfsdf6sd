@@ -39,7 +39,7 @@
         if (!cur || !cur.src) return;
         var href;
         try {
-            href = new URL('../styles/live2d-widget.css', cur.src).href;
+            href = new URL('../styles/live2d-widget.css?v=mobile-v4-2', cur.src).href;
         } catch (e) {
             return;
         }
