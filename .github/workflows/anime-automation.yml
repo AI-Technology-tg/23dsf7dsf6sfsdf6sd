@@ -33,6 +33,9 @@ jobs:
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "update anime catalog data"
+          commit_user_name: AI-Technology-tg
+          commit_user_email: 235368487+AI-Technology-tg@users.noreply.github.com
+          commit_author: AI-Technology-tg <235368487+AI-Technology-tg@users.noreply.github.com>
           file_pattern: |
             data/kodik-anime-catalog.json
             data/kodik-calendar.json
