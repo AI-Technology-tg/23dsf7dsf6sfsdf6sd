@@ -656,13 +656,35 @@ function extractFranchiseSeasonOrdinal(anime) {
 }
 
 function franchiseFallbackChronologyCompare(a, b) {
-    const ya = a?.year != null ? parseInt(a.year, 10) : 9999;
-    const yb = b?.year != null ? parseInt(b.year, 10) : 9999;
-    if (ya !== yb) return ya - yb;
+    const da = franchiseReleaseSortValue(a);
+    const db = franchiseReleaseSortValue(b);
+    if (da !== db) return da - db;
     const sa = extractFranchiseSeasonOrdinal(a);
     const sb = extractFranchiseSeasonOrdinal(b);
     if (sa !== sb) return sa - sb;
     return (parseInt(a?.mal_id, 10) || 0) - (parseInt(b?.mal_id, 10) || 0);
+}
+
+function franchiseReleaseSortValue(anime) {
+    const raw = anime?._jikanRaw || anime?.jikanRaw || null;
+    const candidates = [
+        raw?.aired?.from,
+        raw?.aired?.prop?.from?.year
+            ? `${raw.aired.prop.from.year}-${String(raw.aired.prop.from.month || 1).padStart(2, '0')}-${String(raw.aired.prop.from.day || 1).padStart(2, '0')}`
+            : '',
+        anime?.airedFrom,
+        anime?.aired_at,
+        anime?.start_date,
+        anime?.release_date,
+    ];
+    for (const value of candidates) {
+        if (!value) continue;
+        const t = Date.parse(String(value));
+        if (Number.isFinite(t)) return t;
+    }
+    const year = parseInt(anime?.year, 10);
+    if (Number.isFinite(year) && year > 0) return Date.UTC(year, 0, 1);
+    return Number.MAX_SAFE_INTEGER;
 }
 
 function sortFranchiseSeasonsChronologically(items, edges) {
@@ -723,7 +745,7 @@ function sortFranchiseSeasonsChronologically(items, edges) {
         return !Number.isFinite(mal) || mal <= 0 || !visited.has(mal);
     });
     rest.sort(franchiseFallbackChronologyCompare);
-    return [...ordered, ...rest];
+    return [...ordered, ...rest].sort(franchiseFallbackChronologyCompare);
 }
 
 function getCatalogAnimeList() {

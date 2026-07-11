@@ -393,23 +393,129 @@
                                         <span>Планшетная сетка</span>
                                     </div>
                                 </div>
-                                <div class="mobile-device-row" aria-label="Макет мобильного и планшетного вида">
-                                    <div class="mobile-phone-frame">
-                                        <div class="mobile-phone-status"><span>9:41</span><span>5G</span></div>
-                                        <div class="mobile-phone-search">Поиск аниме...</div>
-                                        <div class="mobile-phone-feature">
-                                            <span>Сейчас выходит</span>
-                                            <strong>Жизнь в альтернативном мире с нуля</strong>
+                                <div class="mobile-device-row" aria-label="Интерактивный макет мобильного сайта">
+                                    <div class="mobile-site-phone-frame">
+                                        <div class="mobile-site-status"><span>9:41</span><strong>Re-Minko</strong><span>5G</span></div>
+                                        <div class="mobile-site-screen">
+                                            <section class="mobile-site-view active" data-mobile-demo-panel="home">
+                                                <div class="mobile-site-topbar">
+                                                    <button type="button" class="mobile-site-menu-btn">☰</button>
+                                                    <div>
+                                                        <span>Главная</span>
+                                                        <strong>Что смотрим?</strong>
+                                                    </div>
+                                                    <button type="button" class="mobile-site-avatar">M</button>
+                                                </div>
+                                                <button type="button" class="mobile-site-search-pill" data-mobile-demo-open="search">Поиск аниме, жанра, серии...</button>
+                                                <div class="mobile-site-hero-card">
+                                                    <span>Продолжить</span>
+                                                    <strong>Поднятие уровня в одиночку</strong>
+                                                    <small>Серия 11 · 24 мин</small>
+                                                    <button type="button" data-mobile-demo-open="watch">Смотреть</button>
+                                                </div>
+                                                <div class="mobile-site-section-head"><strong>Сейчас выходит</strong><span>Все</span></div>
+                                                <div class="mobile-site-row-scroll">
+                                                    <button type="button" class="mobile-anime-mini-card" data-mobile-demo-open="watch"><span></span><strong>Re:Zero</strong><small>серия 4</small></button>
+                                                    <button type="button" class="mobile-anime-mini-card"><span></span><strong>Магия</strong><small>серия 8</small></button>
+                                                    <button type="button" class="mobile-anime-mini-card"><span></span><strong>Герой</strong><small>анонс</small></button>
+                                                </div>
+                                            </section>
+
+                                            <section class="mobile-site-view" data-mobile-demo-panel="catalog">
+                                                <div class="mobile-site-topbar">
+                                                    <button type="button" class="mobile-site-menu-btn">☰</button>
+                                                    <div>
+                                                        <span>Каталог</span>
+                                                        <strong>Аниме</strong>
+                                                    </div>
+                                                    <button type="button" class="mobile-site-filter-btn">Фильтр</button>
+                                                </div>
+                                                <div class="mobile-site-chip-row">
+                                                    <button type="button" class="active">Онгоинг</button>
+                                                    <button type="button">Анонсы</button>
+                                                    <button type="button">Фильмы</button>
+                                                </div>
+                                                <div class="mobile-site-catalog-grid">
+                                                    <button type="button" class="mobile-catalog-card" data-mobile-demo-open="watch"><span></span><strong>Re:Zero</strong><small>2026 · ТВ-4</small></button>
+                                                    <button type="button" class="mobile-catalog-card"><span></span><strong>Дандадан</strong><small>2025 · ТВ</small></button>
+                                                    <button type="button" class="mobile-catalog-card"><span></span><strong>Блич</strong><small>2024 · ТВ</small></button>
+                                                    <button type="button" class="mobile-catalog-card"><span></span><strong>Кайдзю</strong><small>2024 · ТВ</small></button>
+                                                </div>
+                                            </section>
+
+                                            <section class="mobile-site-view" data-mobile-demo-panel="search">
+                                                <div class="mobile-site-topbar">
+                                                    <button type="button" class="mobile-site-menu-btn" data-mobile-demo-open="home">‹</button>
+                                                    <div>
+                                                        <span>Поиск</span>
+                                                        <strong>Быстрый доступ</strong>
+                                                    </div>
+                                                </div>
+                                                <input class="mobile-site-search-input" id="mobileDemoSearchInput" type="search" value="Re:Zero" aria-label="Поиск в мобильном макете">
+                                                <div class="mobile-search-results" id="mobileDemoSearchResults">
+                                                    <button type="button" data-title="Re:Zero" data-mobile-demo-open="watch"><span></span><strong>Re:Zero. Жизнь с нуля</strong><small>Франшиза · 12 частей</small></button>
+                                                    <button type="button" data-title="Solo Leveling"><span></span><strong>Поднятие уровня в одиночку</strong><small>Онгоинг · 11 серий</small></button>
+                                                    <button type="button" data-title="Dandadan"><span></span><strong>Дандадан</strong><small>Комедия · Экшен</small></button>
+                                                </div>
+                                            </section>
+
+                                            <section class="mobile-site-view" data-mobile-demo-panel="watch">
+                                                <div class="mobile-site-topbar">
+                                                    <button type="button" class="mobile-site-menu-btn" data-mobile-demo-open="home">‹</button>
+                                                    <div>
+                                                        <span>Просмотр</span>
+                                                        <strong>Re:Zero ТВ-4</strong>
+                                                    </div>
+                                                </div>
+                                                <div class="mobile-site-player"><span></span></div>
+                                                <div class="mobile-episode-strip">
+                                                    <button type="button">1</button><button type="button">2</button><button type="button">3</button><button type="button" class="active">4</button>
+                                                </div>
+                                                <div class="mobile-watch-info">
+                                                    <strong>Жизнь в альтернативном мире с нуля</strong>
+                                                    <p>Плеер сверху, серии крупно, описание сворачивается, ниже франшиза и похожие.</p>
+                                                </div>
+                                                <div class="mobile-site-section-head"><strong>Франшиза</strong><span>1 → последний</span></div>
+                                                <div class="mobile-franchise-strip">
+                                                    <span>ТВ-1</span><span>OVA</span><span>ТВ-2</span><span>ТВ-3</span><span>ТВ-4</span>
+                                                </div>
+                                            </section>
+
+                                            <section class="mobile-site-view" data-mobile-demo-panel="messages">
+                                                <div class="mobile-site-topbar">
+                                                    <button type="button" class="mobile-site-menu-btn">☰</button>
+                                                    <div>
+                                                        <span>Сообщения</span>
+                                                        <strong>Личные диалоги</strong>
+                                                    </div>
+                                                </div>
+                                                <div class="mobile-dialog-list">
+                                                    <button type="button"><span>D</span><strong>dubina</strong><small>Новый ответ по сайту</small></button>
+                                                    <button type="button"><span>M</span><strong>Minko AI</strong><small>Подборка готова</small></button>
+                                                </div>
+                                            </section>
+
+                                            <section class="mobile-site-view" data-mobile-demo-panel="profile">
+                                                <div class="mobile-profile-card">
+                                                    <div class="mobile-profile-avatar">M</div>
+                                                    <strong>Мой профиль</strong>
+                                                    <span>История, избранное, друзья, настройки</span>
+                                                </div>
+                                                <div class="mobile-profile-grid">
+                                                    <button type="button">Избранное</button>
+                                                    <button type="button">История</button>
+                                                    <button type="button">Друзья</button>
+                                                    <button type="button">Настройки</button>
+                                                </div>
+                                            </section>
                                         </div>
-                                        <div class="mobile-phone-grid">
-                                            <div></div><div></div><div></div><div></div>
-                                        </div>
-                                        <div class="mobile-phone-player">
-                                            <span></span>
-                                        </div>
-                                        <div class="mobile-bottom-nav">
-                                            <span>⌂</span><span>⌕</span><span>▶</span><span>✉</span><span>☻</span>
-                                        </div>
+                                        <nav class="mobile-site-bottom-nav" aria-label="Навигация мобильного макета">
+                                            <button type="button" class="active" data-mobile-demo-tab="home">⌂<span>Главная</span></button>
+                                            <button type="button" data-mobile-demo-tab="catalog">▦<span>Каталог</span></button>
+                                            <button type="button" data-mobile-demo-tab="search">⌕<span>Поиск</span></button>
+                                            <button type="button" data-mobile-demo-tab="messages">✉<span>ЛС</span></button>
+                                            <button type="button" data-mobile-demo-tab="profile">☻<span>Профиль</span></button>
+                                        </nav>
                                     </div>
                                     <div class="tablet-frame">
                                         <div class="tablet-sidebar"></div>

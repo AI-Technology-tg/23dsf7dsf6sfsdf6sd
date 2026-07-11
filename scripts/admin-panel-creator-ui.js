@@ -1007,6 +1007,16 @@ function initTestsSection() {
     if (window.__reminkoTestsSectionBound) return;
     window.__reminkoTestsSectionBound = true;
 
+    const switchMobileDemoPanel = (name) => {
+        const panelName = name || 'home';
+        document.querySelectorAll('[data-mobile-demo-panel]').forEach((panel) => {
+            panel.classList.toggle('active', panel.dataset.mobileDemoPanel === panelName);
+        });
+        document.querySelectorAll('[data-mobile-demo-tab]').forEach((btn) => {
+            btn.classList.toggle('active', btn.dataset.mobileDemoTab === panelName);
+        });
+    };
+
     document.querySelectorAll('.admin-tests-subtab').forEach((btn) => {
         btn.addEventListener('click', () => {
             const name = btn.dataset.testTab || 'mobile';
@@ -1020,6 +1030,23 @@ function initTestsSection() {
                 panel.classList.toggle('active', active);
                 panel.hidden = !active;
             });
+        });
+    });
+
+    document.querySelectorAll('[data-mobile-demo-tab]').forEach((btn) => {
+        btn.addEventListener('click', () => switchMobileDemoPanel(btn.dataset.mobileDemoTab));
+    });
+    document.querySelectorAll('[data-mobile-demo-open]').forEach((btn) => {
+        btn.addEventListener('click', () => switchMobileDemoPanel(btn.dataset.mobileDemoOpen));
+    });
+
+    const search = document.getElementById('mobileDemoSearchInput');
+    const results = document.getElementById('mobileDemoSearchResults');
+    search?.addEventListener('input', () => {
+        const q = String(search.value || '').toLowerCase().trim();
+        results?.querySelectorAll('[data-title]').forEach((row) => {
+            const title = String(row.dataset.title || row.textContent || '').toLowerCase();
+            row.hidden = !!q && !title.includes(q);
         });
     });
 }
