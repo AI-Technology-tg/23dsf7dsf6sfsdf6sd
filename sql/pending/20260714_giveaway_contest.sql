@@ -124,12 +124,14 @@ BEGIN
 
   LOOP
     v_code := lower(substr(replace(gen_random_uuid()::text, '-', ''), 1, 10));
-    EXIT WHEN NOT EXISTS (SELECT 1 FROM public.giveaway_participants WHERE ref_code = v_code);
+    EXIT WHEN NOT EXISTS (
+      SELECT 1 FROM public.giveaway_participants p WHERE p.ref_code = v_code
+    );
   END LOOP;
 
-  INSERT INTO public.giveaway_participants (user_id, ref_code)
+  INSERT INTO public.giveaway_participants AS gp (user_id, ref_code)
   VALUES (v_uid, v_code)
-  RETURNING joined_at INTO v_joined;
+  RETURNING gp.joined_at INTO v_joined;
 
   RETURN QUERY SELECT v_code, '/r/' || v_code, v_joined;
 END;
@@ -275,7 +277,9 @@ DECLARE
   v_code TEXT;
 BEGIN
   v_code := lower(trim(coalesce(p_ref_code, '')));
-  IF v_code = '' OR NOT EXISTS (SELECT 1 FROM public.giveaway_participants WHERE ref_code = v_code) THEN
+  IF v_code = '' OR NOT EXISTS (
+    SELECT 1 FROM public.giveaway_participants p WHERE p.ref_code = v_code
+  ) THEN
     RETURN QUERY SELECT false, 'invalid_ref';
     RETURN;
   END IF;
@@ -338,7 +342,7 @@ BEGIN
   FROM public.giveaway_participants gp
   LEFT JOIN public.profiles p ON p.id = gp.user_id
   LEFT JOIN auth.users u ON u.id = gp.user_id
-  ORDER BY registrations DESC, unique_clicks DESC, gp.joined_at ASC;
+  ORDER BY 7 DESC, 6 DESC, gp.joined_at ASC;
 END;
 $$;
 

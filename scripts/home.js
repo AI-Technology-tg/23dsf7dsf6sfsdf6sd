@@ -9,8 +9,9 @@ function initHomeBetaBanner() {
     /* Плашка «Бета» — только статичный текст в разметке index.html */
 }
 
-/** Совпадает с giveaway-info.js — скрыть баннер после окончания акции */
-const HOME_GIVEAWAY_END_ISO = '2026-07-28T21:59:59.000Z';
+/** Совпадает с giveaway-info.js */
+const HOME_GIVEAWAY_START_ISO = '2026-07-17T22:00:00.000Z';
+const HOME_GIVEAWAY_END_ISO = '2026-07-31T21:59:59.000Z';
 
 function initHomeGiveawayBanner() {
     const banner = document.getElementById('homeGiveawayBanner');

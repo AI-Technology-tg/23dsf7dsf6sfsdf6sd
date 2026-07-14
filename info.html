@@ -259,7 +259,8 @@
                                 <h2 class="info-section-title info-giveaway-hero-title">Розыгрыш видео-обзоров</h2>
                                 <p class="info-section-lead info-giveaway-hero-lead">
                                     Лучший обзор сайта Re-Minko с высокими лайками, просмотрами и переходами получает
-                                    <strong>100&nbsp;$ в криптовалюте</strong>. Акция длится <strong>2 недели</strong>.
+                                    <strong>100&nbsp;$ в криптовалюте</strong>.
+                                    Старт — <strong>18&nbsp;июля 2026</strong>, длительность — <strong>14&nbsp;дней</strong>.
                                 </p>
                             </div>
                             <div class="info-giveaway-prize-chip" aria-hidden="true">
@@ -272,48 +273,34 @@
                             <div class="info-giveaway-timer-card__glow" aria-hidden="true"></div>
                             <div class="info-giveaway-timer-card__inner">
                                 <div class="info-giveaway-timer-head">
-                                    <span class="info-giveaway-timer-kicker">⏳ До конца розыгрыша</span>
-                                    <p class="info-giveaway-timer-lead">
-                                        Успейте участвовать и опубликовать обзор до
-                                        <strong id="giveawayEndDate">—</strong>
+                                    <span class="info-giveaway-timer-kicker" id="giveawayTimerKicker">⏳ До начала розыгрыша</span>
+                                    <p class="info-giveaway-timer-lead" id="giveawayTimerLead">
+                                        Старт <strong id="giveawayStartDate">—</strong> · финиш <strong id="giveawayEndDate">—</strong>
                                     </p>
                                 </div>
                                 <div class="info-giveaway-countdown" id="giveawayCountdownInner" aria-live="polite"></div>
+                                <p id="giveawayNotStartedNote" class="info-giveaway-not-started" hidden>
+                                    Участие откроется в день старта. Подробности — в Telegram.
+                                </p>
                                 <p id="giveawayEndedNote" class="info-giveaway-ended" hidden>
                                     Розыгрыш завершён. Итоги и победитель — в Telegram-канале Re-Minko.
                                 </p>
                             </div>
                         </div>
 
-                        <div class="info-giveaway-grid">
-                            <article class="info-giveaway-card info-giveaway-card--telegram">
-                                <div class="info-giveaway-card-icon info-giveaway-card-icon--tg" aria-hidden="true">📢</div>
-                                <h3 class="info-giveaway-card-title">Вся информация — в Telegram</h3>
-                                <p class="info-giveaway-card-text">
-                                    Условия, напоминания, промежуточные итоги и объявление победителя — в официальном канале.
-                                </p>
-                                <a
-                                    class="info-link-btn info-link-btn--giveaway info-link-btn--telegram"
-                                    href="https://t.me/re_minko"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                >Telegram Re-Minko</a>
-                            </article>
-
-                            <article class="info-giveaway-card info-giveaway-card--rules">
-                                <div class="info-giveaway-card-icon" aria-hidden="true">🎬</div>
-                                <h3 class="info-giveaway-card-title">Как участвовать</h3>
-                                <ol class="info-giveaway-steps">
-                                    <li><span class="info-giveaway-step-num">1</span><span>Зарегистрируйтесь и нажмите «Участвую».</span></li>
-                                    <li><span class="info-giveaway-step-num">2</span><span>Получите ссылку и добавьте её к видео-обзору.</span></li>
-                                    <li><span class="info-giveaway-step-num">3</span><span>Опубликуйте обзор Re-Minko в TikTok или Instagram.</span></li>
-                                    <li><span class="info-giveaway-step-num">4</span><span>Регистрации по вашей ссылке приближают к победе.</span></li>
-                                </ol>
-                                <p class="info-giveaway-note">
-                                    Один переход с одного устройства — один раз. Повторные регистрации с одного устройства не засчитываются.
-                                </p>
-                            </article>
-                        </div>
+                        <article class="info-giveaway-card info-giveaway-card--telegram info-giveaway-card--solo">
+                            <div class="info-giveaway-card-icon info-giveaway-card-icon--tg" aria-hidden="true">📢</div>
+                            <h3 class="info-giveaway-card-title">Вся информация — в Telegram</h3>
+                            <p class="info-giveaway-card-text">
+                                Условия участия, напоминания, промежуточные итоги и объявление победителя — в официальном канале.
+                            </p>
+                            <a
+                                class="info-link-btn info-link-btn--giveaway info-link-btn--telegram"
+                                href="https://t.me/re_minko"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >Telegram Re-Minko</a>
+                        </article>
 
                         <div class="info-giveaway-cta">
                             <div id="giveawayLoginHint" class="info-giveaway-login-hint" hidden>
@@ -405,7 +392,7 @@
     <script src="scripts/loading.js"></script>
     <script src="scripts/giveaway.js?v=giveaway-1"></script>
     <script src="scripts/info-page.js"></script>
-    <script src="scripts/giveaway-info.js?v=giveaway-3"></script>
+    <script src="scripts/giveaway-info.js?v=giveaway-4"></script>
     <script src="scripts/apply-navigation.js?v=rem-theme-4"></script>
 </body>
 </html>

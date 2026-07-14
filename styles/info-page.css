@@ -763,6 +763,17 @@
     color: #fca5a5;
 }
 
+.info-giveaway-not-started {
+    margin: 0.85rem 0 0;
+    font-size: 0.84rem;
+    line-height: 1.5;
+    color: #fcd34d;
+}
+
+.info-giveaway-card--solo {
+    margin-bottom: 0.15rem;
+}
+
 .info-giveaway-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));

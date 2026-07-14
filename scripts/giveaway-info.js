@@ -1,12 +1,19 @@
 (function () {
     'use strict';
 
-    /** Старт: 14 июля 2026 · окончание через 14 суток (23:59 UTC+2) */
-    var GIVEAWAY_END_ISO = '2026-07-28T21:59:59.000Z';
+    /** 18 июля 2026 00:00 UTC+2 → +14 суток → 31 июля 2026 23:59:59 UTC+2 */
+    var GIVEAWAY_START_ISO = '2026-07-17T22:00:00.000Z';
+    var GIVEAWAY_END_ISO = '2026-07-31T21:59:59.000Z';
     var GIVEAWAY_TG_URL = 'https://t.me/re_minko';
+    var GIVEAWAY_TZ = 'Europe/Kyiv';
 
     function $(id) {
         return document.getElementById(id);
+    }
+
+    function isGiveawayStarted() {
+        var start = Date.parse(GIVEAWAY_START_ISO);
+        return !Number.isNaN(start) && Date.now() >= start;
     }
 
     function isGiveawayEnded() {
@@ -14,31 +21,64 @@
         return !Number.isNaN(end) && Date.now() >= end;
     }
 
-    function formatGiveawayEndDate() {
+    function isGiveawayActive() {
+        return isGiveawayStarted() && !isGiveawayEnded();
+    }
+
+    function formatGiveawayDate(iso, fallback) {
         try {
-            return new Date(GIVEAWAY_END_ISO).toLocaleString('ru-RU', {
+            return new Date(iso).toLocaleString('ru-RU', {
                 day: 'numeric',
                 month: 'long',
                 year: 'numeric',
                 hour: '2-digit',
                 minute: '2-digit',
-                timeZone: 'Europe/Kyiv'
+                timeZone: GIVEAWAY_TZ
             });
         } catch (_) {
-            return '28 июля 2026, 23:59';
+            return fallback || '—';
         }
     }
 
-    function applyGiveawayEndedUi() {
+    function formatGiveawayStartDate() {
+        return formatGiveawayDate(GIVEAWAY_START_ISO, '18 июля 2026, 00:00');
+    }
+
+    function formatGiveawayEndDate() {
+        return formatGiveawayDate(GIVEAWAY_END_ISO, '31 июля 2026, 23:59');
+    }
+
+    function getCountdownTarget() {
+        if (isGiveawayEnded()) return { mode: 'ended', iso: null };
+        if (!isGiveawayStarted()) return { mode: 'start', iso: GIVEAWAY_START_ISO };
+        return { mode: 'end', iso: GIVEAWAY_END_ISO };
+    }
+
+    function applyGiveawayPhaseUi() {
         var ended = isGiveawayEnded();
+        var started = isGiveawayStarted();
+        var active = isGiveawayActive();
         var endedNote = $('giveawayEndedNote');
+        var notStartedNote = $('giveawayNotStartedNote');
         var countdown = $('giveawayCountdownInner');
         var joinBtn = $('giveawayJoinBtn');
+        var kicker = $('giveawayTimerKicker');
+
         if (endedNote) endedNote.hidden = !ended;
+        if (notStartedNote) notStartedNote.hidden = started || ended;
         if (countdown) countdown.hidden = ended;
+
+        if (kicker) {
+            if (ended) kicker.textContent = 'Розыгрыш завершён';
+            else if (!started) kicker.textContent = '⏳ До начала розыгрыша';
+            else kicker.textContent = '⏳ До конца розыгрыша';
+        }
+
         if (joinBtn) {
-            joinBtn.disabled = ended;
+            joinBtn.disabled = !active;
             if (ended) joinBtn.title = 'Розыгрыш завершён';
+            else if (!started) joinBtn.title = 'Участие откроется 18 июля 2026';
+            else joinBtn.title = '';
         }
     }
 
@@ -98,15 +138,22 @@
         var root = $('giveawayCountdownInner');
         if (!root) return;
 
-        var end = Date.parse(GIVEAWAY_END_ISO);
-        var left = end - Date.now();
-        if (Number.isNaN(end) || left <= 0) {
+        var target = getCountdownTarget();
+        applyGiveawayPhaseUi();
+
+        if (target.mode === 'ended') {
             root.innerHTML = renderGiveawayCountdownHtml(null);
-            applyGiveawayEndedUi();
             if (_giveawayCountdownTimer) {
                 clearInterval(_giveawayCountdownTimer);
                 _giveawayCountdownTimer = null;
             }
+            return;
+        }
+
+        var end = Date.parse(target.iso);
+        var left = end - Date.now();
+        if (Number.isNaN(end) || left <= 0) {
+            tickGiveawayCountdown();
             return;
         }
 
@@ -128,11 +175,13 @@
     function initGiveawayCountdown() {
         var root = $('giveawayCountdownInner');
         if (!root) {
-            applyGiveawayEndedUi();
+            applyGiveawayPhaseUi();
             return;
         }
 
+        var startLabel = $('giveawayStartDate');
         var endLabel = $('giveawayEndDate');
+        if (startLabel) startLabel.textContent = formatGiveawayStartDate();
         if (endLabel) endLabel.textContent = formatGiveawayEndDate();
 
         tickGiveawayCountdown();
@@ -147,7 +196,7 @@
             }
         }
 
-        applyGiveawayEndedUi();
+        applyGiveawayPhaseUi();
     }
 
     function showMsg(el, text, ok) {
@@ -221,6 +270,10 @@
         var msg = $('giveawayJoinMsg');
         if (isGiveawayEnded()) {
             showMsg(msg, 'Розыгрыш уже завершён. Следите за итогами в Telegram.', false);
+            return;
+        }
+        if (!isGiveawayStarted()) {
+            showMsg(msg, 'Участие откроется 18 июля 2026. Подробности — в Telegram.', false);
             return;
         }
         if (!(await isLoggedIn())) {
@@ -299,6 +352,7 @@
         });
     }
 
+    window.reminkoGiveawayStartsAt = GIVEAWAY_START_ISO;
     window.reminkoGiveawayEndsAt = GIVEAWAY_END_ISO;
     window.reminkoGiveawayTelegramUrl = GIVEAWAY_TG_URL;
 
