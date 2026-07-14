@@ -54,66 +54,29 @@
         return { mode: 'end', iso: GIVEAWAY_END_ISO };
     }
 
-    var _giveawayCountdownTimer = null;
-    var _giveawayVisBound = false;
-    var _giveawayIsCreator = false;
-    var _giveawayCanJoinNow = false;
-    var _giveawayAccessReady = false;
-
-    async function isGiveawayCreatorUser() {
-        if (typeof supabaseClient === 'undefined' || !supabaseClient) return false;
-        try {
-            var sessionRes = await supabaseClient.auth.getSession();
-            var uid = sessionRes.data && sessionRes.data.session && sessionRes.data.session.user
-                ? sessionRes.data.session.user.id
-                : null;
-            if (!uid) return false;
-            if (typeof userIdIsSiteCreator === 'function') {
-                return !!(await userIdIsSiteCreator(uid));
-            }
-            var res = await supabaseClient.rpc('is_site_creator_user_id', { user_id: uid });
-            return res.data === true;
-        } catch (_) {
-            return false;
-        }
-    }
-
-    async function refreshGiveawayAccess() {
-        var ended = isGiveawayEnded();
-        var creator = !ended && (await isGiveawayCreatorUser());
-        _giveawayIsCreator = creator;
-        _giveawayCanJoinNow = isGiveawayActive() || creator;
-        _giveawayAccessReady = true;
-        applyGiveawayPhaseUi();
-    }
-
     function applyGiveawayPhaseUi() {
         var ended = isGiveawayEnded();
         var started = isGiveawayStarted();
-        var canJoin = _giveawayAccessReady ? _giveawayCanJoinNow : isGiveawayActive();
+        var active = isGiveawayActive();
         var endedNote = $('giveawayEndedNote');
         var notStartedNote = $('giveawayNotStartedNote');
-        var creatorNote = $('giveawayCreatorTestNote');
         var countdown = $('giveawayCountdownInner');
         var joinBtn = $('giveawayJoinBtn');
         var kicker = $('giveawayTimerKicker');
 
         if (endedNote) endedNote.hidden = !ended;
-        if (notStartedNote) notStartedNote.hidden = started || ended || _giveawayIsCreator;
-        if (creatorNote) creatorNote.hidden = !_giveawayIsCreator || started || ended;
+        if (notStartedNote) notStartedNote.hidden = started || ended;
         if (countdown) countdown.hidden = ended;
 
         if (kicker) {
             if (ended) kicker.textContent = 'Розыгрыш завершён';
-            else if (!started && _giveawayIsCreator) kicker.textContent = '🧪 Тест для создателя · до старта';
             else if (!started) kicker.textContent = '⏳ До начала розыгрыша';
             else kicker.textContent = '⏳ До конца розыгрыша';
         }
 
         if (joinBtn) {
-            joinBtn.disabled = !canJoin || ended;
+            joinBtn.disabled = !active;
             if (ended) joinBtn.title = 'Розыгрыш завершён';
-            else if (!started && _giveawayIsCreator) joinBtn.title = 'Тестовое участие для создателя';
             else if (!started) joinBtn.title = 'Участие откроется 18 июля 2026';
             else joinBtn.title = '';
         }
@@ -212,7 +175,7 @@
     function initGiveawayCountdown() {
         var root = $('giveawayCountdownInner');
         if (!root) {
-            void refreshGiveawayAccess();
+            applyGiveawayPhaseUi();
             return;
         }
 
@@ -221,7 +184,6 @@
         if (startLabel) startLabel.textContent = formatGiveawayStartDate();
         if (endLabel) endLabel.textContent = formatGiveawayEndDate();
 
-        void refreshGiveawayAccess();
         tickGiveawayCountdown();
 
         if (!isGiveawayEnded() && !_giveawayCountdownTimer) {
@@ -266,7 +228,6 @@
         if (!logged) {
             joinBlock.hidden = false;
             if (statsBlock) statsBlock.hidden = true;
-            await refreshGiveawayAccess();
             return;
         }
 
@@ -302,7 +263,6 @@
             joinBlock.hidden = false;
             if (statsBlock) statsBlock.hidden = true;
         }
-        await refreshGiveawayAccess();
     }
 
     async function onJoinClick() {
@@ -313,11 +273,8 @@
             return;
         }
         if (!isGiveawayStarted()) {
-            var creator = await isGiveawayCreatorUser();
-            if (!creator) {
-                showMsg(msg, 'Участие откроется 18 июля 2026. Подробности — в Telegram.', false);
-                return;
-            }
+            showMsg(msg, 'Участие откроется 18 июля 2026. Подробности — в Telegram.', false);
+            return;
         }
         if (!(await isLoggedIn())) {
             showMsg(msg, 'Войдите или зарегистрируйтесь на сайте, чтобы участвовать.', false);
@@ -338,8 +295,8 @@
         } catch (e) {
             showMsg(msg, (e && e.message) || 'Ошибка участия. Попробуйте позже.', false);
         } finally {
-            await refreshGiveawayAccess();
-            if (btn) btn.disabled = !(_giveawayCanJoinNow && !isGiveawayEnded());
+            applyGiveawayPhaseUi();
+            if (btn) btn.disabled = !isGiveawayActive();
         }
     }
 

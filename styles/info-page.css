@@ -770,17 +770,6 @@
     color: #fcd34d;
 }
 
-.info-giveaway-creator-test {
-    margin: 0 0 0.75rem;
-    padding: 0.55rem 0.75rem;
-    border-radius: 0.55rem;
-    font-size: 0.82rem;
-    line-height: 1.45;
-    color: #a5f3fc;
-    background: rgba(14, 165, 233, 0.12);
-    border: 1px solid rgba(56, 189, 248, 0.28);
-}
-
 .info-giveaway-card--solo {
     margin-bottom: 0.15rem;
 }
