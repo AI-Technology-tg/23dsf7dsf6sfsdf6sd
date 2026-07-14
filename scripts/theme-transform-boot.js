@@ -54,11 +54,11 @@
         var root = scriptRoot() || siteRootFromPage();
         injectOnce('rem-theme-dark-css', 'link', {
             rel: 'stylesheet',
-            href: root + 'styles/theme-dark.css?v=rem-theme-2'
+            href: root + 'styles/theme-dark.css?v=rem-theme-4'
         });
         injectOnce('rem-transform-overlay-css', 'link', {
             rel: 'stylesheet',
-            href: root + 'styles/transform-overlay.css?v=rem-theme-2'
+            href: root + 'styles/transform-overlay.css?v=rem-theme-4'
         });
 
         applyThemeClass();
@@ -66,7 +66,7 @@
         if (!window.__remThemeEasterEggLoaded) {
             window.__remThemeEasterEggLoaded = true;
             var s = document.createElement('script');
-            s.src = root + 'scripts/theme-easter-egg.js?v=rem-theme-3';
+            s.src = root + 'scripts/theme-easter-egg.js?v=rem-theme-4';
             s.defer = true;
             (document.body || document.head).appendChild(s);
         }

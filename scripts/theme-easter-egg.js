@@ -49,7 +49,6 @@
         document.body.classList.remove('theme-white', 'theme-dark');
         document.body.classList.add(theme === 'dark' ? 'theme-dark' : 'theme-white');
         updateLogo(theme);
-        if (hintTheme) hintTheme.textContent = theme === 'dark' ? 'тёмная' : 'белая';
     }
 
     function updateLogo(theme) {
@@ -293,24 +292,11 @@
         if (clickCount < totalNeeded) scheduleReset();
     }
 
-    function ensureHint() {
-        if (document.getElementById('remTransformHint')) return;
-        var hint = document.createElement('aside');
-        hint.id = 'remTransformHint';
-        hint.className = 'rem-transform-hint';
-        hint.innerHTML =
-            '<strong>Тест трансформации</strong><br>' +
-            'Тема: <span id="remHintTheme">белая</span><br>' +
-            '5 кликов — разогрев<br>' +
-            'затем 100× → тёмная<br>' +
-            'или 250× → белая';
-        document.body.appendChild(hint);
-        hintTheme = document.getElementById('remHintTheme');
-    }
-
     function init() {
+        var staleHint = document.getElementById('remTransformHint');
+        if (staleHint) staleHint.remove();
+
         ensureOverlayDom();
-        ensureHint();
         setThemeClass(getTheme());
         bindLogoElements();
 

@@ -13,7 +13,7 @@
         if (!cur || !cur.src) return;
         var base = cur.src.replace(/[^/]+$/, '');
         var s = document.createElement('script');
-        s.src = base + 'theme-transform-boot.js?v=rem-theme-2';
+        s.src = base + 'theme-transform-boot.js?v=rem-theme-4';
         s.async = false;
         (document.head || document.documentElement).appendChild(s);
     } catch (e) {

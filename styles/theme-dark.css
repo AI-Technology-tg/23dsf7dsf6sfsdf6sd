@@ -398,8 +398,3 @@ body.theme-dark .global-chat-panel {
 body.theme-dark .loading-screen {
     background: #080611 !important;
 }
-
-body.theme-dark .rem-transform-hint {
-    border-color: rgba(255, 45, 85, 0.4);
-    background: rgba(8, 6, 17, 0.92);
-}
