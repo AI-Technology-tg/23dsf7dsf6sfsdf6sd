@@ -69,6 +69,7 @@
                     <button class="admin-tab" data-tab="moderation">🛡️ Модерация</button>
                     <button class="admin-tab" data-tab="notifications">🔔 Уведомления</button>
                     <button class="admin-tab" data-tab="minkoServer">🤖 Сервер Minko AI</button>
+                    <button class="admin-tab" data-tab="giveaway">🎁 Розыгрыш</button>
                     <button class="admin-tab" data-tab="settings">⚙️ Настройки</button>
                     <button class="admin-tab" data-tab="tests">🧪 Тесты</button>
                 </div>
@@ -330,6 +331,40 @@
                             <button type="button" class="admin-btn" id="minkoSrvSaveBtn">💾 Сохранить состояние</button>
                         </div>
                         <p id="minkoSrvSaveStatus" class="admin-inline-hint" style="margin-top: 0.75rem;"></p>
+                    </div>
+                </div>
+
+                <!-- Розыгрыш видео-обзоров -->
+                <div class="admin-tab-content" id="tabGiveaway">
+                    <div class="admin-section">
+                        <h2>🎁 Розыгрыш видео-обзоров</h2>
+                        <p class="admin-inline-hint" style="max-width: 52rem; line-height: 1.5;">
+                            Участники с уникальными ссылками из раздела «Инфо → Розыгрыш».
+                            Переходы считаются один раз с каждого устройства; регистрации — без повторов с одного device_hash.
+                        </p>
+                        <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;margin:1rem 0;">
+                            <button type="button" class="admin-btn" id="giveawayAdminRefreshBtn">🔄 Обновить</button>
+                            <span id="giveawayAdminStatus" class="admin-inline-hint"></span>
+                        </div>
+                        <div id="giveawayAdminSummary" class="admin-giveaway-summary"></div>
+                        <div style="overflow-x:auto;margin-top:1rem;">
+                            <table class="users-table" id="giveawayAdminTable">
+                                <thead>
+                                    <tr>
+                                        <th>Участник</th>
+                                        <th>Email</th>
+                                        <th>Код / ссылка</th>
+                                        <th>Участие</th>
+                                        <th>Переходы</th>
+                                        <th>Регистрации</th>
+                                        <th>Последний переход</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="giveawayAdminTableBody">
+                                    <tr><td colspan="7">Загрузка…</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
 

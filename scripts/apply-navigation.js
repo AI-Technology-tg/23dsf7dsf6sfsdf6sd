@@ -1,6 +1,26 @@
 // Универсальный скрипт для применения навигации ко всем страницам
 // Добавляется в конец body перед закрывающим тегом
 
+(function injectRemGiveawayScript() {
+    if (typeof window === 'undefined' || window.__reminkoGiveawayInjected) return;
+    window.__reminkoGiveawayInjected = true;
+    try {
+        var cur = document.currentScript;
+        if (!cur || !cur.src) {
+            var list = document.querySelectorAll('script[src*="apply-navigation"]');
+            cur = list[list.length - 1];
+        }
+        if (!cur || !cur.src) return;
+        var base = cur.src.replace(/[^/]+$/, '');
+        var s = document.createElement('script');
+        s.src = base + 'giveaway.js?v=giveaway-1';
+        s.async = true;
+        (document.head || document.documentElement).appendChild(s);
+    } catch (e) {
+        console.warn('[Giveaway] inject:', e);
+    }
+})();
+
 (function injectRemThemeTransform() {
     if (typeof window === 'undefined' || window.__remThemeBootInject) return;
     window.__remThemeBootInject = true;

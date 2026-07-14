@@ -19,6 +19,11 @@
   status = 200
   force = true
 
+[[redirects]]
+  from = "/r/:code"
+  to = "/index.html?gref=:code"
+  status = 302
+
 [[headers]]
   for = "/.netlify/functions/*"
   [headers.values]

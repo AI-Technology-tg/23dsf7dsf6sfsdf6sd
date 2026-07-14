@@ -190,6 +190,14 @@ async function registerUser(email, password, username, avatar, gender = 'male') 
         }
         
         if (typeof logger !== 'undefined') logger.log('✅ [REGISTER] Регистрация завершена успешно!');
+
+        if (authData.session && typeof window.reminkoGiveawayAttributeRegistration === 'function') {
+            try {
+                await window.reminkoGiveawayAttributeRegistration();
+            } catch (_) {
+                /* ignore */
+            }
+        }
         
         // Если email не подтвержден, возвращаем информацию для показа модального окна
         if (!authData.session && !authData.user.email_confirmed_at) {

@@ -200,6 +200,14 @@
                 await checkAuth();
             }
 
+            if (typeof window.reminkoGiveawayAttributeRegistration === 'function') {
+                try {
+                    await window.reminkoGiveawayAttributeRegistration();
+                } catch (_) {
+                    /* ignore */
+                }
+            }
+
             if (typeof window.navigationManager !== 'undefined' && window.navigationManager.updateAuthLinks) {
                 await window.navigationManager.updateAuthLinks();
             }

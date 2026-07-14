@@ -135,8 +135,87 @@ function switchTab(tabName) {
         void loadNotificationsManagement();
     } else if (tabName === 'minkoServer') {
         void loadMinkoAiServerPanel();
+    } else if (tabName === 'giveaway') {
+        void loadGiveawayAdminPanel();
     } else if (tabName === 'settings') {
         void loadMaintenanceSettings();
+    }
+}
+
+function initGiveawaySection() {
+    if (window.__reminkoGiveawayAdminBound) return;
+    window.__reminkoGiveawayAdminBound = true;
+    document.getElementById('giveawayAdminRefreshBtn')?.addEventListener('click', () => void loadGiveawayAdminPanel());
+}
+
+async function loadGiveawayAdminPanel() {
+    const tbody = document.getElementById('giveawayAdminTableBody');
+    const summary = document.getElementById('giveawayAdminSummary');
+    const statusEl = document.getElementById('giveawayAdminStatus');
+    if (!tbody || !window.creatorAdminPanel) return;
+
+    if (statusEl) statusEl.textContent = 'Загрузка…';
+    tbody.innerHTML = '<tr><td colspan="7">Загрузка…</td></tr>';
+
+    const { rows, error } = await window.creatorAdminPanel.getGiveawayCreatorStats();
+    if (error) {
+        if (statusEl) statusEl.textContent = '';
+        tbody.innerHTML = `<tr><td colspan="7" style="color:#f87171;">${adminPanelEscapeHtml(error)}</td></tr>`;
+        if (summary) summary.innerHTML = '';
+        return;
+    }
+
+    const list = rows || [];
+    const totalClicks = list.reduce((s, r) => s + (Number(r.unique_clicks) || 0), 0);
+    const totalRegs = list.reduce((s, r) => s + (Number(r.registrations) || 0), 0);
+
+    if (summary) {
+        summary.innerHTML = `
+            <div class="admin-giveaway-stat">
+                <span class="admin-giveaway-stat-label">Участников</span>
+                <strong class="admin-giveaway-stat-value">${list.length}</strong>
+            </div>
+            <div class="admin-giveaway-stat">
+                <span class="admin-giveaway-stat-label">Всего переходов</span>
+                <strong class="admin-giveaway-stat-value">${totalClicks}</strong>
+            </div>
+            <div class="admin-giveaway-stat">
+                <span class="admin-giveaway-stat-label">Всего регистраций</span>
+                <strong class="admin-giveaway-stat-value">${totalRegs}</strong>
+            </div>
+        `;
+    }
+
+    if (!list.length) {
+        tbody.innerHTML = '<tr><td colspan="7">Пока никто не нажал «Участвую».</td></tr>';
+        if (statusEl) statusEl.textContent = 'Обновлено';
+        return;
+    }
+
+    const origin = window.location.origin.replace(/\/$/, '');
+    tbody.innerHTML = list
+        .map((r) => {
+            const joined = r.joined_at
+                ? new Date(r.joined_at).toLocaleString('ru-RU', { dateStyle: 'short', timeStyle: 'short' })
+                : '—';
+            const lastClick = r.last_click_at
+                ? new Date(r.last_click_at).toLocaleString('ru-RU', { dateStyle: 'short', timeStyle: 'short' })
+                : '—';
+            const shareUrl = `${origin}/r/${adminPanelEscapeHtml(r.ref_code || '')}`;
+            return `<tr>
+                <td>${adminPanelEscapeHtml(r.username || '—')}</td>
+                <td>${adminPanelEscapeHtml(r.email || '—')}</td>
+                <td><code>${adminPanelEscapeHtml(r.ref_code || '')}</code><br><a href="${shareUrl}" target="_blank" rel="noopener noreferrer">${adminPanelEscapeHtml(shareUrl)}</a></td>
+                <td>${adminPanelEscapeHtml(joined)}</td>
+                <td>${Number(r.unique_clicks) || 0}</td>
+                <td>${Number(r.registrations) || 0}</td>
+                <td>${adminPanelEscapeHtml(lastClick)}</td>
+            </tr>`;
+        })
+        .join('');
+
+    if (statusEl) {
+        statusEl.textContent = `Обновлено · ${list.length} участник(ов)`;
     }
 }
 
@@ -1406,6 +1485,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     initNotificationsSection();
     initMaintenanceSettingsSection();
     initMinkoAiServerPanel();
+    initGiveawaySection();
     initTestsSection();
 
     await loadDashboard();

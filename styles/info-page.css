@@ -584,3 +584,230 @@
     line-height: 1.45;
     color: #94a3b8;
 }
+
+/* Розыгрыш */
+.info-giveaway-subtitle {
+    margin: 0 0 0.65rem;
+    font-size: 1rem;
+    font-weight: 800;
+    color: #f0abfc;
+}
+
+.info-giveaway-rules {
+    margin: 1.25rem 0;
+}
+
+.info-giveaway-note {
+    margin: 0.85rem 0 0;
+    font-size: 0.78rem;
+    line-height: 1.5;
+    color: #94a3b8;
+}
+
+.info-giveaway-login-hint {
+    margin: 1rem 0;
+    padding: 0.85rem 1rem;
+    border-radius: 0.65rem;
+    border: 1px dashed rgba(227, 0, 255, 0.35);
+    background: rgba(15, 15, 28, 0.55);
+}
+
+.info-giveaway-login-hint p {
+    margin: 0 0 0.65rem;
+    font-size: 0.86rem;
+    color: #e2e8f0;
+}
+
+.info-giveaway-actions {
+    margin-top: 1.25rem;
+}
+
+.info-giveaway-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.65rem 1.25rem;
+    border-radius: 0.55rem;
+    border: 1px solid rgba(227, 0, 255, 0.45);
+    background: linear-gradient(135deg, rgba(192, 38, 211, 0.85), rgba(124, 58, 237, 0.85));
+    color: #fff;
+    font-family: inherit;
+    font-size: 0.9rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.info-giveaway-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(192, 38, 211, 0.35);
+}
+
+.info-giveaway-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.info-giveaway-btn--ghost {
+    background: transparent;
+    border-color: rgba(148, 163, 184, 0.35);
+    color: #e2e8f0;
+}
+
+.info-giveaway-msg {
+    margin: 0.65rem 0 0;
+    font-size: 0.82rem;
+    line-height: 1.45;
+    color: #94a3b8;
+}
+
+.info-giveaway-msg.is-ok {
+    color: #86efac;
+}
+
+.info-giveaway-msg.is-error {
+    color: #fca5a5;
+}
+
+.info-giveaway-stats {
+    margin-top: 1.5rem;
+    padding: 1rem 1.1rem;
+    border-radius: 0.75rem;
+    border: 1px solid rgba(227, 0, 255, 0.28);
+    background: rgba(15, 15, 28, 0.72);
+}
+
+.info-giveaway-link-row {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-top: 0.65rem;
+}
+
+.info-giveaway-link-input {
+    flex: 1 1 14rem;
+    min-width: 0;
+    padding: 0.55rem 0.75rem;
+    border-radius: 0.45rem;
+    border: 1px solid rgba(148, 163, 184, 0.25);
+    background: rgba(0, 0, 0, 0.35);
+    color: #e2e8f0;
+    font-family: inherit;
+    font-size: 0.82rem;
+}
+
+.info-giveaway-metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.info-giveaway-metric {
+    padding: 0.75rem;
+    border-radius: 0.55rem;
+    background: rgba(91, 33, 182, 0.18);
+    border: 1px solid rgba(227, 0, 255, 0.18);
+}
+
+.info-giveaway-metric-label {
+    display: block;
+    font-size: 0.72rem;
+    color: #94a3b8;
+    margin-bottom: 0.35rem;
+}
+
+.info-giveaway-metric-value {
+    font-size: 1.35rem;
+    font-weight: 900;
+    color: #f0abfc;
+}
+
+.info-giveaway-timer {
+    margin: 1.25rem 0;
+    padding: 1rem 1.1rem;
+    border-radius: 0.75rem;
+    border: 1px solid rgba(251, 191, 36, 0.35);
+    background: linear-gradient(135deg, rgba(251, 191, 36, 0.1), rgba(15, 15, 28, 0.75));
+}
+
+.info-giveaway-timer-lead {
+    margin: 0 0 0.85rem;
+    font-size: 0.88rem;
+    line-height: 1.5;
+    color: #e2e8f0;
+}
+
+.info-giveaway-timer-box {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: flex-start;
+}
+
+.info-giveaway-timer-label {
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #fbbf24;
+}
+
+.info-giveaway-countdown .countdown__line {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.15rem 0.35rem;
+    font-size: clamp(0.95rem, 2.5vw, 1.15rem);
+    font-weight: 800;
+    color: #fde68a;
+}
+
+.info-giveaway-countdown .countdown__num {
+    font-variant-numeric: tabular-nums;
+    color: #fff;
+    font-size: 1.15em;
+}
+
+.info-giveaway-countdown .countdown__unit {
+    font-size: 0.72em;
+    font-weight: 700;
+    color: #fcd34d;
+}
+
+.info-giveaway-countdown .countdown__colon {
+    color: rgba(251, 191, 36, 0.65);
+    font-weight: 900;
+}
+
+.info-giveaway-countdown .countdown__unknown {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #fcd34d;
+}
+
+.info-giveaway-ended {
+    margin: 0.75rem 0 0;
+    font-size: 0.84rem;
+    line-height: 1.5;
+    color: #fca5a5;
+}
+
+.info-giveaway-telegram {
+    margin: 1.25rem 0;
+    padding: 1rem 1.1rem;
+    border-radius: 0.75rem;
+    border: 1px solid rgba(56, 189, 248, 0.28);
+    background: linear-gradient(135deg, rgba(14, 165, 233, 0.12), rgba(15, 15, 28, 0.72));
+}
+
+.info-giveaway-btn--telegram {
+    margin-top: 0.65rem;
+    background: linear-gradient(135deg, rgba(14, 165, 233, 0.9), rgba(37, 99, 235, 0.9));
+    border-color: rgba(56, 189, 248, 0.45);
+    text-decoration: none;
+}
+
+.info-giveaway-btn--telegram:hover {
+    box-shadow: 0 8px 24px rgba(14, 165, 233, 0.35);
+}

@@ -344,6 +344,33 @@
     border: 1px dashed rgba(255, 255, 255, 0.18);
 }
 
+.admin-giveaway-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.admin-giveaway-stat {
+    min-width: 8.5rem;
+    padding: 0.75rem 1rem;
+    border-radius: 10px;
+    background: rgba(124, 58, 237, 0.15);
+    border: 1px solid rgba(167, 139, 250, 0.25);
+}
+
+.admin-giveaway-stat-label {
+    display: block;
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.25rem;
+}
+
+.admin-giveaway-stat-value {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: #e9d5ff;
+}
+
 .users-view-switch {
     display: inline-flex;
     gap: 0.35rem;

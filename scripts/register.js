@@ -321,6 +321,13 @@ async function handleRegistration() {
         if (typeof checkAuth === 'function') {
             await checkAuth();
         }
+        if (typeof window.reminkoGiveawayAttributeRegistration === 'function') {
+            try {
+                await window.reminkoGiveawayAttributeRegistration();
+            } catch (_) {
+                /* ignore */
+            }
+        }
         if (window.navigationManager && typeof window.navigationManager.updateAuthLinks === 'function') {
             await window.navigationManager.updateAuthLinks();
         }

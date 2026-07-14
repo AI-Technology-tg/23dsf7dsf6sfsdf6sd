@@ -179,6 +179,19 @@ class CreatorAdminPanel {
         }
     }
 
+    async getGiveawayCreatorStats() {
+        if (!supabaseClient) return { rows: [], error: 'Нет подключения' };
+        const gate = await this._assertCallerIsSiteCreator();
+        if (!gate.ok) return { rows: [], error: gate.message };
+        try {
+            const { data, error } = await supabaseClient.rpc('giveaway_creator_stats');
+            if (error) return { rows: [], error: error.message || 'Ошибка загрузки розыгрыша' };
+            return { rows: data || [], error: null };
+        } catch (e) {
+            return { rows: [], error: e.message || 'Ошибка загрузки розыгрыша' };
+        }
+    }
+
     // Получить расширенную статистику
     async getAdvancedStats() {
         if (!supabaseClient) return null;
