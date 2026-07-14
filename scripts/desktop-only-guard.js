@@ -1,6 +1,6 @@
 /**
- * Сайт только для ПК. Телефоны и планшеты блокируются, в том числе с «Версией для ПК»
- * (подмена User-Agent не отменяет Client Hints и физический экран/тач).
+ * Раньше сайт блокировал телефоны и планшеты. Сейчас мобильные устройства
+ * допускаются на сайт и получают класс мобильного preview-оформления.
  */
 (function () {
     if (typeof window === 'undefined' || window.__reminkoDesktopGuardRan) return;
@@ -413,10 +413,14 @@
 
     function boot() {
         if (shouldBlockMobileBrowsing()) {
-            maybeMountWallForMobilePreview();
+            markMobilePreviewAllowed();
             return;
         }
-        scheduleAsyncMobileRecheck();
+        try {
+            if (isGitHubPagesMobilePreview()) markMobilePreviewAllowed();
+        } catch (_) {
+            /* ignore */
+        }
     }
 
     if (document.body) boot();
