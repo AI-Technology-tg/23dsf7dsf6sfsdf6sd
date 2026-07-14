@@ -66,7 +66,7 @@
         if (!window.__remThemeEasterEggLoaded) {
             window.__remThemeEasterEggLoaded = true;
             var s = document.createElement('script');
-            s.src = root + 'scripts/theme-easter-egg.js?v=rem-theme-4';
+            s.src = root + 'scripts/theme-easter-egg.js?v=rem-theme-5';
             s.defer = true;
             (document.body || document.head).appendChild(s);
         }

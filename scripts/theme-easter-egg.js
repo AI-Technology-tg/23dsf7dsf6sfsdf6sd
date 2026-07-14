@@ -263,12 +263,31 @@
         }, 2800);
     }
 
+    function clearTextSelection() {
+        try {
+            var sel = window.getSelection && window.getSelection();
+            if (sel && sel.removeAllRanges) sel.removeAllRanges();
+        } catch (_) {
+            /* ignore */
+        }
+    }
+
     function bindLogoElements() {
         document.querySelectorAll('.top-logo').forEach(function (logo) {
             if (logo.dataset.remTransformBound === '1') return;
             logo.dataset.remTransformBound = '1';
             logo.setAttribute('href', '#');
             logo.setAttribute('role', 'button');
+            logo.addEventListener('mousedown', function (e) {
+                e.preventDefault();
+                clearTextSelection();
+            }, true);
+            logo.addEventListener('selectstart', function (e) {
+                e.preventDefault();
+            });
+            logo.addEventListener('dragstart', function (e) {
+                e.preventDefault();
+            });
             logo.addEventListener('click', onLogoClick, true);
         });
     }
@@ -280,6 +299,7 @@
         e.preventDefault();
         e.stopPropagation();
         if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+        clearTextSelection();
 
         clickCount += 1;
         if (resetTimer) clearTimeout(resetTimer);
