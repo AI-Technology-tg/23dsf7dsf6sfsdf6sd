@@ -163,15 +163,82 @@ let __reminkoLoadingSettled = false;
 let __reminkoNavigationApplied = false;
 let __reminkoLoadingBooted = false;
 
+function reminkoRevealAfterPaint(callback) {
+    requestAnimationFrame(function () {
+        requestAnimationFrame(callback);
+    });
+}
+
+function reminkoWhenThemeCssReady(callback) {
+    var theme = 'white';
+    try {
+        theme =
+            document.documentElement.getAttribute('data-rem-theme') ||
+            (localStorage.getItem('rem_transform_theme') === 'dark' ? 'dark' : 'white');
+    } catch (_) {
+        /* ignore */
+    }
+
+    if (theme !== 'dark') {
+        reminkoRevealAfterPaint(callback);
+        return;
+    }
+
+    var link = document.getElementById('rem-theme-dark-css');
+    var done = false;
+    var finish = function () {
+        if (done) return;
+        done = true;
+        reminkoRevealAfterPaint(callback);
+    };
+
+    if (!link) {
+        finish();
+        return;
+    }
+
+    try {
+        if (link.sheet) {
+            finish();
+            return;
+        }
+    } catch (_) {
+        /* cross-origin or not ready */
+    }
+
+    link.addEventListener('load', finish, { once: true });
+    link.addEventListener('error', finish, { once: true });
+    setTimeout(finish, 1500);
+}
+
+function reminkoWhenLayoutReady(callback) {
+    if (__reminkoNavigationApplied) {
+        reminkoWhenThemeCssReady(callback);
+        return;
+    }
+    window.addEventListener(
+        'reminko:navigation-applied',
+        function () {
+            reminkoWhenThemeCssReady(callback);
+        },
+        { once: true }
+    );
+}
+
 function reminkoHideLoadingOnce() {
     if (__reminkoLoadingSettled) return;
-    __reminkoLoadingSettled = true;
-    hideLoading();
+    reminkoWhenLayoutReady(function () {
+        if (__reminkoLoadingSettled) return;
+        __reminkoLoadingSettled = true;
+        hideLoading();
+    });
 }
 
 function reminkoTryHideAfterNavigation() {
     if (__reminkoLoadingSettled || !__reminkoNavigationApplied) return;
-    setTimeout(() => reminkoHideLoadingOnce(), 320);
+    setTimeout(function () {
+        reminkoHideLoadingOnce();
+    }, 60);
 }
 
 /** Слушатель сразу при загрузке скрипта — до defer/initNavigation и до DOMContentLoaded */
@@ -185,14 +252,16 @@ function reminkoBootLoadingScreen() {
     __reminkoLoadingBooted = true;
 
     if (window.__reminkoSkipTransformLoading || window.__reminkoSkipInitialLoading) {
-        document.body.classList.add('reminko-loading-dismissed', 'reminko-ui-ready', 'reminko-content-revealed');
+        document.body.classList.add('reminko-loading-dismissed');
         var skipLs = document.getElementById('loadingScreen');
         if (skipLs) {
             skipLs.classList.add('hidden');
             skipLs.style.display = 'none';
         }
-        __reminkoLoadingSettled = true;
-        dispatchReminkoLoadingHidden();
+        reminkoTryHideAfterNavigation();
+        setTimeout(function () {
+            reminkoHideLoadingOnce();
+        }, 10000);
         return;
     }
 
