@@ -4,7 +4,7 @@
     /** 18 июля 2026 00:00 UTC+2 → +14 суток → 31 июля 2026 23:59:59 UTC+2 */
     var GIVEAWAY_START_ISO = '2026-07-17T22:00:00.000Z';
     var GIVEAWAY_END_ISO = '2026-07-31T21:59:59.000Z';
-    var GIVEAWAY_TG_URL = 'https://t.me/re_minko';
+    var GIVEAWAY_TG_URL = 'https://telegram.me/re_minko';
     var GIVEAWAY_TZ = 'Europe/Kyiv';
 
     function $(id) {

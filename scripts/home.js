@@ -74,7 +74,7 @@ const HOME_SOCIAL_INFO = {
     telegram: {
         title: 'Telegram',
         img: 'Fons/Sociale/Telegram.png',
-        url: 'https://t.me/re_minko',
+        url: 'https://telegram.me/re_minko',
         goLabel: 'Перейти в Telegram',
         text: 'На канале чаще всего публикуется информация о разработке и проводятся розыгрыши. Также есть Telegram-группа для общения с сообществом.',
     },

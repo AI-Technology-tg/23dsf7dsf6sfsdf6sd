@@ -367,7 +367,7 @@
     }
 
     function openTelegramAppNews() {
-        var url = 'https://t.me/re_minko';
+        var url = 'https://telegram.me/re_minko';
         try {
             window.open(url, '_blank', 'noopener,noreferrer');
         } catch (_) {
