@@ -12,6 +12,15 @@ const JIKAN = 'https://api.jikan.moe/v4';
 const SUPABASE_URL = process.env.SUPABASE_URL || '';
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+const MAX_BODY_CHARS = 24000;
+const MAX_MESSAGES = 24;
+const MAX_MESSAGE_CHARS = 4000;
+const ALLOWED_ORIGINS = new Set([
+    'https://re-minko-anime.com',
+    'https://ai-technology-tg.github.io',
+    'http://localhost:8080',
+    'http://127.0.0.1:8080'
+]);
 
 async function checkChatEnabledFromSupabase() {
     if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return { ok: true };
@@ -61,21 +70,35 @@ async function remoteServerLog(level, message, details) {
     }
 }
 
-function corsHeaders() {
+function allowedOrigin(event) {
+    const origin = event?.headers?.origin || event?.headers?.Origin || '';
+    if (!origin) return 'https://re-minko-anime.com';
+    if (ALLOWED_ORIGINS.has(origin)) return origin;
+    try {
+        const host = new URL(origin).hostname;
+        if (host.endsWith('.netlify.app')) return origin;
+    } catch (_) {
+        /* ignore */
+    }
+    return 'https://re-minko-anime.com';
+}
+
+function corsHeaders(event) {
     return {
-        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Origin': allowedOrigin(event),
         'Access-Control-Allow-Headers': 'Content-Type',
         'Access-Control-Allow-Methods': 'POST, OPTIONS, GET, HEAD',
+        Vary: 'Origin',
         'Content-Type': 'application/json'
     };
 }
 
-function ok(bodyObj) {
-    return { statusCode: 200, headers: corsHeaders(), body: JSON.stringify(bodyObj) };
+function ok(bodyObj, headers) {
+    return { statusCode: 200, headers, body: JSON.stringify(bodyObj) };
 }
 
-function err(status, msg) {
-    return { statusCode: status, headers: corsHeaders(), body: JSON.stringify({ error: { message: msg } }) };
+function err(status, msg, headers) {
+    return { statusCode: status, headers, body: JSON.stringify({ error: { message: msg } }) };
 }
 
 function genderLine(userGender) {
@@ -320,32 +343,40 @@ async function callOpenAI(messages, model, maxTokens, temperature) {
 }
 
 exports.handler = async (event) => {
-    const headers = corsHeaders();
+    const headers = corsHeaders(event);
     if (event.httpMethod === 'OPTIONS') return { statusCode: 204, headers, body: '' };
     if (event.httpMethod !== 'POST') return { statusCode: 404, headers, body: JSON.stringify({ error: 'Not found' }) };
 
     const gate = await checkChatEnabledFromSupabase();
     if (!gate.ok) {
         void remoteServerLog('warn', 'Запрос отклонён: чат выключен в панели', { message: gate.message });
-        return err(503, gate.message);
+        return err(503, gate.message, headers);
     }
 
     if (!GPT_KEY) {
         void remoteServerLog('error', 'Нет OPENAI_API_KEY');
-        return err(503, 'Задайте OPENAI_API_KEY в переменных окружения Netlify.');
+        return err(503, 'Задайте OPENAI_API_KEY в переменных окружения Netlify.', headers);
     }
 
     let body = event.body;
     if (event.isBase64Encoded && body) body = Buffer.from(body, 'base64').toString('utf8');
+    if (String(body || '').length > MAX_BODY_CHARS) {
+        return err(413, 'Запрос слишком большой.', headers);
+    }
 
     let json;
     try {
         json = JSON.parse(body || '{}');
     } catch {
-        return err(400, 'Invalid JSON');
+        return err(400, 'Invalid JSON', headers);
     }
 
-    const messagesIn = json.messages || [];
+    const messagesIn = Array.isArray(json.messages) ? json.messages.slice(-MAX_MESSAGES) : [];
+    messagesIn.forEach((m) => {
+        if (m && typeof m.content === 'string' && m.content.length > MAX_MESSAGE_CHARS) {
+            m.content = m.content.slice(0, MAX_MESSAGE_CHARS);
+        }
+    });
     const isVip = Boolean(json.isVip);
     const clientResearch = String(json.researchContext || '').trim();
     const nonSystem = messagesIn.filter((m) => m.role !== 'system');
@@ -374,7 +405,7 @@ exports.handler = async (event) => {
     try {
         const text = await callOpenAI(msgs, model, maxTok, temp);
         const reply = text || '…';
-        return ok({ choices: [{ message: { role: 'assistant', content: reply } }] });
+        return ok({ choices: [{ message: { role: 'assistant', content: reply } }] }, headers);
     } catch (e) {
         console.error('[minko-chat]', e);
         void remoteServerLog('error', 'OpenAI call failed', { err: String(e.message || e) });
@@ -388,6 +419,6 @@ exports.handler = async (event) => {
                     }
                 }
             ]
-        });
+        }, headers);
     }
 };

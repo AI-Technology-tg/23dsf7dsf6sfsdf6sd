@@ -4,12 +4,33 @@
  */
 const KODIK_ORIGIN = 'https://kodik-api.com';
 const TOKEN = (process.env.KODIK_API_TOKEN || '').trim();
+const ALLOWED_PATHS = new Set(['/search', '/list', '/translations/v2', '/qualities', '/countries', '/genres', '/years']);
+const ALLOWED_ORIGINS = new Set([
+    'https://re-minko-anime.com',
+    'https://ai-technology-tg.github.io',
+    'http://localhost:8080',
+    'http://127.0.0.1:8080'
+]);
 
-function corsHeaders() {
+function allowedOrigin(event) {
+    const origin = event.headers?.origin || event.headers?.Origin || '';
+    if (!origin) return 'https://re-minko-anime.com';
+    if (ALLOWED_ORIGINS.has(origin)) return origin;
+    try {
+        const host = new URL(origin).hostname;
+        if (host.endsWith('.netlify.app')) return origin;
+    } catch (_) {
+        /* ignore */
+    }
+    return 'https://re-minko-anime.com';
+}
+
+function corsHeaders(event) {
     return {
-        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Origin': allowedOrigin(event),
         'Access-Control-Allow-Headers': 'Content-Type',
         'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        Vary: 'Origin',
         'Content-Type': 'application/json; charset=utf-8'
     };
 }
@@ -21,7 +42,7 @@ function normalizePath(raw) {
 }
 
 exports.handler = async (event) => {
-    const headers = corsHeaders();
+    const headers = corsHeaders(event);
     if (event.httpMethod === 'OPTIONS') {
         return { statusCode: 204, headers, body: '' };
     }
@@ -40,6 +61,9 @@ exports.handler = async (event) => {
 
     const q = event.queryStringParameters || {};
     const path = normalizePath(q.path);
+    if (!ALLOWED_PATHS.has(path)) {
+        return { statusCode: 403, headers, body: JSON.stringify({ error: 'Kodik path not allowed' }) };
+    }
     const params = Object.assign({}, q, { token: TOKEN });
     delete params.path;
 
