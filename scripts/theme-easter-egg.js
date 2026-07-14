@@ -22,7 +22,6 @@
     var flash = null;
     var veil = null;
     var scanlines = null;
-    var hintTheme = null;
 
     function getTheme() {
         return localStorage.getItem(STORAGE_THEME) === 'dark' ? 'dark' : 'white';
