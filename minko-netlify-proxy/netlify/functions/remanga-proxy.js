@@ -8,6 +8,7 @@ const { corsHeaders: buildCorsHeaders } = require('./_cors');
 function corsHeaders(event) {
     return {
         ...buildCorsHeaders(event, 'GET, OPTIONS'),
+        'Cache-Control': 'private, no-store',
         'Content-Type': 'application/json; charset=utf-8'
     };
 }

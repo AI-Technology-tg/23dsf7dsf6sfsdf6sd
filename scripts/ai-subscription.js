@@ -34,27 +34,12 @@ class AISubscriptionService {
                     .maybeSingle();
 
                 if (error && error.code !== 'PGRST116') {
-                    return this._getLocalSubscription();
+                    return null;
                 }
 
                 if (!data) {
-                    const local = this._peekLocalSubscription();
-                    if (
-                        local &&
-                        (local.subscription_type === 'premium' || local.subscription_type === 'unlimited')
-                    ) {
-                        if (
-                            local.subscription_type === 'premium' &&
-                            local.expires_at &&
-                            new Date(local.expires_at) < new Date()
-                        ) {
-                            /* истёк — не подменяем БД локалью */
-                        } else {
-                            this.subscription = { ...local, user_id: userId };
-                            return this.subscription;
-                        }
-                    }
                     this.subscription = null;
+                    this._syncToLocal({ subscription_type: 'free', expires_at: null });
                     return null;
                 }
 
@@ -70,7 +55,7 @@ class AISubscriptionService {
 
                 return data;
             } catch {
-                return this._getLocalSubscription();
+                return null;
             }
         }
 

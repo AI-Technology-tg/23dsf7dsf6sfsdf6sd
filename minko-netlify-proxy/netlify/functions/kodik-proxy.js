@@ -17,7 +17,22 @@ function corsHeaders(event) {
 function normalizePath(raw) {
     const p = String(raw || '/search').trim();
     if (!p || p === '/') return '/search';
-    return p.startsWith('/') ? p : `/${p}`;
+    const normalized = p.startsWith('/') ? p : `/${p}`;
+    if (/[@\\]/.test(normalized) || normalized.includes('..')) {
+        return null;
+    }
+    return normalized;
+}
+
+function buildKodikTarget(path) {
+    let target;
+    try {
+        target = new URL(path, KODIK_ORIGIN + '/');
+    } catch (_) {
+        return null;
+    }
+    if (target.origin !== KODIK_ORIGIN) return null;
+    return target;
 }
 
 exports.handler = async (event) => {
@@ -40,13 +55,16 @@ exports.handler = async (event) => {
 
     const q = event.queryStringParameters || {};
     const path = normalizePath(q.path);
-    if (!ALLOWED_PATHS.has(path)) {
+    if (!path || !ALLOWED_PATHS.has(path)) {
         return { statusCode: 403, headers, body: JSON.stringify({ error: 'Kodik path not allowed' }) };
     }
     const params = Object.assign({}, q, { token: TOKEN });
     delete params.path;
 
-    const target = new URL(KODIK_ORIGIN + path);
+    const target = buildKodikTarget(path);
+    if (!target) {
+        return { statusCode: 403, headers, body: JSON.stringify({ error: 'Kodik path not allowed' }) };
+    }
     Object.keys(params).forEach((key) => {
         const v = params[key];
         if (v !== undefined && v !== null && String(v) !== '') {
@@ -82,7 +100,7 @@ exports.handler = async (event) => {
         return {
             statusCode: 502,
             headers,
-            body: JSON.stringify({ error: 'Kodik proxy error', message: String(e.message || e) })
+            body: JSON.stringify({ error: 'Kodik proxy error' })
         };
     }
 };

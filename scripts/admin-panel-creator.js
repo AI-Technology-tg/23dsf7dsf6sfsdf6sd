@@ -113,6 +113,8 @@ class CreatorAdminPanel {
 
     async appendCreatorAuditLog(action, options = {}) {
         if (!supabaseClient) return { success: false, message: 'Нет подключения' };
+        const gate = await this._assertCallerIsSiteCreator();
+        if (!gate.ok) return { success: false, message: gate.message };
         try {
             const {
                 targetUserId = null,
@@ -180,6 +182,8 @@ class CreatorAdminPanel {
     // Получить расширенную статистику
     async getAdvancedStats() {
         if (!supabaseClient) return null;
+        const gate = await this._assertCallerIsSiteCreator();
+        if (!gate.ok) return null;
 
         try {
             const now = new Date();
@@ -395,6 +399,8 @@ class CreatorAdminPanel {
     // Получить список пользователей с фильтрами
     async getUsersAdvanced(page = 1, limit = 50, filters = {}) {
         if (!supabaseClient) return { users: [], total: 0 };
+        const gate = await this._assertCallerIsSiteCreator();
+        if (!gate.ok) return { users: [], total: 0, error: gate.message };
 
         try {
             let query = supabaseClient
@@ -520,25 +526,16 @@ class CreatorAdminPanel {
     // Забанить/разбанить пользователя
     async toggleUserBan(userId, ban = true, reason = '') {
         if (!supabaseClient) return { success: false, message: 'Нет подключения' };
+        const gate = await this._assertCallerIsSiteCreator();
+        if (!gate.ok) return { success: false, message: gate.message };
 
         try {
             const rpcRes = await this._banViaRpc(userId, ban, reason);
             if (!rpcRes.success) {
-                const updates = {
-                    is_banned: !!ban
+                return {
+                    success: false,
+                    message: 'Ошибка изменения статуса. Нужны права создателя в Supabase (RPC ban).'
                 };
-                if (ban) {
-                    updates.ban_reason = reason || null;
-                    updates.banned_at = new Date().toISOString();
-                } else {
-                    updates.ban_reason = null;
-                    updates.banned_at = null;
-                }
-                const { error } = await supabaseClient.from('profiles').update(updates).eq('id', userId);
-                if (error) {
-                    console.error('Ошибка изменения статуса бана:', error);
-                    return { success: false, message: error.message || 'Ошибка изменения статуса' };
-                }
             }
 
             await this.appendCreatorAuditLog('user_ban_toggle', {
@@ -623,6 +620,8 @@ class CreatorAdminPanel {
     // Удалить сообщение чата
     async deleteChatMessage(messageId, reason = '') {
         if (!supabaseClient) return { success: false };
+        const gate = await this._assertCallerIsSiteCreator();
+        if (!gate.ok) return { success: false, message: gate.message };
 
         try {
             const { error } = await supabaseClient
@@ -652,6 +651,8 @@ class CreatorAdminPanel {
     // Мут пользователя в чате
     async muteUserChat(userId, hours, reason = '') {
         if (!supabaseClient) return { success: false };
+        const gate = await this._assertCallerIsSiteCreator();
+        if (!gate.ok) return { success: false, message: gate.message };
 
         try {
             const mutedUntil = new Date();
@@ -989,6 +990,8 @@ class CreatorAdminPanel {
     // Отправить уведомление пользователю
     async sendNotificationToUser(userId, title, message, type = 'system', link = null) {
         if (!supabaseClient) return { success: false };
+        const gate = await this._assertCallerIsSiteCreator();
+        if (!gate.ok) return { success: false, message: gate.message };
 
         try {
             const { error } = await supabaseClient
@@ -1021,6 +1024,8 @@ class CreatorAdminPanel {
     // Массовая отправка уведомлений
     async sendBulkNotifications(userIds, title, message, type = 'system', link = null) {
         if (!supabaseClient || !userIds || userIds.length === 0) return { success: false };
+        const gate = await this._assertCallerIsSiteCreator();
+        if (!gate.ok) return { success: false, message: gate.message };
 
         try {
             const notifications = userIds.map(userId => ({
@@ -1085,6 +1090,8 @@ class CreatorAdminPanel {
     /** Записи глобального каталога (Jikan / MyAnimeList), id на сайте = 10_000_000 + mal_id */
     async listCatalogSiteAnime() {
         if (!supabaseClient) return { success: false, message: 'Supabase не инициализирован', rows: [] };
+        const gate = await this._assertCallerIsSiteCreator();
+        if (!gate.ok) return { success: false, message: gate.message, rows: [] };
         try {
             const { data, error } = await supabaseClient
                 .from('catalog_site_anime')
@@ -1429,6 +1436,8 @@ class CreatorAdminPanel {
     /** Метка выката на главной (только кнопка в панели). */
     async getDeployStatusMark() {
         if (!supabaseClient) return { at: null, error: 'Нет Supabase' };
+        const gate = await this._assertCallerIsSiteCreator();
+        if (!gate.ok) return { at: null, error: gate.message };
         try {
             const { data, error } = await supabaseClient
                 .from('site_maintenance_config')
