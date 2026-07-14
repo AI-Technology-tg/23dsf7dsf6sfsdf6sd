@@ -1,8 +1,8 @@
 User-agent: *
 Allow: /
 Disallow: /admin.html
-Disallow: /manga/reader.html
 Disallow: /favorites-manga.html
+Disallow: /data/remanga-manga-catalog.json
 Disallow: /reset-password.html
 Disallow: /payment-success.html
 Disallow: /cancel-success.html

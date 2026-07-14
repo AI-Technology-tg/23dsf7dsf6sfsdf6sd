@@ -6,3 +6,17 @@
 
 /Fons/reminko.png
   Cache-Control: public, max-age=31536000, immutable
+
+# Манга временно не должна попадать в поиск: раздел доступен пользователям,
+# но Google должен убрать каталог, карточки и читалку из индекса.
+/catalog/manga.html
+  X-Robots-Tag: noindex, nofollow, noarchive
+
+/manga/*
+  X-Robots-Tag: noindex, nofollow, noarchive
+
+/favorites-manga.html
+  X-Robots-Tag: noindex, nofollow, noarchive
+
+/data/remanga-manga-catalog.json
+  X-Robots-Tag: noindex, nofollow, noarchive
