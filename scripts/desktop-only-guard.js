@@ -2,6 +2,54 @@
  * Раньше сайт блокировал телефоны и планшеты. Сейчас мобильные устройства
  * допускаются на сайт и получают класс мобильного preview-оформления.
  */
+(function remThemeEarlyBoot() {
+    if (typeof window === 'undefined' || window.__remThemeEarlyBoot) return;
+    window.__remThemeEarlyBoot = true;
+
+    var STORAGE = 'rem_transform_theme';
+
+    function assetRoot() {
+        var p = window.location.pathname || '';
+        return /\/(catalog|manga|anime)\//i.test(p) ? '../' : '';
+    }
+
+    try {
+        var theme = localStorage.getItem(STORAGE) === 'dark' ? 'dark' : 'white';
+        var root = assetRoot();
+        var docEl = document.documentElement;
+        docEl.setAttribute('data-rem-theme', theme);
+
+        if (theme === 'dark') {
+            if (!document.getElementById('rem-theme-dark-css')) {
+                var css = document.createElement('link');
+                css.id = 'rem-theme-dark-css';
+                css.rel = 'stylesheet';
+                css.href = root + 'styles/theme-dark.css?v=rem-theme-2';
+                document.head.appendChild(css);
+            }
+            if (!document.getElementById('rem-dark-bg-preload')) {
+                var preload = document.createElement('link');
+                preload.id = 'rem-dark-bg-preload';
+                preload.rel = 'preload';
+                preload.as = 'image';
+                preload.href = root + 'Fons/rem-dark-bg.png';
+                document.head.appendChild(preload);
+            }
+        }
+
+        function applyBodyThemeClass() {
+            if (!document.body) return;
+            document.body.classList.remove('theme-white', 'theme-dark');
+            document.body.classList.add(theme === 'dark' ? 'theme-dark' : 'theme-white');
+        }
+
+        if (document.body) applyBodyThemeClass();
+        else document.addEventListener('DOMContentLoaded', applyBodyThemeClass, { once: true });
+    } catch (_) {
+        /* ignore */
+    }
+})();
+
 (function () {
     if (typeof window === 'undefined' || window.__reminkoDesktopGuardRan) return;
     window.__reminkoDesktopGuardRan = true;

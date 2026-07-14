@@ -6,6 +6,9 @@
   Strict-Transport-Security: max-age=31536000; includeSubDomains
   Content-Security-Policy: frame-ancestors 'self'
 
+/*
+  Cache-Control: public, max-age=2592000
+
 /Fons/Sociale/*
   Cache-Control: public, max-age=31536000, immutable
 
@@ -14,6 +17,21 @@
 
 /Fons/reminko.png
   Cache-Control: public, max-age=31536000, immutable
+
+/Fons/seitFon.jpg
+  Cache-Control: public, max-age=31536000, immutable
+
+/Fons/rem-dark-bg.png
+  Cache-Control: public, max-age=31536000, immutable
+
+/Fons/logo-dark-rem.png
+  Cache-Control: public, max-age=31536000, immutable
+
+/Fons/fonG.jpg
+  Cache-Control: public, max-age=31536000, immutable
+
+/Fons/loading.mp4
+  Cache-Control: public, max-age=2592000
 
 # Манга временно не должна попадать в поиск: раздел доступен пользователям,
 # но Google должен убрать каталог, карточки и читалку из индекса.

@@ -1,5 +1,17 @@
 /* ═══ Тёмная сторона Re-Minko — Dark Anime UI (только визуал) ═══ */
 
+/* Ранний фон до полной загрузки theme-transform-boot (без мигания белой темы) */
+html[data-rem-theme="dark"] body {
+    background-color: #000 !important;
+    background-image:
+        linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)),
+        url('../Fons/rem-dark-bg.png') !important;
+    background-size: cover, cover !important;
+    background-position: center, center !important;
+    background-repeat: no-repeat, no-repeat !important;
+    background-attachment: fixed, fixed !important;
+}
+
 body.theme-dark {
     --primary-color: #9d4dff !important;
     --primary-hover: #c35bff !important;

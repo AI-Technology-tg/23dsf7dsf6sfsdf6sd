@@ -7,6 +7,17 @@
     }
 })();
 
+(function reminkoMaybeSkipLoaderOnRevisit() {
+    try {
+        var nav = performance.getEntriesByType && performance.getEntriesByType('navigation')[0];
+        if (nav && (nav.type === 'reload' || nav.type === 'back_forward')) {
+            window.__reminkoSkipInitialLoading = true;
+        }
+    } catch (_) {
+        /* ignore */
+    }
+})();
+
 function getLoadingVideoSrc() {
     const path = window.location.pathname || '';
     if (path.includes('/catalog/') || path.includes('/anime/') || path.includes('/manga/')) {
@@ -173,7 +184,7 @@ function reminkoBootLoadingScreen() {
     if (__reminkoLoadingBooted) return;
     __reminkoLoadingBooted = true;
 
-    if (window.__reminkoSkipTransformLoading) {
+    if (window.__reminkoSkipTransformLoading || window.__reminkoSkipInitialLoading) {
         document.body.classList.add('reminko-loading-dismissed', 'reminko-ui-ready', 'reminko-content-revealed');
         var skipLs = document.getElementById('loadingScreen');
         if (skipLs) {
