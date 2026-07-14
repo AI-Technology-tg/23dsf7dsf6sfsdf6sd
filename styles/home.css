@@ -548,6 +548,154 @@
     flex-wrap: wrap;
 }
 
+/* Баннер розыгрыша на главной */
+.home-giveaway-banner {
+    position: relative;
+    display: block;
+    margin: 0 0 1.25rem;
+    padding: 0;
+    border-radius: 16px;
+    overflow: hidden;
+    text-decoration: none;
+    color: inherit;
+    border: 1px solid rgba(227, 0, 255, 0.35);
+    background: linear-gradient(125deg, rgba(91, 33, 182, 0.42), rgba(15, 15, 28, 0.92) 48%, rgba(234, 88, 12, 0.18));
+    box-shadow: 0 14px 40px rgba(0, 0, 0, 0.28);
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.home-giveaway-banner:hover {
+    transform: translateY(-2px);
+    border-color: rgba(251, 191, 36, 0.45);
+    box-shadow: 0 18px 48px rgba(192, 38, 211, 0.22);
+}
+
+.home-giveaway-banner:focus-visible {
+    outline: 2px solid #e879f9;
+    outline-offset: 3px;
+}
+
+.home-giveaway-banner__glow {
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(ellipse 55% 90% at 0% 50%, rgba(227, 0, 255, 0.22), transparent 58%),
+        radial-gradient(ellipse 45% 80% at 100% 20%, rgba(251, 191, 36, 0.18), transparent 55%);
+    pointer-events: none;
+}
+
+.home-giveaway-banner__inner {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: auto 1fr auto auto;
+    gap: 1rem 1.25rem;
+    align-items: center;
+    padding: 1.1rem 1.25rem;
+}
+
+@media (max-width: 820px) {
+    .home-giveaway-banner__inner {
+        grid-template-columns: auto 1fr auto;
+    }
+
+    .home-giveaway-banner__prize {
+        grid-column: 1 / -1;
+        justify-self: start;
+        flex-direction: row !important;
+        gap: 0.5rem !important;
+        padding: 0.45rem 0.75rem !important;
+    }
+}
+
+.home-giveaway-banner__badge {
+    flex-shrink: 0;
+    padding: 0.35rem 0.65rem;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 900;
+    letter-spacing: 0.04em;
+    color: #fdf4ff;
+    background: rgba(227, 0, 255, 0.28);
+    border: 1px solid rgba(240, 171, 252, 0.35);
+    white-space: nowrap;
+}
+
+.home-giveaway-banner__copy {
+    min-width: 0;
+}
+
+.home-giveaway-banner__kicker {
+    margin: 0 0 0.25rem;
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #fcd34d;
+}
+
+.home-giveaway-banner__title {
+    margin: 0 0 0.25rem;
+    font-size: clamp(1rem, 2.2vw, 1.25rem);
+    font-weight: 900;
+    line-height: 1.25;
+    color: #fff;
+}
+
+.home-giveaway-banner__text {
+    margin: 0;
+    font-size: 0.82rem;
+    line-height: 1.45;
+    color: rgba(226, 232, 240, 0.88);
+}
+
+.home-giveaway-banner__cta {
+    flex-shrink: 0;
+    padding: 0.55rem 1rem;
+    border-radius: 10px;
+    font-size: 0.82rem;
+    font-weight: 800;
+    color: #fff;
+    background: linear-gradient(135deg, #c026d3, #7c3aed);
+    border: 1px solid rgba(227, 0, 255, 0.45);
+    box-shadow: 0 0 18px rgba(192, 38, 211, 0.28);
+    white-space: nowrap;
+    transition: box-shadow 0.2s ease;
+}
+
+.home-giveaway-banner:hover .home-giveaway-banner__cta {
+    box-shadow: 0 0 24px rgba(192, 38, 211, 0.42);
+}
+
+.home-giveaway-banner__prize {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 4.5rem;
+    padding: 0.55rem 0.75rem;
+    border-radius: 12px;
+    background: linear-gradient(145deg, rgba(251, 191, 36, 0.22), rgba(234, 88, 12, 0.16));
+    border: 1px solid rgba(251, 191, 36, 0.42);
+}
+
+.home-giveaway-banner__prize-sum {
+    font-size: 1.35rem;
+    font-weight: 900;
+    line-height: 1;
+    color: #fde68a;
+}
+
+.home-giveaway-banner__prize-note {
+    margin-top: 0.15rem;
+    font-size: 0.62rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #fcd34d;
+}
+
 /* Бета-уведомление на главной */
 .home-beta-banner {
     margin: 0 0 2rem;

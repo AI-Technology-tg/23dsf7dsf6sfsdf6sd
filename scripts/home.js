@@ -9,6 +9,18 @@ function initHomeBetaBanner() {
     /* Плашка «Бета» — только статичный текст в разметке index.html */
 }
 
+/** Совпадает с giveaway-info.js — скрыть баннер после окончания акции */
+const HOME_GIVEAWAY_END_ISO = '2026-07-28T21:59:59.000Z';
+
+function initHomeGiveawayBanner() {
+    const banner = document.getElementById('homeGiveawayBanner');
+    if (!banner) return;
+    const end = Date.parse(HOME_GIVEAWAY_END_ISO);
+    if (!Number.isNaN(end) && Date.now() >= end) {
+        banner.hidden = true;
+    }
+}
+
 function getHomeCache() {
     try {
         const raw = sessionStorage.getItem(JIKAN_HOME_CACHE_KEY);
@@ -223,6 +235,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         initHomeBetaBanner();
+        initHomeGiveawayBanner();
         initHomeAppButtons();
 
         updateHeroStats();

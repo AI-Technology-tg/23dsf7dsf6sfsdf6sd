@@ -32,44 +32,119 @@
     function applyGiveawayEndedUi() {
         var ended = isGiveawayEnded();
         var endedNote = $('giveawayEndedNote');
-        var timerBox = document.querySelector('.info-giveaway-timer-box');
+        var countdown = $('giveawayCountdownInner');
         var joinBtn = $('giveawayJoinBtn');
         if (endedNote) endedNote.hidden = !ended;
-        if (timerBox) timerBox.hidden = ended;
+        if (countdown) countdown.hidden = ended;
         if (joinBtn) {
             joinBtn.disabled = ended;
             if (ended) joinBtn.title = 'Розыгрыш завершён';
         }
     }
 
-    function initGiveawayCountdown() {
-        var root = $('giveawayCountdownInner');
-        if (!root || root.dataset.started === '1') {
-            applyGiveawayEndedUi();
-            return;
+    function ruUnit(n, one, few, many) {
+        if (typeof reminkoRuUnit === 'function') return reminkoRuUnit(n, one, few, many);
+        return many;
+    }
+
+    function countdownParts(diffMs) {
+        if (typeof reminkoCountdownParts === 'function') return reminkoCountdownParts(diffMs);
+        if (diffMs <= 0) return null;
+        var s = Math.floor(diffMs / 1000);
+        var secs = s % 60;
+        s = Math.floor(s / 60);
+        var mins = s % 60;
+        s = Math.floor(s / 60);
+        var hours = s % 24;
+        var days = Math.floor(s / 24);
+        return { days: days, hours: hours, mins: mins, secs: secs };
+    }
+
+    function renderGiveawayCountdownHtml(parts) {
+        if (!parts) {
+            return '<div class="info-giveaway-cd-ended">Розыгрыш завершён</div>';
         }
-        root.dataset.started = '1';
+        var cells = [
+            { val: parts.days, one: 'день', few: 'дня', many: 'дней' },
+            { val: parts.hours, one: 'час', few: 'часа', many: 'часов' },
+            { val: parts.mins, one: 'мин', few: 'мин', many: 'мин' },
+            { val: parts.secs, one: 'сек', few: 'сек', many: 'сек' }
+        ];
+        return (
+            '<div class="info-giveaway-cd-grid">' +
+            cells
+                .map(function (c) {
+                    var pad = c.val >= 100 ? String(c.val) : String(c.val).padStart(2, '0');
+                    return (
+                        '<div class="info-giveaway-cd-cell">' +
+                        '<span class="info-giveaway-cd-num">' +
+                        pad +
+                        '</span>' +
+                        '<span class="info-giveaway-cd-label">' +
+                        ruUnit(c.val, c.one, c.few, c.many) +
+                        '</span>' +
+                        '</div>'
+                    );
+                })
+                .join('') +
+            '</div>'
+        );
+    }
 
-        var endLabel = $('giveawayEndDate');
-        if (endLabel) endLabel.textContent = formatGiveawayEndDate();
+    var _giveawayCountdownTimer = null;
+    var _giveawayVisBound = false;
 
-        if (isGiveawayEnded()) {
+    function tickGiveawayCountdown() {
+        var root = $('giveawayCountdownInner');
+        if (!root) return;
+
+        var end = Date.parse(GIVEAWAY_END_ISO);
+        var left = end - Date.now();
+        if (Number.isNaN(end) || left <= 0) {
+            root.innerHTML = renderGiveawayCountdownHtml(null);
             applyGiveawayEndedUi();
-            if (root) {
-                root.innerHTML = '<div class="countdown__unknown">Розыгрыш завершён</div>';
+            if (_giveawayCountdownTimer) {
+                clearInterval(_giveawayCountdownTimer);
+                _giveawayCountdownTimer = null;
             }
             return;
         }
 
-        if (typeof reminkoStartLiveCountdown === 'function') {
-            reminkoStartLiveCountdown(root, GIVEAWAY_END_ISO, {
-                expiredText: 'Розыгрыш завершён. Итоги — в Telegram.',
-                onExpire: function () {
-                    applyGiveawayEndedUi();
-                }
-            });
-        } else {
-            root.textContent = formatGiveawayEndDate();
+        var parts = countdownParts(left);
+        var html = renderGiveawayCountdownHtml(parts);
+        if (root.innerHTML !== html) root.innerHTML = html;
+        else {
+            var nums = root.querySelectorAll('.info-giveaway-cd-num');
+            if (nums.length === 4 && parts) {
+                var vals = [parts.days, parts.hours, parts.mins, parts.secs];
+                nums.forEach(function (el, i) {
+                    var v = vals[i];
+                    el.textContent = v >= 100 ? String(v) : String(v).padStart(2, '0');
+                });
+            }
+        }
+    }
+
+    function initGiveawayCountdown() {
+        var root = $('giveawayCountdownInner');
+        if (!root) {
+            applyGiveawayEndedUi();
+            return;
+        }
+
+        var endLabel = $('giveawayEndDate');
+        if (endLabel) endLabel.textContent = formatGiveawayEndDate();
+
+        tickGiveawayCountdown();
+
+        if (!isGiveawayEnded() && !_giveawayCountdownTimer) {
+            _giveawayCountdownTimer = setInterval(tickGiveawayCountdown, 1000);
+            if (!_giveawayVisBound) {
+                _giveawayVisBound = true;
+                document.addEventListener('visibilitychange', function () {
+                    if (!document.hidden) tickGiveawayCountdown();
+                });
+            }
         }
 
         applyGiveawayEndedUi();
