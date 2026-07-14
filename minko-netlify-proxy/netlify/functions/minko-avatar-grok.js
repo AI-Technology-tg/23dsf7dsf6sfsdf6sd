@@ -17,29 +17,26 @@ const XAI_URL = 'https://api.x.ai/v1/images/generations';
 const LIMIT = 3;
 const WINDOW_MS = 24 * 60 * 60 * 1000;
 
+const { corsHeaders: buildCorsHeaders } = require('./_cors');
+
 const NSFW_RE =
     /(nude|naked|nsfw|porn|porno|sexual|xxx|erotic|fetish|hentai|loli|shota|rape|nudes?|nipple|genital|penis|vagina|boobs?|tits\b|\bnsfw\b)/i;
 const NSFW_RU =
     /(порно|секс|эротик|голый|голая|голые|нюд|интим|фетиш|хентай|извращ|генитал|мастурб|камасутр|18\s*\+)/i;
 
-function corsHeaders() {
-    return {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-        'Content-Type': 'application/json'
-    };
+function corsHeaders(event) {
+    return buildCorsHeaders(event, 'GET, POST, OPTIONS', 'Content-Type, Authorization');
 }
 
-function ok(body) {
-    return { statusCode: 200, headers: corsHeaders(), body: JSON.stringify(body) };
+function ok(body, event) {
+    return { statusCode: 200, headers: corsHeaders(event), body: JSON.stringify(body) };
 }
 
-function err(status, msg, extra) {
+function err(status, msg, event, extra) {
     return {
         statusCode: status,
-        headers: corsHeaders(),
-        body: JSON.stringify({ error: { message: msg }, ...extra })
+        headers: corsHeaders(event),
+        body: JSON.stringify({ error: { message: msg }, ...(extra || {}) })
     };
 }
 
@@ -128,7 +125,7 @@ function buildPrompt(userLine) {
 }
 
 exports.handler = async (event) => {
-    const headers = corsHeaders();
+    const headers = corsHeaders(event);
     if (event.httpMethod === 'OPTIONS') return { statusCode: 204, headers, body: '' };
 
     const apiKey = getXaiKey();
@@ -138,26 +135,26 @@ exports.handler = async (event) => {
 
     const user = await verifySupabaseUser(jwt);
     if (!user || !user.id) {
-        return err(401, 'Нужна авторизация: войдите в аккаунт и обновите страницу.');
+        return err(401, 'Нужна авторизация: войдите в аккаунт и обновите страницу.', event);
     }
 
     if (!svc) {
-        return err(503, 'На сервере не настроен SUPABASE_SERVICE_ROLE_KEY.');
+        return err(503, 'На сервере не настроен SUPABASE_SERVICE_ROLE_KEY.', event);
     }
 
     const { rows: windowRows } = await countGenerationsInWindow(user.id);
     const quota = quotaFromRows(windowRows);
 
     if (event.httpMethod === 'GET') {
-        return ok(quota);
+        return ok(quota, event);
     }
 
     if (event.httpMethod !== 'POST') {
-        return err(404, 'Not found');
+        return err(404, 'Not found', event);
     }
 
     if (!apiKey) {
-        return err(503, 'На сервере не задан XAI_API_KEY (или GROK_API_KEY).');
+        return err(503, 'На сервере не задан XAI_API_KEY (или GROK_API_KEY).', event);
     }
 
     let body = event.body;
@@ -166,33 +163,28 @@ exports.handler = async (event) => {
     try {
         json = JSON.parse(body || '{}');
     } catch {
-        return err(400, 'Некорректный JSON');
+        return err(400, 'Некорректный JSON', event);
     }
 
     const rawPrompt = (json.prompt != null ? String(json.prompt) : '').trim();
     if (rawPrompt.length < 4) {
-        return err(400, 'Опиши образ чуть подробнее (от 4 символов).');
+        return err(400, 'Опиши образ чуть подробнее (от 4 символов).', event);
     }
     if (NSFW_RE.test(rawPrompt) || NSFW_RU.test(rawPrompt)) {
         return err(
             400,
-            'Такой запрос недопустим. Только безопасный аниме-стиль, без сексуального и откровенного контента.'
+            'Такой запрос недопустим. Только безопасный аниме-стиль, без сексуального и откровенного контента.',
+            event
         );
     }
 
     if (quota.remaining <= 0) {
-        return {
-            statusCode: 429,
-            headers: corsHeaders(),
-            body: JSON.stringify({
-                error: {
-                    message: `Лимит ${LIMIT} генераций на 24 часа исчерпан. Следующая попытка после сброса окна.`
-                },
-                resetsAt: quota.resetsAt,
-                remaining: 0,
-                limit: LIMIT
-            })
-        };
+        return err(
+            429,
+            `Лимит ${LIMIT} генераций на 24 часа исчерпан. Следующая попытка после сброса окна.`,
+            event,
+            { resetsAt: quota.resetsAt, remaining: 0, limit: LIMIT }
+        );
     }
 
     const prompt = buildPrompt(rawPrompt);
@@ -214,7 +206,7 @@ exports.handler = async (event) => {
         });
     } catch (e) {
         console.error('[minko-avatar-grok] xai fetch', e);
-        return err(502, 'Не удалось связаться с сервисом генерации изображений.');
+        return err(502, 'Не удалось связаться с сервисом генерации изображений.', event);
     }
 
     const xaiData = await xaiRes.json().catch(() => ({}));
@@ -223,7 +215,8 @@ exports.handler = async (event) => {
         return err(
             502,
             (xaiData && xaiData.error && (xaiData.error.message || xaiData.error)) ||
-                `Ошибка генерации (${xaiRes.status}). Проверьте модель в XAI_IMAGE_MODEL.`
+                `Ошибка генерации (${xaiRes.status}). Проверьте модель в XAI_IMAGE_MODEL.`,
+            event
         );
     }
 
@@ -234,7 +227,7 @@ exports.handler = async (event) => {
     }
     if (!url) {
         console.error('[minko-avatar-grok] unexpected response', xaiData);
-        return err(502, 'Пустой ответ картинки. Уточните модель в кабинете xAI.');
+        return err(502, 'Пустой ответ картинки. Уточните модель в кабинете xAI.', event);
     }
 
     const inserted = await insertGeneration(user.id);
@@ -250,5 +243,5 @@ exports.handler = async (event) => {
         remaining: q2.remaining,
         limit: LIMIT,
         resetsAt: q2.resetsAt
-    });
+    }, event);
 };

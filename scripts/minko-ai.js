@@ -11,6 +11,21 @@ function getMinkoChatProxyUrl() {
     }
     return 'http://localhost:3334/chat';
 }
+
+async function _minkoChatRequestHeaders() {
+    const headers = { 'Content-Type': 'application/json' };
+    try {
+        if (typeof supabaseClient !== 'undefined' && supabaseClient?.auth?.getSession) {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (session?.access_token) {
+                headers.Authorization = 'Bearer ' + session.access_token;
+            }
+        }
+    } catch (_) {
+        /* guest */
+    }
+    return headers;
+}
 const GROK_PROXY_ROOT = 'http://localhost:3333';
 
 /** Видео-аватар Minko (без CSS-покачивания — см. minko-ai.css) */
@@ -2670,11 +2685,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const apiRes = await fetch(getMinkoChatProxyUrl(), {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: await _minkoChatRequestHeaders(),
                 body: JSON.stringify({
                     model: 'openai',
                     messages: apiMessages,
-                    isVip: false,
                     sessionKey: minkoSessionKey,
                     researchContext: researchContext || '',
                     max_tokens: 3200,

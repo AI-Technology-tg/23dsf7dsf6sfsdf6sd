@@ -3,18 +3,17 @@
  * GET /.netlify/functions/remanga-proxy?url=https://api.remanga.org/api/...
  */
 const ALLOWED_HOST = 'api.remanga.org';
+const { corsHeaders: buildCorsHeaders } = require('./_cors');
 
-function corsHeaders() {
+function corsHeaders(event) {
     return {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'Content-Type',
-        'Access-Control-Allow-Methods': 'GET, OPTIONS',
+        ...buildCorsHeaders(event, 'GET, OPTIONS'),
         'Content-Type': 'application/json; charset=utf-8'
     };
 }
 
 exports.handler = async (event) => {
-    const headers = corsHeaders();
+    const headers = corsHeaders(event);
     if (event.httpMethod === 'OPTIONS') {
         return { statusCode: 204, headers, body: '' };
     }
@@ -34,7 +33,7 @@ exports.handler = async (event) => {
         return { statusCode: 400, headers, body: JSON.stringify({ error: 'Invalid url' }) };
     }
 
-    if (target.hostname !== ALLOWED_HOST) {
+    if (target.protocol !== 'https:' || target.hostname !== ALLOWED_HOST || !target.pathname.startsWith('/api/')) {
         return { statusCode: 403, headers, body: JSON.stringify({ error: 'Host not allowed' }) };
     }
 
@@ -43,29 +42,11 @@ exports.handler = async (event) => {
             method: 'GET',
             headers: {
                 Accept: 'application/json, */*',
-                'Accept-Language': 'ru-RU,ru;q=0.9,en;q=0.8',
-                'Cache-Control': 'no-cache',
-                Origin: 'https://remanga.org',
-                Referer: 'https://remanga.org/',
-                'User-Agent':
-                    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36'
+                Referer: 'https://remanga.org/'
             }
         });
         const text = await res.text();
-        if (!res.ok) {
-            console.warn('[remanga-proxy] upstream', res.status, target.pathname);
-        }
-        const contentType = res.headers.get('content-type') || '';
-        return {
-            statusCode: res.status,
-            headers: {
-                ...headers,
-                'Content-Type': contentType.includes('json')
-                    ? 'application/json; charset=utf-8'
-                    : 'text/plain; charset=utf-8'
-            },
-            body: text || '{}'
-        };
+        return { statusCode: res.status, headers, body: text || '{}' };
     } catch (e) {
         console.error('[remanga-proxy]', e);
         return {

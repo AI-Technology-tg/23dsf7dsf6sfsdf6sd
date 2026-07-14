@@ -9,18 +9,19 @@ const MODEL_VIP = (process.env.MINKO_OPENAI_MODEL_VIP || MODEL_DEFAULT).trim();
 const WEB_ON = String(process.env.MINKO_WEB_SEARCH || '1').trim() === '1';
 const JIKAN = 'https://api.jikan.moe/v4';
 
+const { corsHeaders: buildCorsHeaders, clientIp } = require('./_cors');
+
 const SUPABASE_URL = process.env.SUPABASE_URL || '';
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 const MAX_BODY_CHARS = 24000;
 const MAX_MESSAGES = 24;
 const MAX_MESSAGE_CHARS = 4000;
-const ALLOWED_ORIGINS = new Set([
-    'https://re-minko-anime.com',
-    'https://ai-technology-tg.github.io',
-    'http://localhost:8080',
-    'http://127.0.0.1:8080'
-]);
+const RATE_WINDOW_MS = 60 * 1000;
+const RATE_LIMIT_GUEST = 10;
+const RATE_LIMIT_USER = 18;
+const RATE_LIMIT_VIP = 30;
+const rateBuckets = new Map();
 
 async function checkChatEnabledFromSupabase() {
     if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return { ok: true };
@@ -70,27 +71,63 @@ async function remoteServerLog(level, message, details) {
     }
 }
 
-function allowedOrigin(event) {
-    const origin = event?.headers?.origin || event?.headers?.Origin || '';
-    if (!origin) return 'https://re-minko-anime.com';
-    if (ALLOWED_ORIGINS.has(origin)) return origin;
+async function verifySupabaseUser(event) {
+    const auth = event.headers?.authorization || event.headers?.Authorization || '';
+    const m = auth.match(/^Bearer\s+(.+)$/i);
+    const jwt = m ? m[1].trim() : '';
+    const base = SUPABASE_URL.replace(/\/$/, '');
+    const anon = SUPABASE_ANON_KEY.trim();
+    if (!base || !anon || !jwt) return null;
     try {
-        const host = new URL(origin).hostname;
-        if (host.endsWith('.netlify.app')) return origin;
-    } catch (_) {
-        /* ignore */
+        const r = await fetch(`${base}/auth/v1/user`, {
+            headers: { Authorization: `Bearer ${jwt}`, apikey: anon }
+        });
+        if (!r.ok) return null;
+        const j = await r.json().catch(() => null);
+        return j && j.id ? j : null;
+    } catch {
+        return null;
     }
-    return 'https://re-minko-anime.com';
+}
+
+async function resolveIsVip(userId) {
+    if (!userId || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) return false;
+    try {
+        const base = SUPABASE_URL.replace(/\/$/, '');
+        const url =
+            `${base}/rest/v1/vip_subscriptions?user_id=eq.${encodeURIComponent(userId)}` +
+            '&select=is_active,expires_at&limit=1';
+        const r = await fetch(url, {
+            headers: {
+                apikey: SUPABASE_SERVICE_ROLE_KEY,
+                Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`
+            }
+        });
+        const rows = await r.json().catch(() => []);
+        const row = Array.isArray(rows) ? rows[0] : null;
+        if (!row || row.is_active !== true) return false;
+        if (row.expires_at && new Date(row.expires_at) <= new Date()) return false;
+        return true;
+    } catch (e) {
+        console.warn('[minko-chat] vip check', e.message);
+        return false;
+    }
+}
+
+function checkRateLimit(key, limit) {
+    const now = Date.now();
+    const bucket = rateBuckets.get(key);
+    if (!bucket || now >= bucket.resetAt) {
+        rateBuckets.set(key, { count: 1, resetAt: now + RATE_WINDOW_MS });
+        return true;
+    }
+    if (bucket.count >= limit) return false;
+    bucket.count += 1;
+    return true;
 }
 
 function corsHeaders(event) {
-    return {
-        'Access-Control-Allow-Origin': allowedOrigin(event),
-        'Access-Control-Allow-Headers': 'Content-Type',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS, GET, HEAD',
-        Vary: 'Origin',
-        'Content-Type': 'application/json'
-    };
+    return buildCorsHeaders(event, 'POST, OPTIONS, GET, HEAD', 'Content-Type, Authorization');
 }
 
 function ok(bodyObj, headers) {
@@ -377,8 +414,16 @@ exports.handler = async (event) => {
             m.content = m.content.slice(0, MAX_MESSAGE_CHARS);
         }
     });
-    const isVip = Boolean(json.isVip);
     const clientResearch = String(json.researchContext || '').trim();
+    const sessionKey = String(json.sessionKey || '').trim().slice(0, 128);
+    const authUser = await verifySupabaseUser(event);
+    const isVip = authUser ? await resolveIsVip(authUser.id) : false;
+    const ip = clientIp(event);
+    const rateKey = `${ip}:${authUser?.id || sessionKey || 'anon'}`;
+    const rateLimit = isVip ? RATE_LIMIT_VIP : authUser ? RATE_LIMIT_USER : RATE_LIMIT_GUEST;
+    if (!checkRateLimit(rateKey, rateLimit)) {
+        return err(429, 'Слишком много сообщений. Подожди минуту и попробуй снова.', headers);
+    }
     const nonSystem = messagesIn.filter((m) => m.role !== 'system');
     const systemMsg = (messagesIn.find((m) => m.role === 'system') || {}).content || '';
     const userGender = /женском роде/i.test(systemMsg) ? 'female' : 'male';

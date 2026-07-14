@@ -5,32 +5,11 @@
 const KODIK_ORIGIN = 'https://kodik-api.com';
 const TOKEN = (process.env.KODIK_API_TOKEN || '').trim();
 const ALLOWED_PATHS = new Set(['/search', '/list', '/translations/v2', '/qualities', '/countries', '/genres', '/years']);
-const ALLOWED_ORIGINS = new Set([
-    'https://re-minko-anime.com',
-    'https://ai-technology-tg.github.io',
-    'http://localhost:8080',
-    'http://127.0.0.1:8080'
-]);
-
-function allowedOrigin(event) {
-    const origin = event.headers?.origin || event.headers?.Origin || '';
-    if (!origin) return 'https://re-minko-anime.com';
-    if (ALLOWED_ORIGINS.has(origin)) return origin;
-    try {
-        const host = new URL(origin).hostname;
-        if (host.endsWith('.netlify.app')) return origin;
-    } catch (_) {
-        /* ignore */
-    }
-    return 'https://re-minko-anime.com';
-}
+const { corsHeaders: buildCorsHeaders } = require('./_cors');
 
 function corsHeaders(event) {
     return {
-        'Access-Control-Allow-Origin': allowedOrigin(event),
-        'Access-Control-Allow-Headers': 'Content-Type',
-        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-        Vary: 'Origin',
+        ...buildCorsHeaders(event, 'GET, POST, OPTIONS'),
         'Content-Type': 'application/json; charset=utf-8'
     };
 }
