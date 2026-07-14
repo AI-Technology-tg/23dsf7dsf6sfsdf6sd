@@ -1,0 +1,393 @@
+/* ═══ Тёмная сторона Re-Minko — Dark Anime UI (только визуал) ═══ */
+
+body.theme-dark {
+    --primary-color: #9d4dff !important;
+    --primary-hover: #c35bff !important;
+    --secondary-color: #ff4da6 !important;
+    --accent-color: #ff2d55 !important;
+    --text-color: #ffffff !important;
+    --text-primary: #ffffff !important;
+    --text-secondary: #b7afcf !important;
+    --card-bg: rgba(18, 8, 31, 0.62) !important;
+    --hover-bg: rgba(157, 77, 255, 0.14) !important;
+    --neon-glow: 0 0 20px rgba(255, 45, 85, 0.35), 0 0 40px rgba(157, 77, 255, 0.2) !important;
+
+    background-color: #000 !important;
+    background-image:
+        linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)),
+        url('../Fons/rem-dark-bg.png') !important;
+    background-size: cover, cover !important;
+    background-position: center, center !important;
+    background-repeat: no-repeat, no-repeat !important;
+    background-attachment: fixed, fixed !important;
+}
+
+body.theme-dark .top-navbar {
+    background: rgba(8, 6, 17, 0.82) !important;
+    backdrop-filter: blur(20px) saturate(1.15);
+    border-bottom: 1px solid rgba(157, 77, 255, 0.42) !important;
+    box-shadow: 0 6px 32px rgba(255, 45, 85, 0.12);
+}
+
+body.theme-dark .top-logo-img {
+    height: 32px !important;
+    width: 32px !important;
+    max-width: 32px !important;
+    max-height: 32px !important;
+    object-fit: cover !important;
+    object-position: center !important;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 45, 85, 0.5);
+    box-shadow: 0 0 18px rgba(255, 45, 85, 0.35);
+}
+
+body.theme-dark .top-logo-text {
+    background: none !important;
+    -webkit-background-clip: unset !important;
+    background-clip: unset !important;
+    -webkit-text-fill-color: #b7afcf !important;
+    color: #b7afcf !important;
+    filter: none !important;
+    text-shadow: none !important;
+}
+
+body.theme-dark .top-nav-link {
+    color: #b7afcf !important;
+}
+
+body.theme-dark .top-nav-link:hover,
+body.theme-dark .top-nav-link.active {
+    color: #ff2d55 !important;
+    text-shadow: 0 0 16px rgba(255, 45, 85, 0.7);
+}
+
+body.theme-dark .top-search-input {
+    background: rgba(18, 8, 31, 0.65) !important;
+    border: 1px solid rgba(157, 77, 255, 0.45) !important;
+    color: #fff !important;
+    box-shadow: 0 0 14px rgba(157, 77, 255, 0.12);
+}
+
+body.theme-dark .top-search-input:focus {
+    border-color: #ff2d55 !important;
+    box-shadow: 0 0 20px rgba(255, 45, 85, 0.28) !important;
+}
+
+body.theme-dark .top-random-anime-btn {
+    border: none !important;
+    background: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    width: 88px !important;
+    height: 88px !important;
+    max-width: none !important;
+    border-radius: 10px !important;
+    transform: translateY(calc(-50% + 6px)) !important;
+    filter: drop-shadow(0 0 10px rgba(255, 45, 85, 0.45)) !important;
+}
+
+body.theme-dark .top-random-anime-btn:hover {
+    transform: translateY(calc(-50% + 6px)) scale(1.06) !important;
+    filter: drop-shadow(0 0 16px rgba(255, 45, 85, 0.65)) !important;
+    border: none !important;
+    background: none !important;
+}
+
+body.theme-dark .top-notifications-btn {
+    background: rgba(18, 8, 31, 0.7) !important;
+    border: 1px solid rgba(157, 77, 255, 0.4) !important;
+    box-shadow: 0 0 12px rgba(157, 77, 255, 0.15);
+}
+
+body.theme-dark .sidebar {
+    background: rgba(8, 6, 17, 0.72) !important;
+    border: 1px solid rgba(157, 77, 255, 0.32) !important;
+    backdrop-filter: blur(16px);
+    box-shadow: 4px 0 28px rgba(255, 45, 85, 0.08);
+}
+
+body.theme-dark .sidebar-link {
+    color: #8b84a8 !important;
+    border: 1px solid transparent;
+    border-radius: 12px;
+}
+
+body.theme-dark .sidebar-link:hover,
+body.theme-dark .sidebar-link.active {
+    color: #fff !important;
+    background: rgba(255, 45, 85, 0.1) !important;
+    border-color: rgba(255, 45, 85, 0.5) !important;
+    box-shadow: 0 0 20px rgba(255, 45, 85, 0.2);
+}
+
+body.theme-dark .home-hero {
+    background: rgba(18, 8, 31, 0.62) !important;
+    border: 1px solid rgba(157, 77, 255, 0.4) !important;
+    box-shadow: 0 10px 48px rgba(255, 45, 85, 0.14), 0 0 0 1px rgba(255, 45, 85, 0.08) inset;
+    backdrop-filter: blur(16px);
+}
+
+body.theme-dark .home-hero-bg {
+    background:
+        radial-gradient(ellipse 55% 45% at 85% 15%, rgba(195, 91, 255, 0.28), transparent),
+        radial-gradient(ellipse 40% 50% at 10% 90%, rgba(255, 45, 85, 0.16), transparent) !important;
+}
+
+body.theme-dark .home-hero-title,
+body.theme-dark .section-title {
+    color: #ffffff !important;
+    text-shadow: 0 0 22px rgba(255, 45, 85, 0.38);
+}
+
+body.theme-dark .home-hero-lead,
+body.theme-dark .home-hero-subtitle {
+    color: #b7afcf !important;
+}
+
+body.theme-dark .home-hero-wink,
+body.theme-dark .hero-stat-label,
+body.theme-dark .section-subtitle {
+    color: #8b84a8 !important;
+}
+
+body.theme-dark .hero-stat-value {
+    color: #fff !important;
+    text-shadow: 0 0 14px rgba(157, 77, 255, 0.45);
+}
+
+body.theme-dark .home-section,
+body.theme-dark .home-beta-banner-inner {
+    background: rgba(18, 8, 31, 0.58) !important;
+    border: 1px solid rgba(157, 77, 255, 0.35) !important;
+    backdrop-filter: blur(14px);
+    box-shadow: 0 6px 28px rgba(255, 45, 85, 0.1);
+}
+
+body.theme-dark .jikan-card,
+body.theme-dark .kodik-home-card {
+    background: rgba(18, 8, 31, 0.62) !important;
+    border: 1px solid rgba(157, 77, 255, 0.38) !important;
+    backdrop-filter: blur(14px) saturate(1.1);
+    box-shadow: 0 4px 24px rgba(255, 45, 85, 0.12), 0 0 0 1px rgba(255, 45, 85, 0.06) inset;
+    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease !important;
+}
+
+body.theme-dark .jikan-card:hover,
+body.theme-dark .kodik-home-card:hover {
+    border-color: rgba(255, 45, 85, 0.55) !important;
+    box-shadow: 0 14px 40px rgba(255, 45, 85, 0.28), 0 0 24px rgba(157, 77, 255, 0.2) !important;
+    transform: translateY(-4px);
+}
+
+body.theme-dark .jikan-card-title {
+    color: #fff !important;
+}
+
+body.theme-dark .jikan-card-meta,
+body.theme-dark .jikan-card-ep {
+    color: #8b84a8 !important;
+}
+
+body.theme-dark .btn,
+body.theme-dark .btn-secondary,
+body.theme-dark .btn-top-login,
+body.theme-dark .jikan-card-go-btn,
+body.theme-dark .home-type-toggle-btn {
+    border-radius: 14px !important;
+    border: 1px solid rgba(157, 77, 255, 0.55) !important;
+    background: rgba(8, 6, 17, 0.72) !important;
+    color: #ffffff !important;
+    box-shadow: 0 0 14px rgba(157, 77, 255, 0.18);
+    transition: all 0.3s ease !important;
+}
+
+body.theme-dark .btn-primary,
+body.theme-dark .btn-top-register,
+body.theme-dark .home-type-toggle-btn.is-active {
+    background: linear-gradient(135deg, #ff2d55, #b00045) !important;
+    border-color: transparent !important;
+    box-shadow: 0 0 28px rgba(255, 45, 85, 0.42);
+}
+
+body.theme-dark .btn:hover,
+body.theme-dark .btn-secondary:hover,
+body.theme-dark .btn-top-login:hover {
+    transform: scale(1.03);
+    border-color: #ff2d55 !important;
+    box-shadow: 0 0 26px rgba(255, 45, 85, 0.45) !important;
+}
+
+body.theme-dark .home-type-toggle {
+    background: rgba(8, 6, 17, 0.85) !important;
+    border: 1px solid rgba(157, 77, 255, 0.4) !important;
+}
+
+body.theme-dark .section-badge {
+    background: rgba(157, 77, 255, 0.15) !important;
+    color: #c35bff !important;
+    border: 1px solid rgba(157, 77, 255, 0.45) !important;
+    box-shadow: 0 0 10px rgba(255, 45, 85, 0.12);
+}
+
+body.theme-dark a.section-more-link {
+    color: #ffffff !important;
+}
+
+body.theme-dark a.section-more-link:hover {
+    color: #ff2d55 !important;
+    text-shadow: 0 0 12px rgba(255, 45, 85, 0.55);
+}
+
+body.theme-dark ::-webkit-scrollbar-thumb {
+    background: rgba(157, 77, 255, 0.5) !important;
+    box-shadow: 0 0 8px rgba(255, 45, 85, 0.25);
+}
+
+/* ═══ Глобально: все страницы (каталог, профиль, просмотр, чат…) ═══ */
+body.theme-dark .main-layout,
+body.theme-dark .main-content-wrapper,
+body.theme-dark .catalog-main,
+body.theme-dark .profile-page,
+body.theme-dark .minko-ai-page,
+body.theme-dark .anime-view-page {
+    color: #b7afcf;
+}
+
+body.theme-dark h1,
+body.theme-dark h2,
+body.theme-dark h3,
+body.theme-dark .catalog-title,
+body.theme-dark .page-heading {
+    color: #ffffff !important;
+    text-shadow: 0 0 16px rgba(255, 45, 85, 0.28);
+}
+
+body.theme-dark p,
+body.theme-dark label,
+body.theme-dark .text-muted {
+    color: #b7afcf !important;
+}
+
+body.theme-dark input:not([type="checkbox"]):not([type="radio"]),
+body.theme-dark select,
+body.theme-dark textarea {
+    background: rgba(18, 8, 31, 0.72) !important;
+    border: 1px solid rgba(157, 77, 255, 0.45) !important;
+    color: #ffffff !important;
+    border-radius: 12px !important;
+    box-shadow: 0 0 10px rgba(157, 77, 255, 0.1);
+}
+
+body.theme-dark input:focus,
+body.theme-dark select:focus,
+body.theme-dark textarea:focus {
+    border-color: #ff2d55 !important;
+    box-shadow: 0 0 18px rgba(255, 45, 85, 0.28) !important;
+    outline: none !important;
+}
+
+body.theme-dark .catalog-filter-bar,
+body.theme-dark .filter-dropdown,
+body.theme-dark .filter-select-panel,
+body.theme-dark .filter-dropdown-inner {
+    background: rgba(18, 8, 31, 0.78) !important;
+    border: 1px solid rgba(157, 77, 255, 0.38) !important;
+    backdrop-filter: blur(14px);
+    box-shadow: 0 8px 32px rgba(255, 45, 85, 0.12);
+}
+
+body.theme-dark .filter-chip {
+    background: rgba(8, 6, 17, 0.65) !important;
+    border: 1px solid rgba(157, 77, 255, 0.45) !important;
+    color: #fff !important;
+    box-shadow: 0 0 10px rgba(157, 77, 255, 0.12);
+}
+
+body.theme-dark .filter-chip:hover,
+body.theme-dark .filter-chip.active {
+    border-color: #ff2d55 !important;
+    box-shadow: 0 0 16px rgba(255, 45, 85, 0.3) !important;
+}
+
+body.theme-dark .filter-option,
+body.theme-dark .filter-chip-label,
+body.theme-dark .filter-chip-value {
+    color: #b7afcf !important;
+}
+
+body.theme-dark .anime-grid-card,
+body.theme-dark .catalog-card,
+body.theme-dark .poster-card,
+body.theme-dark .profile-card,
+body.theme-dark .history-item,
+body.theme-dark .favorite-item,
+body.theme-dark .friend-card,
+body.theme-dark .message-thread,
+body.theme-dark .wt-panel,
+body.theme-dark .info-block,
+body.theme-dark .admin-panel-section,
+body.theme-dark .modal-content,
+body.theme-dark .register-modal-content {
+    background: rgba(18, 8, 31, 0.62) !important;
+    border: 1px solid rgba(157, 77, 255, 0.38) !important;
+    backdrop-filter: blur(14px) saturate(1.08);
+    box-shadow: 0 6px 28px rgba(255, 45, 85, 0.14) !important;
+}
+
+body.theme-dark .anime-grid-card:hover,
+body.theme-dark .catalog-card:hover,
+body.theme-dark .poster-card:hover,
+body.theme-dark .profile-card:hover {
+    border-color: rgba(255, 45, 85, 0.55) !important;
+    box-shadow: 0 12px 36px rgba(255, 45, 85, 0.28) !important;
+}
+
+body.theme-dark a:not(.btn):not(.top-logo):not(.sidebar-link):not(.top-nav-link) {
+    color: #ffffff !important;
+}
+
+body.theme-dark a:not(.btn):hover {
+    color: #ff2d55 !important;
+    text-shadow: 0 0 10px rgba(255, 45, 85, 0.45);
+}
+
+body.theme-dark .btn,
+body.theme-dark button.btn,
+body.theme-dark a.btn {
+    border-radius: 14px !important;
+    border: 1px solid rgba(157, 77, 255, 0.55) !important;
+    background: rgba(8, 6, 17, 0.72) !important;
+    color: #ffffff !important;
+    box-shadow: 0 0 14px rgba(157, 77, 255, 0.16), 0 4px 16px rgba(255, 45, 85, 0.1) !important;
+}
+
+body.theme-dark .btn-primary,
+body.theme-dark a.btn-primary {
+    background: linear-gradient(135deg, #ff2d55, #b00045) !important;
+    border-color: transparent !important;
+    box-shadow: 0 0 26px rgba(255, 45, 85, 0.4) !important;
+}
+
+body.theme-dark .btn:hover,
+body.theme-dark a.btn:hover {
+    transform: scale(1.03);
+    border-color: #ff2d55 !important;
+    box-shadow: 0 0 24px rgba(255, 45, 85, 0.42) !important;
+}
+
+body.theme-dark .minko-chat-panel,
+body.theme-dark .minko-ai-wrap,
+body.theme-dark .global-chat-panel {
+    background: rgba(18, 8, 31, 0.75) !important;
+    border: 1px solid rgba(157, 77, 255, 0.4) !important;
+    box-shadow: 0 8px 40px rgba(255, 45, 85, 0.15) !important;
+}
+
+body.theme-dark .loading-screen {
+    background: #080611 !important;
+}
+
+body.theme-dark .rem-transform-hint {
+    border-color: rgba(255, 45, 85, 0.4);
+    background: rgba(8, 6, 17, 0.92);
+}

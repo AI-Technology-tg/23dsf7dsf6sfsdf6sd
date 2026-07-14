@@ -1,0 +1,355 @@
+/* ── Проценты: премиальный неон ── */
+.rem-transform-percent {
+    position: fixed;
+    inset: 0;
+    z-index: 2147483000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.18s ease;
+    transform: none !important;
+    filter: none !important;
+}
+
+.rem-transform-percent.is-visible {
+    opacity: 1;
+}
+
+.rem-transform-percent-aura {
+    position: absolute;
+    width: min(72vw, 520px);
+    height: min(72vw, 520px);
+    border-radius: 50%;
+    background:
+        radial-gradient(circle, rgba(var(--pct-r, 255), var(--pct-g, 255), var(--pct-b, 255), 0.35) 0%, transparent 68%);
+    filter: blur(28px);
+    animation: remPctAura 1.8s ease-in-out infinite;
+}
+
+.rem-transform-percent-ring {
+    position: absolute;
+    width: min(58vw, 420px);
+    height: min(58vw, 420px);
+    border-radius: 50%;
+    border: 2px solid rgba(var(--pct-r, 255), var(--pct-g, 80), var(--pct-b, 120), 0.55);
+    box-shadow:
+        0 0 40px rgba(var(--pct-r, 255), var(--pct-g, 60), var(--pct-b, 100), 0.45),
+        inset 0 0 30px rgba(157, 77, 255, 0.15);
+    animation: remPctRingSpin 6s linear infinite;
+}
+
+.rem-transform-percent-glass {
+    position: relative;
+    display: inline-flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 0.06em;
+    min-width: min(88vw, 520px);
+    padding: 0.28em 0.85em 0.22em;
+    border-radius: 32px;
+    background: linear-gradient(145deg, rgba(18, 8, 31, 0.82), rgba(8, 6, 17, 0.65));
+    border: 1px solid rgba(157, 77, 255, 0.5);
+    backdrop-filter: blur(20px) saturate(1.25);
+    box-shadow:
+        0 0 0 1px rgba(255, 45, 85, 0.25),
+        0 24px 64px rgba(255, 45, 85, 0.2),
+        0 0 90px rgba(157, 77, 255, 0.25);
+    overflow: visible;
+}
+
+.rem-transform-percent-digits {
+    display: inline-block;
+    font-size: clamp(3.2rem, 14vw, 7.5rem);
+    font-weight: 900;
+    letter-spacing: -0.04em;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    background: linear-gradient(
+        165deg,
+        rgb(var(--pct-r, 255), var(--pct-g, 255), var(--pct-b, 255)) 0%,
+        #c35bff 42%,
+        #ff2d55 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 0 18px rgba(var(--pct-r, 255), var(--pct-g, 80), var(--pct-b, 120), 0.9))
+        drop-shadow(0 0 40px rgba(255, 45, 85, 0.35));
+}
+
+.rem-transform-percent-suffix {
+    font-size: clamp(1.4rem, 5.5vw, 3rem);
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: 0.12em;
+    background: linear-gradient(180deg, #ff4da6, #ff2d55);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 0 12px rgba(255, 45, 85, 0.55));
+    flex-shrink: 0;
+}
+
+@keyframes remPctAura {
+    0%, 100% { transform: scale(0.92); opacity: 0.75; }
+    50% { transform: scale(1.06); opacity: 1; }
+}
+
+@keyframes remPctRingSpin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* ── Финальная вспышка ── */
+.rem-transform-flash {
+    position: fixed;
+    inset: 0;
+    z-index: 2147483645;
+    background: #ffffff;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.5s ease;
+}
+
+.rem-transform-flash.is-active {
+    opacity: 1;
+}
+
+/* ── Veil + scanlines + микро-вспышки ── */
+.rem-curse-glitch-veil {
+    position: fixed;
+    inset: 0;
+    z-index: 2147482000;
+    pointer-events: none;
+    opacity: 0;
+    background:
+        radial-gradient(ellipse 80% 60% at 50% 50%, rgba(255, 45, 85, 0.32) 0%, transparent 70%),
+        radial-gradient(ellipse 40% 80% at 0% 50%, rgba(157, 77, 255, 0.5) 0%, transparent 65%),
+        radial-gradient(ellipse 40% 80% at 100% 50%, rgba(195, 91, 255, 0.45) 0%, transparent 65%);
+    mix-blend-mode: screen;
+}
+
+.rem-curse-glitch-veil.is-on {
+    opacity: var(--rem-veil-opacity, 0.55);
+    animation: remCurseVeilPulse 0.38s ease-in-out infinite;
+}
+
+.rem-transform-scanlines {
+    position: fixed;
+    inset: 0;
+    z-index: 2147482500;
+    pointer-events: none;
+    opacity: 0;
+    background: repeating-linear-gradient(
+        0deg,
+        rgba(255, 255, 255, 0.04) 0px,
+        rgba(255, 255, 255, 0.04) 1px,
+        transparent 1px,
+        transparent 3px
+    );
+    mix-blend-mode: overlay;
+}
+
+.rem-transform-scanlines.is-on {
+    opacity: calc(0.15 + var(--rem-chaos, 0.5) * 0.45);
+    animation: remScanDrift 0.12s linear infinite;
+}
+
+.rem-micro-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 2147482800;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+.rem-micro-burst {
+    position: absolute;
+    width: calc(80px * var(--burst-scale, 1));
+    height: calc(80px * var(--burst-scale, 1));
+    border-radius: 50%;
+    transform: translate(-50%, -50%) scale(0.2);
+    animation: remMicroPop 0.45s ease-out forwards;
+    mix-blend-mode: screen;
+}
+
+.rem-micro-burst--red {
+    background: radial-gradient(circle, rgba(255, 45, 85, 0.9), transparent 70%);
+    box-shadow: 0 0 40px rgba(255, 45, 85, 0.8);
+}
+
+.rem-micro-burst--violet {
+    background: radial-gradient(circle, rgba(157, 77, 255, 0.85), transparent 70%);
+    box-shadow: 0 0 40px rgba(157, 77, 255, 0.75);
+}
+
+.rem-micro-burst--white {
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.95), transparent 65%);
+    box-shadow: 0 0 50px rgba(255, 255, 255, 0.6);
+}
+
+.rem-micro-burst--crimson {
+    background: radial-gradient(circle, rgba(176, 0, 69, 0.9), transparent 70%);
+    box-shadow: 0 0 35px rgba(255, 45, 85, 0.65);
+}
+
+body.rem-chaos-flash::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 2147482400;
+    pointer-events: none;
+    background: rgba(255, 255, 255, 0);
+    animation: remGlobalFlash 0.55s steps(2, end) infinite;
+}
+
+/* ── Тряска / глитч UI ── */
+body.rem-curse-shake .top-navbar,
+body.rem-curse-shake .main-layout,
+body.rem-curse-shake .sidebar {
+    animation: remCurseShake 0.1s linear infinite;
+}
+
+body.rem-curse-shake--heavy .top-navbar,
+body.rem-curse-shake--heavy .main-layout,
+body.rem-curse-shake--heavy .sidebar {
+    animation: remCurseShakeHeavy 0.06s linear infinite;
+}
+
+body.rem-curse-glitch-active .main-layout {
+    filter: contrast(calc(1.04 + var(--rem-chaos, 0.5) * 0.12))
+        saturate(calc(0.95 - var(--rem-chaos, 0.5) * 0.15))
+        hue-rotate(var(--rem-hue, 0deg));
+}
+
+body.rem-curse-glitch-active .top-nav-link,
+body.rem-curse-glitch-active .sidebar-link,
+body.rem-curse-glitch-active .btn,
+body.rem-curse-glitch-active .home-hero-title,
+body.rem-curse-glitch-active .section-title,
+body.rem-curse-glitch-active .home-hero-lead,
+body.rem-curse-glitch-active .jikan-card,
+body.rem-curse-glitch-active .kodik-home-card,
+body.rem-curse-glitch-active .home-section,
+body.rem-curse-glitch-active .hero-stat,
+body.rem-curse-glitch-active .home-social-avatar,
+body.rem-curse-glitch-active .top-search-input {
+    animation: remCurseUiFlicker 0.28s steps(2, end) infinite;
+}
+
+body.rem-curse-shake--heavy.rem-curse-glitch-active .top-nav-link,
+body.rem-curse-shake--heavy.rem-curse-glitch-active .sidebar-link,
+body.rem-curse-shake--heavy.rem-curse-glitch-active .btn,
+body.rem-curse-shake--heavy.rem-curse-glitch-active .home-hero-title,
+body.rem-curse-shake--heavy.rem-curse-glitch-active .section-title,
+body.rem-curse-shake--heavy.rem-curse-glitch-active .jikan-card,
+body.rem-curse-shake--heavy.rem-curse-glitch-active .kodik-home-card,
+body.rem-curse-shake--heavy.rem-curse-glitch-active .home-section {
+    animation: remCurseUiFlickerHeavy 0.18s steps(2, end) infinite;
+}
+
+body.rem-curse-glitch-active .top-nav-link:nth-child(3n),
+body.rem-curse-glitch-active .jikan-card:nth-child(2n),
+body.rem-curse-glitch-active .kodik-home-card:nth-child(3n) {
+    animation-delay: 0.06s;
+}
+
+body.rem-curse-glitch-recover .main-layout {
+    animation: remCalmSettle 0.9s ease-out forwards;
+    filter: none !important;
+}
+
+body.rem-curse-calm .top-navbar,
+body.rem-curse-calm .main-layout,
+body.rem-curse-calm .sidebar,
+body.rem-curse-calm .top-nav-link,
+body.rem-curse-calm .sidebar-link,
+body.rem-curse-calm .btn,
+body.rem-curse-calm .home-hero-title,
+body.rem-curse-calm .section-title,
+body.rem-curse-calm .jikan-card,
+body.rem-curse-calm .kodik-home-card,
+body.rem-curse-calm .home-section {
+    animation: none !important;
+    transform: none !important;
+    opacity: 1 !important;
+    filter: none !important;
+}
+
+body.rem-curse-calm::before {
+    animation: none !important;
+    display: none;
+}
+
+.rem-transform-hint {
+    position: fixed;
+    right: 10px;
+    bottom: 10px;
+    z-index: 999;
+    max-width: 200px;
+    padding: 0.55rem 0.65rem;
+    font-size: 0.72rem;
+    line-height: 1.4;
+    color: #ddd;
+    background: rgba(0, 0, 0, 0.78);
+    border: 1px solid rgba(168, 85, 247, 0.35);
+    border-radius: 10px;
+    backdrop-filter: blur(8px);
+    pointer-events: none;
+}
+
+@keyframes remMicroPop {
+    0% { transform: translate(-50%, -50%) scale(0.1); opacity: 0; }
+    25% { opacity: 1; }
+    100% { transform: translate(-50%, -50%) scale(2.2); opacity: 0; }
+}
+
+@keyframes remGlobalFlash {
+    0%, 100% { background: rgba(255, 255, 255, 0); }
+    50% { background: rgba(255, 45, 85, calc(0.04 + var(--rem-chaos, 0.5) * 0.08)); }
+}
+
+@keyframes remScanDrift {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(4px); }
+}
+
+@keyframes remCurseShake {
+    0%, 100% { transform: translate(0, 0); }
+    20% { transform: translate(calc(-7px * var(--rem-chaos, 1)), calc(5px * var(--rem-chaos, 1))) rotate(-0.45deg); }
+    40% { transform: translate(calc(6px * var(--rem-chaos, 1)), calc(-6px * var(--rem-chaos, 1))) rotate(0.4deg); }
+    60% { transform: translate(calc(-5px * var(--rem-chaos, 1)), calc(-4px * var(--rem-chaos, 1))) rotate(-0.3deg); }
+    80% { transform: translate(calc(5px * var(--rem-chaos, 1)), calc(4px * var(--rem-chaos, 1))) rotate(0.35deg); }
+}
+
+@keyframes remCurseShakeHeavy {
+    0%, 100% { transform: translate(0, 0); }
+    25% { transform: translate(calc(-14px * var(--rem-chaos, 1)), calc(9px * var(--rem-chaos, 1))) rotate(-0.85deg); }
+    50% { transform: translate(calc(12px * var(--rem-chaos, 1)), calc(-11px * var(--rem-chaos, 1))) rotate(0.8deg); }
+    75% { transform: translate(calc(-9px * var(--rem-chaos, 1)), calc(-7px * var(--rem-chaos, 1))) rotate(-0.55deg); }
+}
+
+@keyframes remCurseVeilPulse {
+    0%, 100% { opacity: var(--rem-veil-opacity, 0.55); filter: hue-rotate(0deg); }
+    50% { opacity: calc(var(--rem-veil-opacity, 0.55) * 0.45); filter: hue-rotate(18deg); }
+}
+
+@keyframes remCurseUiFlicker {
+    0% { opacity: 1; transform: translateY(0); filter: none; }
+    50% { opacity: 0.08; transform: translateY(-4px) translateX(3px); filter: blur(1.6px); }
+    100% { opacity: 0.72; transform: translateY(2px) translateX(-2px); }
+}
+
+@keyframes remCurseUiFlickerHeavy {
+    0% { opacity: 1; transform: translate(0, 0); filter: none; }
+    33% { opacity: 0.02; transform: translate(-5px, 4px); filter: blur(2.5px) invert(0.12); }
+    66% { opacity: 0.28; transform: translate(4px, -4px); filter: blur(1.8px); }
+    100% { opacity: 0.82; transform: translate(-3px, 3px); }
+}
+
+@keyframes remCalmSettle {
+    from { transform: scale(1.01); filter: blur(0.8px); }
+    to { transform: scale(1); filter: none; }
+}

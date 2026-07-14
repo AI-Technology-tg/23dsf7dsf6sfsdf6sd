@@ -1,5 +1,12 @@
 // Управление экраном загрузки
 
+(function () {
+    if (sessionStorage.getItem('rem_transform_skip_loading') === '1') {
+        sessionStorage.removeItem('rem_transform_skip_loading');
+        window.__reminkoSkipTransformLoading = true;
+    }
+})();
+
 function getLoadingVideoSrc() {
     const path = window.location.pathname || '';
     if (path.includes('/catalog/') || path.includes('/anime/') || path.includes('/manga/')) {
@@ -166,6 +173,18 @@ function reminkoBootLoadingScreen() {
     if (__reminkoLoadingBooted) return;
     __reminkoLoadingBooted = true;
 
+    if (window.__reminkoSkipTransformLoading) {
+        document.body.classList.add('reminko-loading-dismissed', 'reminko-ui-ready', 'reminko-content-revealed');
+        var skipLs = document.getElementById('loadingScreen');
+        if (skipLs) {
+            skipLs.classList.add('hidden');
+            skipLs.style.display = 'none';
+        }
+        __reminkoLoadingSettled = true;
+        dispatchReminkoLoadingHidden();
+        return;
+    }
+
     showLoading();
 
     // Абсолютный предел ожидания (если навигация так и не применилась)
@@ -196,6 +215,10 @@ reminkoBootLoadingScreen();
 document.addEventListener('click', (e) => {
     const link = e.target.closest('a');
     if (!link) return;
+
+    if (link.classList.contains('top-logo') || link.closest('.top-logo')) {
+        return;
+    }
     
     // Исключаем кнопки входа и регистрации - они открывают модальные окна без загрузки
     // Проверяем по ID, классам и тексту кнопки ПЕРВЫМ ДЕЛОМ

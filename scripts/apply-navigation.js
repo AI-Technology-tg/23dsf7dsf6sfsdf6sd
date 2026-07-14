@@ -1,6 +1,26 @@
 // Универсальный скрипт для применения навигации ко всем страницам
 // Добавляется в конец body перед закрывающим тегом
 
+(function injectRemThemeTransform() {
+    if (typeof window === 'undefined' || window.__remThemeBootInject) return;
+    window.__remThemeBootInject = true;
+    try {
+        var cur = document.currentScript;
+        if (!cur || !cur.src) {
+            var list = document.querySelectorAll('script[src*="apply-navigation"]');
+            cur = list[list.length - 1];
+        }
+        if (!cur || !cur.src) return;
+        var base = cur.src.replace(/[^/]+$/, '');
+        var s = document.createElement('script');
+        s.src = base + 'theme-transform-boot.js?v=rem-theme-1';
+        s.async = false;
+        (document.head || document.documentElement).appendChild(s);
+    } catch (e) {
+        console.warn('[RemTheme] inject boot:', e);
+    }
+})();
+
 (function injectLive2dWidgetEverywhere() {
     if (typeof window === 'undefined' || window.__reminkoLive2dInjected) return;
     window.__reminkoLive2dInjected = true;
