@@ -33,7 +33,7 @@
         if (!cur || !cur.src) return;
         var base = cur.src.replace(/[^/]+$/, '');
         var s = document.createElement('script');
-        s.src = base + 'live2d-widget-init.js?v=mobile-v4-10';
+        s.src = base + 'live2d-widget-init.js?v=live2d-tab-fix-1';
         s.async = true;
         (document.head || document.documentElement).appendChild(s);
     } catch (e) {
