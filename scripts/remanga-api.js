@@ -12,23 +12,7 @@ const ReManga = (() => {
     };
 
     const RATE_LIMIT_MS = 350;
-    const REMANGA_PROXY_STORAGE_KEY = 'reminko_remanga_proxy_url';
     let lastRequest = 0;
-
-    function cleanProxyUrl(value) {
-        const url = String(value || '').trim();
-        if (!url) return '';
-        if (!/^https?:\/\//i.test(url)) return '';
-        return url.replace(/\/$/, '');
-    }
-
-    function storedProxyBase() {
-        try {
-            return cleanProxyUrl(localStorage.getItem(REMANGA_PROXY_STORAGE_KEY));
-        } catch (_) {
-            return '';
-        }
-    }
 
     function remangaProxyBase() {
         const cfg =
@@ -36,9 +20,7 @@ const ReManga = (() => {
             window.APP_CONFIG &&
             typeof window.APP_CONFIG.remanga?.apiProxyUrl === 'string' &&
             window.APP_CONFIG.remanga.apiProxyUrl.trim();
-        if (cfg) return cleanProxyUrl(cfg);
-        const stored = storedProxyBase();
-        if (stored) return stored;
+        if (cfg) return cfg.trim().replace(/\/$/, '');
         try {
             const h = window.location?.hostname || '';
             const proto = window.location?.protocol || '';
@@ -58,25 +40,6 @@ const ReManga = (() => {
         return `${base}?url=${encodeURIComponent(url)}`;
     }
 
-    function publicCorsProxyUrl(url) {
-        return `https://corsproxy.io/?${encodeURIComponent(url)}`;
-    }
-
-    function setProxyUrl(url) {
-        const cleaned = cleanProxyUrl(url);
-        try {
-            if (cleaned) localStorage.setItem(REMANGA_PROXY_STORAGE_KEY, cleaned);
-            else localStorage.removeItem(REMANGA_PROXY_STORAGE_KEY);
-        } catch (_) {
-            /* ignore */
-        }
-        return cleaned;
-    }
-
-    function getProxyUrl() {
-        return remangaProxyBase();
-    }
-
     async function rateLimitedFetch(url) {
         const now = Date.now();
         const wait = RATE_LIMIT_MS - (now - lastRequest);
@@ -91,10 +54,6 @@ const ReManga = (() => {
         const proxied = remangaProxyBase() ? proxyUrl(url) : url;
         let resp = await fetch(proxied, { credentials: 'omit', headers });
         if (!resp.ok && proxied !== url) {
-            const publicProxy = publicCorsProxyUrl(url);
-            resp = await fetch(publicProxy, { credentials: 'omit', headers });
-        }
-        if (!resp.ok && resp.url !== url) {
             resp = await fetch(url, { credentials: 'omit', headers });
         }
         if (!resp.ok) throw new Error(`ReManga API ${resp.status}`);
@@ -264,12 +223,8 @@ const ReManga = (() => {
         searchTitles,
         coverUrl,
         normalizeCover,
-        setProxyUrl,
-        getProxyUrl,
         SITE,
     };
 })();
 
 window.ReManga = ReManga;
-window.reminkoSetRemangaProxyUrl = (url) => ReManga.setProxyUrl(url);
-window.reminkoGetRemangaProxyUrl = () => ReManga.getProxyUrl();

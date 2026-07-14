@@ -116,11 +116,6 @@ const APP_CONFIG = {
             window.APP_CONFIG.remanga.catalogPath.trim()
                 ? window.APP_CONFIG.remanga.catalogPath.trim()
                 : 'data/remanga-manga-catalog.json',
-        apiProxyUrl:
-            typeof window.APP_CONFIG?.remanga?.apiProxyUrl === 'string' &&
-            window.APP_CONFIG.remanga.apiProxyUrl.trim()
-                ? window.APP_CONFIG.remanga.apiProxyUrl.trim().replace(/\/$/, '')
-                : '',
         siteOrigin:
             (window.APP_CONFIG?.remanga?.siteOrigin || 'https://remanga.org').replace(/\/$/, ''),
     },
