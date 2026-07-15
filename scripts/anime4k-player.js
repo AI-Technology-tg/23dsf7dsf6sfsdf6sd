@@ -271,6 +271,12 @@
             }
         });
 
+        video.addEventListener('timeupdate', () => {
+            if (!video.duration || seek?.matches(':active')) return;
+            seek.value = String(Math.round((video.currentTime / video.duration) * 1000));
+            timeLabel.textContent = `${formatTime(video.currentTime)} / ${formatTime(video.duration)}`;
+        });
+
         video.addEventListener('play', () => {
             video.classList.remove('a4k-player__video--before-start');
             viewport?.classList.add('a4k-player__viewport--ready');
