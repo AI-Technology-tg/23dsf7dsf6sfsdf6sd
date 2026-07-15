@@ -44,10 +44,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         await raceMs(reminkoLoadCalendarData(), 4000);
     }
 
-    if (typeof showLoading === 'function') {
-        showLoading();
-    }
-    
     const urlParams = new URLSearchParams(window.location.search);
     const malId = urlParams.get('mal_id');
     const idFromUrl = urlParams.get('id');

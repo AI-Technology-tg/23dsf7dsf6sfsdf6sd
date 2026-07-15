@@ -607,8 +607,45 @@ if (!window.__reminkoMaintNavClickBound) {
         }
     };
 
+    async function sendHeartbeat() {
+        if (skipPage()) return;
+        if (typeof supabaseClient === 'undefined' || !supabaseClient) return;
+        const path = String(window.location.pathname || '') + String(window.location.search || '');
+        let user_id = null;
+        try {
+            const {
+                data: { session }
+            } = await supabaseClient.auth.getSession();
+            user_id = session && session.user ? session.user.id : null;
+        } catch (_) {
+            /* ignore */
+        }
+        const payload = {
+            visitor_id: getVisitorId(),
+            user_id,
+            path: path.slice(0, 2048),
+            page_title: String(document.title || '').slice(0, 300) || null,
+            referrer: null,
+            user_agent: String(navigator.userAgent || '').slice(0, 400) || null,
+            event_kind: 'action',
+            event_label: 'heartbeat',
+            meta: { ts: Date.now() }
+        };
+        try {
+            await supabaseClient.from('site_visit_events').insert(payload);
+        } catch (_) {
+            /* ignore */
+        }
+    }
+
+    window.reminkoSendSiteHeartbeat = sendHeartbeat;
+
     function boot() {
         sendPageView();
+        sendHeartbeat();
+        if (!window.__reminkoSiteHeartbeatTimer) {
+            window.__reminkoSiteHeartbeatTimer = setInterval(sendHeartbeat, 45000);
+        }
     }
 
     if (document.readyState === 'loading') {

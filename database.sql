@@ -1376,6 +1376,26 @@ REVOKE ALL ON FUNCTION public.site_visit_creator_live(integer) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.site_visit_creator_live(integer) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.site_visit_creator_live(integer) TO service_role;
 
+-- Публичный счётчик «онлайн сейчас» для шапки сайта (anon/auth).
+CREATE OR REPLACE FUNCTION public.site_visit_online_count(p_window_minutes integer DEFAULT 5)
+RETURNS integer
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT COUNT(DISTINCT visitor_id)::integer
+  FROM public.site_visit_events
+  WHERE created_at >= now() - make_interval(mins => LEAST(15, GREATEST(1, COALESCE(p_window_minutes, 5))))
+    AND (
+      event_kind = 'pageview'
+      OR (event_kind = 'action' AND event_label = 'heartbeat')
+    );
+$$;
+
+REVOKE ALL ON FUNCTION public.site_visit_online_count(integer) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.site_visit_online_count(integer) TO anon, authenticated;
+
 -- Глобальная пауза комнаты: любой участник (плеер/сеть); снимает только хост.
 CREATE OR REPLACE FUNCTION public.wt_raise_sync_hold(p_session_id uuid, p_reason text DEFAULT 'issue')
 RETURNS void
@@ -1914,6 +1934,9 @@ GRANT EXECUTE ON FUNCTION public.site_visit_creator_bundle(timestamptz) TO authe
 
 REVOKE ALL ON FUNCTION public.site_visit_creator_live(integer) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.site_visit_creator_live(integer) TO authenticated, service_role;
+
+REVOKE ALL ON FUNCTION public.site_visit_online_count(integer) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.site_visit_online_count(integer) TO anon, authenticated;
 
 REVOKE ALL ON FUNCTION public.wt_raise_sync_hold(uuid, text) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.wt_raise_sync_hold(uuid, text) TO authenticated, service_role;

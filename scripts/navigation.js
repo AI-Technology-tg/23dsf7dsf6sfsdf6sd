@@ -64,6 +64,11 @@ class NavigationManager {
                         <img src="${this.basePath}Fons/fonG.jpg" alt="Re-Minko Logo" class="top-logo-img" width="32" height="32" decoding="async" fetchpriority="high">
                         <span class="top-logo-text">Re-Minko</span>
                     </a>
+                    <div class="top-online-widget" id="topOnlineWidget" title="Сейчас на сайте" aria-live="polite">
+                        <span class="top-online-dot" aria-hidden="true"></span>
+                        <span class="top-online-label">Онлайн</span>
+                        <strong class="top-online-count" id="topOnlineCount">—</strong>
+                    </div>
                     
                     <div class="top-search-wrapper">
                         <div class="top-search-input-wrapper">
@@ -576,6 +581,31 @@ class NavigationManager {
         }
     }
 
+    initSiteOnlineWidget() {
+        const countEl = document.getElementById('topOnlineCount');
+        if (!countEl) return;
+
+        const refresh = async () => {
+            if (typeof supabaseClient === 'undefined' || !supabaseClient) return;
+            try {
+                const { data, error } = await supabaseClient.rpc('site_visit_online_count', {
+                    p_window_minutes: 5
+                });
+                if (error) throw error;
+                const n = Number(data);
+                countEl.textContent = Number.isFinite(n) && n >= 0 ? String(n) : '—';
+            } catch (_) {
+                /* тихо — не ломаем шапку */
+            }
+        };
+
+        if (window.__reminkoOnlineWidgetTimer) {
+            clearInterval(window.__reminkoOnlineWidgetTimer);
+        }
+        void refresh();
+        window.__reminkoOnlineWidgetTimer = setInterval(refresh, 30000);
+    }
+
     /** Общая инициализация после вставки/обновления шапки и сайдбара */
     finishNavigationInit(preservedMain) {
         this.initTopSearch();
@@ -587,6 +617,7 @@ class NavigationManager {
         this.initDisabledNavLinks();
         this.updateAuthLinks();
         this.initLiveInternetCounter();
+        this.initSiteOnlineWidget();
 
         const navManagerInstance = this;
         setTimeout(() => {

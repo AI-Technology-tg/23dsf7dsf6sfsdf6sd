@@ -1345,10 +1345,10 @@ class CreatorAdminPanel {
                 mal_id: mal,
                 jikan: jikanFull,
                 added_by: a.user.id,
-                title_ru: tr,
-                description_ru: dr,
                 published
             };
+            if (tr != null) payload.title_ru = tr;
+            if (dr != null) payload.description_ru = dr;
             if (videoUrl != null) payload.video_url = videoUrl;
             if (posterUrl != null) payload.poster_url = posterUrl;
             const { error } = await supabaseClient.from('catalog_4k_anime').upsert(payload, { onConflict: 'mal_id' });
@@ -1361,21 +1361,47 @@ class CreatorAdminPanel {
     }
 
     async updateCatalog4kVideoUrl(malId, videoUrl) {
+        return this.updateCatalog4kAnimeMeta(malId, { video_url: videoUrl });
+    }
+
+    async updateCatalog4kAnimeMeta(malId, fields = {}) {
         if (!supabaseClient) return { success: false, message: 'Нет клиента' };
         const a = await this._assertCallerIsSiteCreator();
         if (!a.ok) return { success: false, message: a.message };
         const mid = parseInt(malId, 10);
         if (!mid || Number.isNaN(mid)) return { success: false, message: 'Некорректный mal_id' };
+
+        const payload = {};
+        if (fields.title_ru !== undefined) {
+            const t = String(fields.title_ru || '').trim();
+            payload.title_ru = t || null;
+        }
+        if (fields.description_ru !== undefined) {
+            const d = String(fields.description_ru || '').trim();
+            payload.description_ru = d || null;
+        }
+        if (fields.poster_url !== undefined) {
+            const p = String(fields.poster_url || '').trim();
+            payload.poster_url = p || null;
+        }
+        if (fields.video_url !== undefined) {
+            const v = String(fields.video_url || '').trim();
+            payload.video_url = v || null;
+        }
+        if (fields.published !== undefined) {
+            payload.published = fields.published !== false;
+        }
+        if (!Object.keys(payload).length) {
+            return { success: false, message: 'Нет полей для сохранения' };
+        }
+
         try {
-            const { error } = await supabaseClient
-                .from('catalog_4k_anime')
-                .update({ video_url: videoUrl ? String(videoUrl).trim() : null })
-                .eq('mal_id', mid);
+            const { error } = await supabaseClient.from('catalog_4k_anime').update(payload).eq('mal_id', mid);
             if (error) throw error;
-            return { success: true, message: 'URL видео обновлён' };
+            return { success: true, message: 'Карточка ≈4K сохранена' };
         } catch (e) {
-            console.error('[CreatorAdmin] updateCatalog4kVideoUrl', e);
-            return { success: false, message: e.message || 'Ошибка обновления' };
+            console.error('[CreatorAdmin] updateCatalog4kAnimeMeta', e);
+            return { success: false, message: e.message || 'Ошибка сохранения' };
         }
     }
 

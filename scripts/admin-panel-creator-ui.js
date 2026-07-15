@@ -160,9 +160,237 @@ function initAnime4kSection() {
     );
     document.getElementById('anime4kAdminUploadBtn')?.addEventListener('click', () => void anime4kAdminUploadVideo());
     document.getElementById('anime4kAdminFileInput')?.addEventListener('change', () => anime4kAdminOnFileSelected());
+    document.getElementById('anime4kAdminSaveEditorBtn')?.addEventListener('click', () => void anime4kAdminSaveEditor());
+    document.getElementById('anime4kAdminDeleteEditorBtn')?.addEventListener('click', () => void anime4kAdminDeleteSelected());
+    document.getElementById('anime4kAdminRefreshMetaBtn')?.addEventListener('click', () => void anime4kAdminRefreshMetaForSelected());
+    document.getElementById('anime4kEditorPosterUrl')?.addEventListener('input', () => {
+        anime4kEditorUpdatePosterPreview(document.getElementById('anime4kEditorPosterUrl')?.value || '');
+    });
     anime4kAdminUpdateMaxUploadLabel();
 }
 
+let __anime4kRowsCache = [];
+let __anime4kSelectedMal = null;
+
+function anime4kAdminSetStatus(text, isError) {
+    const statusEl = document.getElementById('anime4kAdminStatus');
+    if (!statusEl) return;
+    statusEl.textContent = text || '';
+    statusEl.style.color = isError ? '#f87171' : '';
+}
+
+function anime4kExtractJikanPoster(j) {
+    if (!j || typeof j !== 'object') return '';
+    return j.images?.jpg?.large_image_url || j.images?.jpg?.image_url || '';
+}
+
+function anime4kRowJikan(row) {
+    const j = row?.jikan;
+    if (!j) return {};
+    if (typeof j === 'string') {
+        try {
+            return JSON.parse(j);
+        } catch {
+            return {};
+        }
+    }
+    if (j.data && typeof j.data === 'object') return j.data;
+    return j;
+}
+
+function anime4kRowDisplayTitle(row) {
+    const j = anime4kRowJikan(row);
+    const custom = row?.title_ru && String(row.title_ru).trim();
+    if (custom) return custom;
+    return j.title || j.title_english || `MAL ${row?.mal_id}`;
+}
+
+function anime4kRowPosterUrl(row) {
+    const custom = row?.poster_url && String(row.poster_url).trim();
+    if (custom) return custom;
+    return anime4kExtractJikanPoster(anime4kRowJikan(row));
+}
+
+function anime4kRowMetaSourceLabel(row) {
+    const j = anime4kRowJikan(row);
+    const src = j._reminkoMetaSource || j._metaSource;
+    if (src === 'shikimori') return 'Shikimori';
+    if (src === 'kodik-catalog') return 'Kodik';
+    if (src === 'manual') return 'Вручную';
+    return 'Jikan';
+}
+
+function anime4kEditorUpdatePosterPreview(url) {
+    const img = document.getElementById('anime4kEditorPosterPreview');
+    const ph = document.getElementById('anime4kEditorPosterPh');
+    const trimmed = String(url || '').trim();
+    if (!img || !ph) return;
+    if (trimmed) {
+        img.src = trimmed;
+        img.hidden = false;
+        ph.hidden = true;
+        img.onerror = () => {
+            img.hidden = true;
+            ph.hidden = false;
+        };
+    } else {
+        img.hidden = true;
+        img.removeAttribute('src');
+        ph.hidden = false;
+    }
+}
+
+function anime4kAdminClearEditor() {
+    __anime4kSelectedMal = null;
+    document.getElementById('anime4kAdminEditorForm')?.setAttribute('hidden', '');
+    document.getElementById('anime4kAdminEditorEmpty')?.removeAttribute('hidden');
+    document.querySelectorAll('.anime4k-admin__list-item').forEach((el) => el.classList.remove('is-active'));
+}
+
+function anime4kAdminFillEditor(row) {
+    if (!row) {
+        anime4kAdminClearEditor();
+        return;
+    }
+    __anime4kSelectedMal = Number(row.mal_id);
+    const j = anime4kRowJikan(row);
+    const mal = Number(row.mal_id);
+    const siteId = 22000000 + mal;
+    const titleRu = row.title_ru && String(row.title_ru).trim() ? String(row.title_ru).trim() : '';
+    const descRu =
+        row.description_ru && String(row.description_ru).trim()
+            ? String(row.description_ru).trim()
+            : String(j.synopsis || '').replace(/\s+/g, ' ').trim();
+    const poster = anime4kRowPosterUrl(row);
+    const titleEn = j.title_english || j.title || '';
+
+    document.getElementById('anime4kAdminEditorEmpty')?.setAttribute('hidden', '');
+    document.getElementById('anime4kAdminEditorForm')?.removeAttribute('hidden');
+
+    const setText = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = val;
+    };
+    const setVal = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.value = val;
+    };
+
+    setText('anime4kEditorMal', String(mal));
+    setText('anime4kEditorSiteId', String(siteId));
+    setText('anime4kEditorMetaSource', anime4kRowMetaSourceLabel(row));
+    setText('anime4kEditorTitleEn', titleEn ? `EN: ${titleEn}` : 'EN: —');
+    setVal('anime4kEditorTitleRu', titleRu);
+    setVal('anime4kEditorDescRu', descRu);
+    setVal('anime4kEditorPosterUrl', poster);
+    setVal('anime4kEditorVideoUrl', row.video_url || '');
+    const pub = document.getElementById('anime4kEditorPublished');
+    if (pub) pub.checked = row.published !== false;
+
+    anime4kEditorUpdatePosterPreview(poster);
+
+    const viewLink = document.getElementById('anime4kEditorViewLink');
+    const catalogLink = document.getElementById('anime4kEditorCatalogLink');
+    if (viewLink) viewLink.href = `anime/view-4k.html?id=${siteId}`;
+    if (catalogLink) catalogLink.href = 'catalog/anime-4k.html';
+
+    document.querySelectorAll('.anime4k-admin__list-item').forEach((el) => {
+        el.classList.toggle('is-active', Number(el.getAttribute('data-mal')) === mal);
+    });
+
+    const hint = document.getElementById('anime4kAdminFileHint');
+    if (hint) {
+        hint.textContent = `H.264 + AAC. Выбрана карточка MAL ${mal} (site id ${siteId}).`;
+    }
+}
+
+function anime4kAdminSelectRow(mal) {
+    const mid = Number(mal);
+    const row = __anime4kRowsCache.find((r) => Number(r.mal_id) === mid);
+    if (row) anime4kAdminFillEditor(row);
+}
+
+function anime4kAdminReadEditorFields() {
+    return {
+        title_ru: document.getElementById('anime4kEditorTitleRu')?.value || '',
+        description_ru: document.getElementById('anime4kEditorDescRu')?.value || '',
+        poster_url: document.getElementById('anime4kEditorPosterUrl')?.value || '',
+        video_url: document.getElementById('anime4kEditorVideoUrl')?.value || '',
+        published: !!document.getElementById('anime4kEditorPublished')?.checked
+    };
+}
+
+async function anime4kAdminSaveEditor() {
+    if (!__anime4kSelectedMal || !window.creatorAdminPanel) return;
+    anime4kAdminSetStatus('Сохранение…');
+    const fields = anime4kAdminReadEditorFields();
+    const res = await window.creatorAdminPanel.updateCatalog4kAnimeMeta(__anime4kSelectedMal, fields);
+    if (res.success) {
+        anime4kAdminSetStatus(res.message || 'Сохранено');
+        if (typeof showSuccess === 'function') showSuccess(res.message || 'Карточка сохранена');
+        await loadAnime4kAdminPanel(__anime4kSelectedMal);
+    } else {
+        anime4kAdminSetStatus(res.message || 'Ошибка', true);
+        showErrorSafe(res.message || 'Ошибка сохранения');
+    }
+}
+
+async function anime4kAdminDeleteSelected() {
+    if (!__anime4kSelectedMal || !window.creatorAdminPanel) return;
+    const mal = __anime4kSelectedMal;
+    const title = document.getElementById('anime4kEditorTitleRu')?.value || `MAL ${mal}`;
+    if (!confirm(`Удалить «${title}» (MAL ${mal}) из ≈4K каталога?\n\nЗапись в БД будет удалена; файл в Storage не трогается.`)) {
+        return;
+    }
+    anime4kAdminSetStatus('Удаление…');
+    const del = await window.creatorAdminPanel.deleteCatalog4kAnime(mal);
+    if (del.success) {
+        anime4kAdminSetStatus(del.message || 'Удалено');
+        __anime4kSelectedMal = null;
+        await loadAnime4kAdminPanel();
+    } else {
+        anime4kAdminSetStatus(del.message || 'Ошибка', true);
+    }
+}
+
+async function anime4kAdminRefreshMetaForSelected() {
+    if (!__anime4kSelectedMal) {
+        anime4kAdminSetStatus('Сначала выберите тайтл', true);
+        return;
+    }
+    const mal = __anime4kSelectedMal;
+    anime4kAdminSetStatus('Jikan / Shikimori…');
+    try {
+        if (typeof window.KodikCatalogStore?.load === 'function') {
+            await Promise.race([
+                window.KodikCatalogStore.load(),
+                new Promise((r) => setTimeout(r, 5000))
+            ]).catch(() => null);
+        }
+        const resolved = await anime4kResolveMalMeta(mal, { skipJikan: false });
+        if (!resolved?.jikan) throw new Error('Не удалось получить метаданные');
+
+        const row = __anime4kRowsCache.find((r) => Number(r.mal_id) === mal);
+        const poster = resolved.poster_url || anime4kExtractJikanPoster(resolved.jikan);
+        const upsOptions = {};
+        if (!(row?.title_ru && String(row.title_ru).trim())) {
+            upsOptions.title_ru = resolved.title_ru;
+        }
+        if (!(row?.description_ru && String(row.description_ru).trim())) {
+            upsOptions.description_ru = resolved.description_ru;
+        }
+        if (!(row?.poster_url && String(row.poster_url).trim()) && poster) {
+            upsOptions.poster_url = poster;
+        }
+        const ups = await window.creatorAdminPanel.upsertCatalog4kAnime(resolved.jikan, upsOptions);
+        if (!ups.success) throw new Error(ups.message || 'Ошибка обновления jikan');
+
+        anime4kAdminSetStatus('Jikan / Shikimori обновлены. Пустые поля подставлены — проверьте и сохраните при необходимости.');
+        await loadAnime4kAdminPanel(mal);
+    } catch (e) {
+        anime4kAdminSetStatus(e.message || 'Ошибка', true);
+    }
+}
 function anime4kBuildJikanStub(mal, meta) {
     const m = meta || {};
     const titleEn = m.title_en || m.title || `Anime MAL ${mal}`;
@@ -201,7 +429,15 @@ async function anime4kResolveMalMeta(mal, opts) {
                     14000
                 );
                 if (json?.data?.mal_id) {
-                    return { jikan: json.data, source: 'jikan', title_ru: null, description_ru: null };
+                    const j = json.data;
+                    const synopsis = String(j.synopsis || '').replace(/\s+/g, ' ').trim();
+                    return {
+                        jikan: j,
+                        source: 'jikan',
+                        title_ru: j.title || j.title_english || null,
+                        description_ru: synopsis || null,
+                        poster_url: anime4kExtractJikanPoster(j) || null
+                    };
                 }
             } catch (_) {
                 /* fallback */
@@ -210,7 +446,14 @@ async function anime4kResolveMalMeta(mal, opts) {
         if (typeof jikanFetchAnimeFullByMalId === 'function') {
             const full = await withTimeout(jikanFetchAnimeFullByMalId(mal), 14000);
             if (full?.mal_id) {
-                return { jikan: full, source: 'jikan', title_ru: null, description_ru: null };
+                const synopsis = String(full.synopsis || '').replace(/\s+/g, ' ').trim();
+                return {
+                    jikan: full,
+                    source: 'jikan',
+                    title_ru: full.title || full.title_english || null,
+                    description_ru: synopsis || null,
+                    poster_url: anime4kExtractJikanPoster(full) || null
+                };
             }
         }
     }
@@ -243,7 +486,8 @@ async function anime4kResolveMalMeta(mal, opts) {
                 jikan,
                 source: 'shikimori',
                 title_ru: sh.russian || sh.name || null,
-                description_ru: description || null
+                description_ru: description || null,
+                poster_url: poster || null
             };
         }
     }
@@ -266,7 +510,8 @@ async function anime4kResolveMalMeta(mal, opts) {
             jikan,
             source: 'kodik-catalog',
             title_ru: kodikAnime.title || null,
-            description_ru: kodikAnime.description || null
+            description_ru: kodikAnime.description || null,
+            poster_url: kodikAnime.posterUrl || kodikAnime.poster || null
         };
     }
 
@@ -294,17 +539,17 @@ function anime4kAdminUpdateMaxUploadLabel() {
 }
 
 function anime4kAdminOnFileSelected() {
-    const statusEl = document.getElementById('anime4kAdminStatus');
     const fileInput = document.getElementById('anime4kAdminFileInput');
     const file = fileInput?.files && fileInput.files[0];
-    if (!file || !statusEl) return;
+    if (!file) return;
     const maxB = anime4kAdminMaxUploadBytes();
     if (file.size > maxB) {
-        statusEl.textContent = `Файл ${anime4kAdminFormatBytes(file.size)} — больше лимита ${anime4kAdminFormatBytes(maxB)}. Загрузка заблокирована.`;
-        statusEl.style.color = '#f87171';
+        anime4kAdminSetStatus(
+            `Файл ${anime4kAdminFormatBytes(file.size)} — больше лимита ${anime4kAdminFormatBytes(maxB)}.`,
+            true
+        );
     } else {
-        statusEl.textContent = `Выбран: ${file.name} (${anime4kAdminFormatBytes(file.size)})`;
-        statusEl.style.color = '';
+        anime4kAdminSetStatus(`Выбран: ${file.name} (${anime4kAdminFormatBytes(file.size)})`);
     }
 }
 
@@ -350,85 +595,79 @@ function anime4kHideUploadProgress(delayMs) {
     else hide();
 }
 
-async function loadAnime4kAdminPanel() {
-    const tbody = document.getElementById('anime4kAdminTableBody');
-    const statusEl = document.getElementById('anime4kAdminStatus');
-    if (!tbody || !window.creatorAdminPanel) return;
+async function loadAnime4kAdminPanel(selectMal) {
+    const listEl = document.getElementById('anime4kAdminList');
+    const countEl = document.getElementById('anime4kAdminCount');
+    if (!listEl || !window.creatorAdminPanel) return;
 
-    if (statusEl) statusEl.textContent = 'Загрузка…';
-    tbody.innerHTML = '<tr><td colspan="5">Загрузка…</td></tr>';
+    const keepMal = selectMal != null ? Number(selectMal) : __anime4kSelectedMal;
+    anime4kAdminSetStatus('Загрузка…');
+    listEl.innerHTML = '<p class="anime4k-admin__empty">Загрузка…</p>';
 
     const res = await window.creatorAdminPanel.listCatalog4kAnime();
     if (!res.success) {
-        tbody.innerHTML = `<tr><td colspan="5" style="color:#f87171;">${adminPanelEscapeHtml(res.message || 'Ошибка')}</td></tr>`;
-        if (statusEl) statusEl.textContent = '';
+        listEl.innerHTML = `<p class="anime4k-admin__empty anime4k-admin__empty--error">${adminPanelEscapeHtml(res.message || 'Ошибка')}</p>`;
+        anime4kAdminSetStatus('');
         return;
     }
 
-    const rows = res.rows || [];
-    if (statusEl) statusEl.textContent = `Тайтлов: ${rows.length}`;
-    if (!rows.length) {
-        tbody.innerHTML = '<tr><td colspan="5">Пусто — добавьте MAL id через Jikan</td></tr>';
+    __anime4kRowsCache = res.rows || [];
+    if (countEl) countEl.textContent = String(__anime4kRowsCache.length);
+    anime4kAdminSetStatus(`${__anime4kRowsCache.length} тайтл(ов)`);
+
+    if (!__anime4kRowsCache.length) {
+        listEl.innerHTML = '<p class="anime4k-admin__empty">Пусто — добавьте MAL id слева.</p>';
+        anime4kAdminClearEditor();
         return;
     }
 
-    tbody.innerHTML = rows
+    listEl.innerHTML = __anime4kRowsCache
         .map((row) => {
-            const j = row.jikan && typeof row.jikan === 'object' ? row.jikan : {};
-            const title = row.title_ru || j.title_english || j.title || '—';
-            const siteId = 22000000 + Number(row.mal_id);
-            const vid = row.video_url || '';
-            const vidShort = vid.length > 48 ? vid.slice(0, 45) + '…' : vid || '—';
-            return `<tr data-mal="${row.mal_id}">
-                <td>${row.mal_id}<br><small style="opacity:.7">id ${siteId}</small></td>
-                <td>${adminPanelEscapeHtml(title)}</td>
-                <td>
-                    <input type="url" class="admin-input anime4k-admin-video-input" data-mal="${row.mal_id}" value="${adminPanelEscapeHtml(vid)}" placeholder="https://…/video.mp4" style="min-width:14rem;">
-                    <div style="font-size:0.75rem;opacity:.65;margin-top:0.2rem;" title="${adminPanelEscapeHtml(vid)}">${adminPanelEscapeHtml(vidShort)}</div>
-                </td>
-                <td>${row.published === false ? 'нет' : 'да'}</td>
-                <td style="white-space:nowrap;">
-                    <button type="button" class="admin-btn admin-btn-small anime4k-save-video-btn" data-mal="${row.mal_id}">💾 URL</button>
-                    <button type="button" class="admin-btn admin-btn-small admin-btn-danger anime4k-del-btn" data-mal="${row.mal_id}" title="Удалить из ≈4K">🗑 Удалить</button>
-                </td>
-            </tr>`;
+            const mal = Number(row.mal_id);
+            const siteId = 22000000 + mal;
+            const title = anime4kRowDisplayTitle(row);
+            const poster = anime4kRowPosterUrl(row);
+            const hasVideo = !!(row.video_url && String(row.video_url).trim());
+            const published = row.published !== false;
+            const posterHtml = poster
+                ? `<img class="anime4k-admin__list-item-poster" src="${adminPanelEscapeHtml(poster)}" alt="" loading="lazy">`
+                : `<div class="anime4k-admin__list-item-poster anime4k-admin__list-item-poster--ph">4K</div>`;
+            return `<button type="button" class="anime4k-admin__list-item" data-mal="${mal}">
+                ${posterHtml}
+                <span class="anime4k-admin__list-item-body">
+                    <strong class="anime4k-admin__list-item-title">${adminPanelEscapeHtml(title)}</strong>
+                    <span class="anime4k-admin__list-item-meta">MAL ${mal} · id ${siteId}</span>
+                    <span class="anime4k-admin__list-item-tags">
+                        <span class="anime4k-admin__tag ${hasVideo ? 'anime4k-admin__tag--ok' : 'anime4k-admin__tag--warn'}">${hasVideo ? 'видео' : 'нет видео'}</span>
+                        <span class="anime4k-admin__tag ${published ? 'anime4k-admin__tag--ok' : ''}">${published ? 'опубл.' : 'скрыт'}</span>
+                    </span>
+                </span>
+            </button>`;
         })
         .join('');
 
-    tbody.querySelectorAll('.anime4k-save-video-btn').forEach((btn) => {
-        btn.addEventListener('click', async () => {
-            const mal = btn.getAttribute('data-mal');
-            const input = tbody.querySelector(`.anime4k-admin-video-input[data-mal="${mal}"]`);
-            const url = input ? input.value.trim() : '';
-            const upd = await window.creatorAdminPanel.updateCatalog4kVideoUrl(mal, url);
-            if (statusEl) statusEl.textContent = upd.message || (upd.success ? 'OK' : 'Ошибка');
-            if (upd.success) void loadAnime4kAdminPanel();
-        });
+    listEl.querySelectorAll('.anime4k-admin__list-item').forEach((btn) => {
+        btn.addEventListener('click', () => anime4kAdminSelectRow(btn.getAttribute('data-mal')));
     });
-    tbody.querySelectorAll('.anime4k-del-btn').forEach((btn) => {
-        btn.addEventListener('click', async () => {
-            const mal = btn.getAttribute('data-mal');
-            if (!confirm(`Удалить MAL ${mal} из ≈4K каталога?`)) return;
-            const del = await window.creatorAdminPanel.deleteCatalog4kAnime(mal);
-            if (statusEl) statusEl.textContent = del.message || '';
-            void loadAnime4kAdminPanel();
-        });
-    });
+
+    const targetMal =
+        keepMal && __anime4kRowsCache.some((r) => Number(r.mal_id) === keepMal)
+            ? keepMal
+            : Number(__anime4kRowsCache[0].mal_id);
+    anime4kAdminSelectRow(targetMal);
 }
 
 async function anime4kAdminUploadVideo() {
-    const statusEl = document.getElementById('anime4kAdminStatus');
     const fileInput = document.getElementById('anime4kAdminFileInput');
-    const malInput = document.getElementById('anime4kAdminMalInput');
     const uploadBtn = document.getElementById('anime4kAdminUploadBtn');
     const file = fileInput?.files && fileInput.files[0];
-    const mal = parseInt(malInput?.value, 10);
+    const mal = __anime4kSelectedMal || parseInt(document.getElementById('anime4kAdminMalInput')?.value, 10);
     if (!file) {
-        if (statusEl) statusEl.textContent = 'Выберите MP4 файл';
+        anime4kAdminSetStatus('Выберите MP4 файл', true);
         return;
     }
     if (!mal || Number.isNaN(mal)) {
-        if (statusEl) statusEl.textContent = 'Укажите MAL id';
+        anime4kAdminSetStatus('Выберите карточку слева или укажите MAL id', true);
         return;
     }
     const maxB = anime4kAdminMaxUploadBytes();
@@ -437,15 +676,12 @@ async function anime4kAdminUploadVideo() {
             typeof reminkoExplainAnime4kSizeError === 'function'
                 ? reminkoExplainAnime4kSizeError('maximum allowed size', file.size)
                 : `Файл слишком большой (${anime4kAdminFormatBytes(file.size)}). Лимит: ${anime4kAdminFormatBytes(maxB)}.`;
-        if (statusEl) {
-            statusEl.textContent = msg;
-            statusEl.style.color = '#f87171';
-        }
+        anime4kAdminSetStatus(msg, true);
         anime4kSetUploadProgress({ phase: 'error', percent: 0, label: msg });
         anime4kHideUploadProgress(12000);
         return;
     }
-    if (statusEl) statusEl.style.color = '';
+    anime4kAdminSetStatus('Загрузка…');
     if (uploadBtn) uploadBtn.disabled = true;
     if (fileInput) fileInput.disabled = true;
     anime4kSetUploadProgress({
@@ -453,24 +689,25 @@ async function anime4kAdminUploadVideo() {
         percent: 0,
         label: `Подготовка… ${(file.size / (1024 * 1024)).toFixed(0)} MB`
     });
-    if (statusEl) statusEl.textContent = 'Загрузка…';
     let res;
     try {
         res = await window.creatorAdminPanel.uploadCatalog4kVideo(mal, file, {
             onProgress: (payload) => {
                 anime4kSetUploadProgress(payload);
-                if (statusEl && payload?.percent != null) statusEl.textContent = `${payload.percent}%`;
+                if (payload?.percent != null) anime4kAdminSetStatus(`${payload.percent}%`);
             }
         });
     } finally {
         if (uploadBtn) uploadBtn.disabled = false;
         if (fileInput) fileInput.disabled = false;
     }
-    if (statusEl) statusEl.textContent = res.message || (res.success ? 'OK' : 'Ошибка');
+    anime4kAdminSetStatus(res.message || (res.success ? 'OK' : 'Ошибка'), !res.success);
     if (res.success) {
         anime4kSetUploadProgress({ phase: 'done', percent: 100, label: res.message || 'Готово!' });
         if (fileInput) fileInput.value = '';
-        void loadAnime4kAdminPanel();
+        const videoInput = document.getElementById('anime4kEditorVideoUrl');
+        if (videoInput && res.video_url) videoInput.value = res.video_url;
+        void loadAnime4kAdminPanel(mal);
         anime4kHideUploadProgress(4000);
     } else {
         anime4kSetUploadProgress({
@@ -483,14 +720,13 @@ async function anime4kAdminUploadVideo() {
 }
 
 async function anime4kAdminFetchAndUpsert(opts) {
-    const statusEl = document.getElementById('anime4kAdminStatus');
     const input = document.getElementById('anime4kAdminMalInput');
     const mal = parseInt(input?.value, 10);
     if (!mal || Number.isNaN(mal)) {
-        if (statusEl) statusEl.textContent = 'Укажите MAL id';
+        anime4kAdminSetStatus('Укажите MAL id', true);
         return;
     }
-    if (statusEl) statusEl.textContent = opts?.skipJikan ? 'Shikimori / каталог…' : 'Jikan…';
+    anime4kAdminSetStatus(opts?.skipJikan ? 'Shikimori / каталог…' : 'Jikan…');
     try {
         if (typeof window.KodikCatalogStore?.load === 'function') {
             await Promise.race([
@@ -502,28 +738,30 @@ async function anime4kAdminFetchAndUpsert(opts) {
         if (!resolved?.jikan) {
             throw new Error('Не удалось собрать данные по MAL id');
         }
+        const poster = resolved.poster_url || anime4kExtractJikanPoster(resolved.jikan);
         const ups = await window.creatorAdminPanel.upsertCatalog4kAnime(resolved.jikan, {
             title_ru: resolved.title_ru,
-            description_ru: resolved.description_ru
+            description_ru: resolved.description_ru,
+            poster_url: poster || undefined
         });
         const srcNote =
             resolved.source === 'jikan'
-                ? ' (Jikan)'
+                ? ' · Jikan'
                 : resolved.source === 'shikimori'
-                  ? ' (Shikimori — Jikan недоступен)'
+                  ? ' · Shikimori'
                   : resolved.source === 'kodik-catalog'
-                    ? ' (каталог Kodik)'
-                    : ' (минимальная карточка)';
-        if (statusEl) {
-            statusEl.textContent = (ups.message || (ups.success ? 'Добавлено' : 'Ошибка')) + srcNote;
+                    ? ' · Kodik'
+                    : ' · минимальная карточка';
+        anime4kAdminSetStatus((ups.message || (ups.success ? 'Добавлено' : 'Ошибка')) + srcNote, !ups.success);
+        if (ups.success) {
+            if (input) input.value = '';
+            await loadAnime4kAdminPanel(mal);
         }
-        if (ups.success) void loadAnime4kAdminPanel();
     } catch (e) {
-        if (statusEl) {
-            statusEl.textContent =
-                (e.message || 'Ошибка') +
-                '. Если Jikan отдаёт 504 — нажмите «Без Jikan» или подождите и повторите.';
-        }
+        anime4kAdminSetStatus(
+            (e.message || 'Ошибка') + '. Если Jikan отдаёт 504 — «+ без Jikan» или повторите позже.',
+            true
+        );
     }
 }
 

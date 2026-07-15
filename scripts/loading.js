@@ -109,6 +109,11 @@ function showLoading(message = null) {
 // Скрыть экран загрузки
 function hideLoading() {
     if (document.body.classList.contains('reminko-loading-dismissed')) {
+        const loadingScreen = document.getElementById('loadingScreen');
+        if (loadingScreen) {
+            loadingScreen.classList.add('hidden');
+            loadingScreen.style.display = 'none';
+        }
         dispatchReminkoLoadingHidden();
         if (!document.body.classList.contains('reminko-ui-ready')) {
             document.body.classList.add('reminko-ui-ready');

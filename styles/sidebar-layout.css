@@ -59,6 +59,65 @@
     -moz-user-select: none;
 }
 
+.top-online-widget {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.38rem;
+    padding: 0.28rem 0.55rem 0.28rem 0.45rem;
+    border-radius: 999px;
+    border: 1px solid rgba(16, 185, 129, 0.28);
+    background: rgba(16, 185, 129, 0.08);
+    flex-shrink: 0;
+    line-height: 1;
+    user-select: none;
+}
+
+.top-online-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #22c55e;
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.55);
+    animation: top-online-pulse 1.6s ease-in-out infinite;
+}
+
+.top-online-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: rgba(167, 243, 208, 0.92);
+    letter-spacing: 0.02em;
+}
+
+.top-online-count {
+    font-size: 0.82rem;
+    font-weight: 800;
+    color: #ecfdf5;
+    min-width: 0.85rem;
+    text-align: center;
+}
+
+@keyframes top-online-pulse {
+    0%,
+    100% {
+        opacity: 1;
+        box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.45);
+    }
+    50% {
+        opacity: 0.55;
+        box-shadow: 0 0 0 5px rgba(34, 197, 94, 0);
+    }
+}
+
+@media (max-width: 720px) {
+    .top-online-label {
+        display: none;
+    }
+
+    .top-online-widget {
+        padding: 0.28rem 0.45rem;
+    }
+}
+
 /* Кнопка уведомлений */
 .top-notifications-btn {
     display: flex;

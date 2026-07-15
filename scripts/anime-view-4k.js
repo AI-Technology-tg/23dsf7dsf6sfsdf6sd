@@ -126,7 +126,6 @@ async function renderAnime4kDetail(anime) {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-    if (typeof showLoading === 'function') showLoading();
     const loadingTimeout = setTimeout(() => {
         if (typeof hideLoading === 'function') hideLoading();
     }, 15000);
