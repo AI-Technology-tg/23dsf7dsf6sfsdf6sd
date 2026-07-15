@@ -68,6 +68,38 @@
     margin-bottom: 0.35rem;
 }
 
+.anime-inline-4k__notice {
+    margin: 0 0 0.95rem;
+    padding: 0.85rem 1rem;
+    border-radius: 12px;
+    border: 1px solid rgba(245, 158, 11, 0.28);
+    background: linear-gradient(135deg, rgba(120, 53, 15, 0.22), rgba(30, 27, 75, 0.35));
+}
+
+.anime-inline-4k__notice-lead {
+    margin: 0 0 0.55rem;
+    font-size: 0.88rem;
+    color: var(--text-color);
+    line-height: 1.55;
+}
+
+.anime-inline-4k__notice-lead strong {
+    color: #c4b5fd;
+}
+
+.anime-inline-4k__notice-warn {
+    margin: 0;
+    font-size: 0.84rem;
+    color: rgba(255, 255, 255, 0.78);
+    line-height: 1.55;
+    border-left: 3px solid #f59e0b;
+    padding-left: 0.65rem;
+}
+
+.anime-inline-4k__notice-warn strong {
+    color: #fcd34d;
+}
+
 .anime-inline-4k__desc {
     margin: 0 0 0.85rem;
     font-size: 0.88rem;

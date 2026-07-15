@@ -83,7 +83,15 @@ async function renderAnime4kDetail(anime) {
             </div>
             <div class="anime-detail-section anime-inline-4k" id="anime4kPlayerSection">
                 <h2 class="section-title anime-inline-4k__title">Смотреть</h2>
-                <p class="anime-inline-4k__desc">Включите <strong>Anime4K</strong> в плеере, чтобы увидеть улучшение в реальном времени.</p>
+                <div class="anime-inline-4k__notice" role="note">
+                    <p class="anime-inline-4k__notice-lead">
+                        В плеере можно включить <strong>Anime4K</strong> — улучшение картинки в реальном времени поверх исходного видео.
+                    </p>
+                    <p class="anime-inline-4k__notice-warn">
+                        <strong>Важно:</strong> после включения сайт, плеер и само устройство могут заметно потерять производительность — возможны лаги и подтормаживания.
+                        Если уверены в мощности своего ПК или телефона — приятного просмотра. Сомневаетесь — смотрите без Anime4K, исходное качество уже высокое.
+                    </p>
+                </div>
                 <div id="anime4kPlayerMount"></div>
             </div>
         </div>
