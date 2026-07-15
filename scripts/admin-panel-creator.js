@@ -11,22 +11,18 @@ class CreatorAdminPanel {
         if (!userId || !supabaseClient) return false;
 
         try {
-            const rpcChecks = [
-                { fn: 'is_site_creator_user_id', args: { check_user_id: userId } },
-                { fn: 'is_site_creator_user_id', args: { user_id: userId } }
-            ];
-            for (const check of rpcChecks) {
-                try {
-                    const { data, error } = await supabaseClient.rpc(check.fn, check.args);
-                    if (!error && data === true) {
-                        this.isCreator = true;
-                        return true;
-                    }
-                } catch (_) {
-                    // fallback ниже
-                }
+            const { data, error } = await supabaseClient.rpc('is_site_creator_user_id', {
+                user_id: userId
+            });
+            if (!error && data === true) {
+                this.isCreator = true;
+                return true;
             }
+        } catch (_) {
+            /* fallback ниже */
+        }
 
+        try {
             const {
                 data: { user },
                 error: userError

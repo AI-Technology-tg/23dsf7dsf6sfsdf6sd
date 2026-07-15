@@ -14,6 +14,12 @@
   node_bundler = "esbuild"
 
 [[redirects]]
+  from = "/config.local.js"
+  to = "/config.local.stub.js"
+  status = 200
+  force = true
+
+[[redirects]]
   from = "/chat"
   to = "/.netlify/functions/minko-chat"
   status = 200
