@@ -246,6 +246,16 @@ class NavigationManager {
                             <span>Условия использования</span>
                         </a>
                     </div>
+                    <div class="sidebar-liveinternet-wrap" aria-hidden="true">
+                        <!--LiveInternet counter-->
+                        <a href="https://www.liveinternet.ru/click" target="_blank" rel="noopener noreferrer">
+                            <img id="licnt3A61" width="88" height="15" style="border:0"
+                                title="LiveInternet: показано число посетителей за сегодня"
+                                src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAEALAAAAAABAAEAAAIBTAA7"
+                                alt="" />
+                        </a>
+                        <!--/LiveInternet-->
+                    </div>
                 </nav>
             </aside>
         `;
@@ -536,6 +546,36 @@ class NavigationManager {
         });
     }
 
+    initLiveInternetCounter() {
+        const img = document.getElementById('licnt3A61');
+        if (!img || img.dataset.reminkoLiHit === '1') return;
+        img.dataset.reminkoLiHit = '1';
+        try {
+            const s = typeof screen !== 'undefined' ? screen : null;
+            const scr =
+                s && s.width
+                    ? ';s' +
+                      s.width +
+                      '*' +
+                      s.height +
+                      '*' +
+                      (s.colorDepth || s.pixelDepth || '')
+                    : '';
+            img.src =
+                'https://counter.yadro.ru/hit?t26.8;r' +
+                escape(document.referrer || '') +
+                scr +
+                ';u' +
+                escape(document.URL || '') +
+                ';h' +
+                escape(String(document.title || '').substring(0, 150)) +
+                ';' +
+                Math.random();
+        } catch (_) {
+            /* ignore */
+        }
+    }
+
     /** Общая инициализация после вставки/обновления шапки и сайдбара */
     finishNavigationInit(preservedMain) {
         this.initTopSearch();
@@ -546,6 +586,7 @@ class NavigationManager {
         this.initProtectedLinks();
         this.initDisabledNavLinks();
         this.updateAuthLinks();
+        this.initLiveInternetCounter();
 
         const navManagerInstance = this;
         setTimeout(() => {

@@ -463,6 +463,24 @@
     flex-direction: column;
     gap: 0.35rem;
     padding: 0 0.75rem;
+    min-height: calc(100vh - 52px - 2rem);
+}
+
+.sidebar-liveinternet-wrap {
+    margin-top: auto;
+    padding: 0.65rem 0.65rem 0.35rem;
+    text-align: center;
+    opacity: 0.42;
+    filter: grayscale(0.35);
+}
+
+.sidebar-liveinternet-wrap:hover {
+    opacity: 0.72;
+}
+
+.sidebar-liveinternet-wrap a {
+    display: inline-block;
+    line-height: 0;
 }
 
 .sidebar-link {
