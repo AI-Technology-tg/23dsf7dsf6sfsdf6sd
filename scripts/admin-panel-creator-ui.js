@@ -156,6 +156,42 @@ function initAnime4kSection() {
     document.getElementById('anime4kAdminRefreshBtn')?.addEventListener('click', () => void loadAnime4kAdminPanel());
     document.getElementById('anime4kAdminFetchJikanBtn')?.addEventListener('click', () => void anime4kAdminFetchAndUpsert());
     document.getElementById('anime4kAdminUploadBtn')?.addEventListener('click', () => void anime4kAdminUploadVideo());
+    document.getElementById('anime4kAdminFileInput')?.addEventListener('change', () => anime4kAdminOnFileSelected());
+    anime4kAdminUpdateMaxUploadLabel();
+}
+
+function anime4kAdminMaxUploadBytes() {
+    if (typeof reminkoGetAnime4kMaxUploadBytes === 'function') return reminkoGetAnime4kMaxUploadBytes();
+    const n = Number(typeof APP_CONFIG !== 'undefined' && APP_CONFIG.anime4k?.maxUploadBytes);
+    return Number.isFinite(n) && n > 0 ? n : 52_428_800;
+}
+
+function anime4kAdminFormatBytes(bytes) {
+    if (typeof reminkoFormatUploadBytes === 'function') return reminkoFormatUploadBytes(bytes);
+    const n = Number(bytes) || 0;
+    if (n >= 1024 ** 3) return `${(n / 1024 ** 3).toFixed(2)} GB`;
+    if (n >= 1024 ** 2) return `${(n / 1024 ** 2).toFixed(1)} MB`;
+    return `${Math.round(n / 1024)} KB`;
+}
+
+function anime4kAdminUpdateMaxUploadLabel() {
+    const el = document.getElementById('anime4kAdminMaxUploadLabel');
+    if (el) el.textContent = anime4kAdminFormatBytes(anime4kAdminMaxUploadBytes());
+}
+
+function anime4kAdminOnFileSelected() {
+    const statusEl = document.getElementById('anime4kAdminStatus');
+    const fileInput = document.getElementById('anime4kAdminFileInput');
+    const file = fileInput?.files && fileInput.files[0];
+    if (!file || !statusEl) return;
+    const maxB = anime4kAdminMaxUploadBytes();
+    if (file.size > maxB) {
+        statusEl.textContent = `Файл ${anime4kAdminFormatBytes(file.size)} — больше лимита ${anime4kAdminFormatBytes(maxB)}. Загрузка заблокирована.`;
+        statusEl.style.color = '#f87171';
+    } else {
+        statusEl.textContent = `Выбран: ${file.name} (${anime4kAdminFormatBytes(file.size)})`;
+        statusEl.style.color = '';
+    }
 }
 
 function anime4kFormatUploadEta(sec) {
@@ -281,6 +317,21 @@ async function anime4kAdminUploadVideo() {
         if (statusEl) statusEl.textContent = 'Укажите MAL id';
         return;
     }
+    const maxB = anime4kAdminMaxUploadBytes();
+    if (file.size > maxB) {
+        const msg =
+            typeof reminkoExplainAnime4kSizeError === 'function'
+                ? reminkoExplainAnime4kSizeError('maximum allowed size', file.size)
+                : `Файл слишком большой (${anime4kAdminFormatBytes(file.size)}). Лимит: ${anime4kAdminFormatBytes(maxB)}.`;
+        if (statusEl) {
+            statusEl.textContent = msg;
+            statusEl.style.color = '#f87171';
+        }
+        anime4kSetUploadProgress({ phase: 'error', percent: 0, label: msg });
+        anime4kHideUploadProgress(12000);
+        return;
+    }
+    if (statusEl) statusEl.style.color = '';
     if (uploadBtn) uploadBtn.disabled = true;
     if (fileInput) fileInput.disabled = true;
     anime4kSetUploadProgress({

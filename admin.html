@@ -38,7 +38,7 @@
     <link rel="stylesheet" href="styles/loading.css">
     <link rel="stylesheet" href="styles/notifications.css">
     <link rel="stylesheet" href="styles/register-flow.css">
-    <link rel="stylesheet" href="styles/admin-panel.css?v=4k-upload-progress">
+    <link rel="stylesheet" href="styles/admin-panel.css?v=4k-upload-limit">
     <link rel="stylesheet" href="styles/minko-edit.css">
 </head>
 <body>
@@ -409,7 +409,12 @@
                         </div>
                         <div class="setting-card" style="margin: 1rem 0; padding: 1rem;">
                             <h3 style="margin-top:0;">Загрузить MP4 в Storage</h3>
-                            <p class="admin-inline-hint">H.264 + AAC, до ~5 GB. После remux: <code>chainsaw-man-reze-1080p.mp4</code></p>
+                            <p class="admin-inline-hint" style="color:#fbbf24;border-left:3px solid #f59e0b;padding-left:0.65rem;margin-bottom:0.75rem;">
+                                <strong>Лимит Supabase:</strong> на Free тарифе один файл — максимум <strong>50 MB</strong> (глобальная настройка Storage).
+                                Файл ~4 GB через кнопку ниже <strong>не загрузится</strong> — Supabase отклонит в конце.
+                                Нужен <strong>Pro</strong> и «Global file size limit» до 5 GB, либо вставьте <strong>прямую ссылку</strong> на MP4 (Bunny, Cloudflare R2) в таблице → 💾 URL.
+                            </p>
+                            <p class="admin-inline-hint" id="anime4kAdminFileHint">H.264 + AAC. Текущий лимит загрузки: <span id="anime4kAdminMaxUploadLabel">50 MB</span></p>
                             <div style="display:flex;flex-wrap:wrap;gap:0.65rem;align-items:center;margin-top:0.75rem;">
                                 <input type="file" id="anime4kAdminFileInput" accept="video/mp4,video/webm" />
                                 <button type="button" class="admin-btn" id="anime4kAdminUploadBtn">⬆ Загрузить и привязать</button>
@@ -769,10 +774,10 @@
     <script src="scripts/shikimori-api.js"></script>
     <script src="scripts/manga-data.js"></script>
     <script src="scripts/admin-panel.js"></script>
-    <script src="scripts/admin-panel-creator.js?v=4k-upload-progress"></script>
+    <script src="scripts/admin-panel-creator.js?v=4k-upload-limit"></script>
     <script src="scripts/ai-subscription.js"></script>
     <script src="scripts/loading.js"></script>
-    <script src="scripts/admin-panel-creator-ui.js?v=4k-upload-progress"></script>
+    <script src="scripts/admin-panel-creator-ui.js?v=4k-upload-limit"></script>
     <script src="scripts/apply-navigation.js?v=rem-theme-4"></script>
 </body>
 </html>

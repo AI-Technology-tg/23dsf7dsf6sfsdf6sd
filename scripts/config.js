@@ -215,6 +215,20 @@ const APP_CONFIG = {
                   (id) => typeof id === 'string' && id.trim().length > 0
               )
             : []
+    },
+
+    /**
+     * ≈4K: лимит размера одного файла для загрузки в Supabase Storage (байты).
+     * На Free тарифе глобальный лимит Supabase — 50 MB (bucket 5 GB не помогает).
+     * После Pro: Dashboard → Storage → Settings → Global file size limit (до 5 GB),
+     * затем в config.local.js: anime4k: { maxUploadBytes: 5368709120 }
+     */
+    anime4k: {
+        maxUploadBytes:
+            window.APP_CONFIG?.anime4k?.maxUploadBytes != null &&
+            Number.isFinite(Number(window.APP_CONFIG.anime4k.maxUploadBytes))
+                ? Number(window.APP_CONFIG.anime4k.maxUploadBytes)
+                : 52_428_800
     }
     
 };

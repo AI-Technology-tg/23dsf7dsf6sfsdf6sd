@@ -13,4 +13,6 @@ window.APP_CONFIG = {
         /** Токен Kodik API — для поиска плеера и скачивания дампов */
         apiToken: 'ВАШ_KODIK_API_TOKEN',
     },
+    // После Supabase Pro + Global file size limit 5 GB:
+    // anime4k: { maxUploadBytes: 5368709120 },
 };

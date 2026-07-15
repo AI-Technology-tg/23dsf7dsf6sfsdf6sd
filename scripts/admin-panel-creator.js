@@ -8,6 +8,37 @@ function reminkoFormatUploadBytes(bytes) {
     return `${n} B`;
 }
 
+function reminkoGetAnime4kMaxUploadBytes() {
+    const fromCfg =
+        typeof APP_CONFIG !== 'undefined' && APP_CONFIG.anime4k?.maxUploadBytes != null
+            ? Number(APP_CONFIG.anime4k.maxUploadBytes)
+            : NaN;
+    if (Number.isFinite(fromCfg) && fromCfg > 0) return fromCfg;
+    return 52_428_800;
+}
+
+function reminkoExplainAnime4kSizeError(rawMessage, fileSize) {
+    const msg = String(rawMessage || '');
+    const lower = msg.toLowerCase();
+    if (
+        lower.includes('maximum allowed size') ||
+        lower.includes('entitytoolarge') ||
+        lower.includes('maximum size exceeded') ||
+        lower.includes('413')
+    ) {
+        const maxB = reminkoGetAnime4kMaxUploadBytes();
+        const fileLabel = fileSize ? reminkoFormatUploadBytes(fileSize) : 'файл';
+        return (
+            `Supabase отклонил ${fileLabel}: превышен лимит (${reminkoFormatUploadBytes(maxB)}). ` +
+            `На Free тарифе глобальный лимит Storage — 50 MB, даже если bucket настроен на 5 GB. ` +
+            `Варианты: (1) Supabase Pro → Storage → Settings → Global file size limit до 5 GB, ` +
+            `и в config.local.js: anime4k.maxUploadBytes = 5368709120; ` +
+            `(2) залить MP4 на Bunny/R2/CDN и вставить прямую ссылку в поле URL в таблице ниже.`
+        );
+    }
+    return msg || 'Ошибка загрузки в Storage';
+}
+
 function reminkoUploadAnime4kToStorage(bucket, storagePath, file, onProgress) {
     return new Promise(async (resolve, reject) => {
         if (!supabaseClient) {
@@ -1362,6 +1393,13 @@ class CreatorAdminPanel {
         const name = (file.name && String(file.name).trim()) || 'video.mp4';
         const safeName = name.replace(/[^\w.\-()+]/g, '_').slice(0, 120);
         const path = `${mid}/${Date.now()}_${safeName}`;
+        const maxBytes = reminkoGetAnime4kMaxUploadBytes();
+        if (file.size > maxBytes) {
+            return {
+                success: false,
+                message: reminkoExplainAnime4kSizeError('maximum allowed size', file.size)
+            };
+        }
         try {
             report({ phase: 'prepare', percent: 0, label: 'Проверка доступа…' });
             await reminkoUploadAnime4kToStorage('anime-4k-videos', path, file, report);
@@ -1378,7 +1416,10 @@ class CreatorAdminPanel {
             return { success: true, message: 'Видео загружено и привязано к каталогу', video_url: url };
         } catch (e) {
             console.error('[CreatorAdmin] uploadCatalog4kVideo', e);
-            return { success: false, message: e.message || 'Ошибка загрузки в Storage' };
+            return {
+                success: false,
+                message: reminkoExplainAnime4kSizeError(e.message, file.size)
+            };
         }
     }
 
