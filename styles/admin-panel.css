@@ -2126,6 +2126,113 @@
     color: var(--anime4k-accent);
 }
 
+.anime4k-admin__search {
+    padding: 0.65rem 0.7rem;
+    margin-bottom: 0.55rem;
+    border-radius: 10px;
+    border: 1px solid rgba(167, 139, 250, 0.28);
+    background: rgba(88, 28, 135, 0.12);
+}
+
+.anime4k-admin__search-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.4rem;
+}
+
+.anime4k-admin__search-hint {
+    margin: 0.35rem 0 0;
+    font-size: 0.72rem;
+    line-height: 1.35;
+    color: var(--text-secondary);
+}
+
+.anime4k-admin__search-results {
+    margin-top: 0.55rem;
+    max-height: min(42vh, 360px);
+    overflow: auto;
+}
+
+.anime4k-admin__search-results[hidden] {
+    display: none !important;
+}
+
+.anime4k-admin__search-empty {
+    margin: 0;
+    padding: 0.55rem 0.15rem;
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    text-align: center;
+}
+
+.anime4k-admin__search-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.anime4k-admin__search-item {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr) auto;
+    gap: 0.55rem;
+    align-items: center;
+    padding: 0.45rem 0.5rem;
+    border-radius: 8px;
+    border: 1px solid rgba(167, 139, 250, 0.18);
+    background: rgba(0, 0, 0, 0.22);
+}
+
+.anime4k-admin__search-poster {
+    width: 44px;
+    height: 62px;
+    object-fit: cover;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.anime4k-admin__search-poster--ph {
+    display: grid;
+    place-items: center;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.anime4k-admin__search-body {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.12rem;
+}
+
+.anime4k-admin__search-title {
+    font-size: 0.84rem;
+    line-height: 1.25;
+    color: var(--text-primary);
+}
+
+.anime4k-admin__search-sub {
+    font-size: 0.74rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.anime4k-admin__search-meta {
+    font-size: 0.72rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    color: rgba(196, 181, 253, 0.92);
+}
+
+.anime4k-admin__search-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
 .anime4k-admin__quick-add {
     padding: 0.65rem 0.7rem;
     border-radius: 10px;

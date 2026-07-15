@@ -385,6 +385,15 @@
                                     <h3>Тайтлы</h3>
                                     <span id="anime4kAdminCount" class="anime4k-admin__count">0</span>
                                 </div>
+                                <div class="anime4k-admin__search">
+                                    <label class="anime4k-admin__field-label" for="anime4kAdminTitleSearch">Поиск id по названию</label>
+                                    <div class="anime4k-admin__search-row">
+                                        <input type="search" id="anime4kAdminTitleSearch" class="admin-input" placeholder="Человек-бензопила, Re:Zero…" autocomplete="off" enterkeyhint="search">
+                                        <button type="button" class="admin-btn admin-btn-small" id="anime4kAdminTitleSearchBtn">Найти</button>
+                                    </div>
+                                    <p class="anime4k-admin__search-hint">Jikan + Shikimori · MAL id и site id (22&nbsp;000&nbsp;000 + MAL) для поля ниже</p>
+                                    <div id="anime4kAdminSearchResults" class="anime4k-admin__search-results" hidden></div>
+                                </div>
                                 <div class="anime4k-admin__quick-add">
                                     <label class="anime4k-admin__field-label" for="anime4kAdminMalInput">Новый MAL id</label>
                                     <div class="anime4k-admin__quick-add-row">
@@ -811,7 +820,7 @@
     <script src="scripts/admin-panel-creator.js?v=4k-jikan-fallback"></script>
     <script src="scripts/ai-subscription.js"></script>
     <script src="scripts/loading.js"></script>
-    <script src="scripts/admin-panel-creator-ui.js?v=4k-jikan-fallback"></script>
+    <script src="scripts/admin-panel-creator-ui.js?v=4k-title-search"></script>
     <script src="scripts/apply-navigation.js?v=rem-theme-4"></script>
 </body>
 </html>
