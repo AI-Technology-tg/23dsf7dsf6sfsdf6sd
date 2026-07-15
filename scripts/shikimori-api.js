@@ -184,10 +184,10 @@
 
     function searchAnimesByQuery(query, limit = 15) {
         const lim = Math.min(25, Math.max(1, parseInt(limit, 10) || 15));
+        const q = String(query || '').trim();
+        if (!q) return Promise.resolve([]);
         return enqueueShikiTask(async () => {
-            const q = encodeURIComponent((query || '').trim());
-            if (!q) return [];
-            const list = await shikiFetch(`/animes?search=${q}&limit=${lim}`);
+            const list = await shikiFetch(`/animes?search=${encodeURIComponent(q)}&limit=${lim}`);
             return Array.isArray(list) ? list : [];
         }).catch(() => []);
     }

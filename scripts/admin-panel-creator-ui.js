@@ -240,7 +240,8 @@ function anime4kAdminNormalizeShikiSearchHits(list) {
     if (!Array.isArray(list)) return [];
     return list
         .map((item) => {
-            const mal = Number(item?.myanimelist_id);
+            // В списке /animes?search= Shikimori часто не отдаёт myanimelist_id — только id
+            const mal = Number(item?.myanimelist_id ?? item?.id);
             if (!Number.isFinite(mal) || mal <= 0) return null;
             const titleRu = String(item.russian || '').trim() || null;
             const titleEn = String(item.english || item.name || '').trim() || null;
@@ -255,6 +256,71 @@ function anime4kAdminNormalizeShikiSearchHits(list) {
             };
         })
         .filter(Boolean);
+}
+
+function anime4kAdminMergeCatalogSiteSearchHits(map, rows, query) {
+    const ql = String(query || '')
+        .toLowerCase()
+        .trim();
+    if (!ql) return;
+    for (const row of rows || []) {
+        const mal = Number(row?.mal_id);
+        if (!Number.isFinite(mal) || mal <= 0) continue;
+        let j = row.jikan;
+        if (typeof j === 'string') {
+            try {
+                j = JSON.parse(j);
+            } catch {
+                j = null;
+            }
+        }
+        const titles = [row.title_ru, j?.title, j?.title_english, j?.title_japanese, j?.title_synonyms?.[0]]
+            .map((t) => String(t || '').trim())
+            .filter(Boolean);
+        if (!titles.some((t) => t.toLowerCase().includes(ql))) continue;
+        anime4kAdminMergeSearchHit(map, {
+            mal,
+            titleRu: row.title_ru || null,
+            titleEn: j?.title_english || j?.title || null,
+            titleMain: row.title_ru || j?.title || j?.title_english || `MAL ${mal}`,
+            year: j?.year || null,
+            type: j?.type || null,
+            poster: j?.images?.jpg?.small_image_url || j?.images?.jpg?.image_url || null
+        });
+    }
+}
+
+async function anime4kAdminFetchJikanSearchList(query, limit) {
+    const lim = Math.min(25, Math.max(1, parseInt(limit, 10) || 15));
+    const q = String(query || '').trim();
+    if (!q) return [];
+
+    const searchFn = typeof window.jikanSearchAnimeMany === 'function' ? window.jikanSearchAnimeMany : null;
+    if (searchFn) {
+        try {
+            const list = await searchFn(q, lim);
+            if (Array.isArray(list) && list.length) return list;
+        } catch (_) {
+            /* fallback ниже */
+        }
+    }
+
+    if (typeof reminkoJikanFetch !== 'function') return [];
+
+    const urls = [
+        `https://api.jikan.moe/v4/anime?q=${encodeURIComponent(q)}&limit=${lim}`,
+        `https://api.jikan.moe/v4/anime?q=${encodeURIComponent(q)}&limit=${lim}&sfw`
+    ];
+    for (const url of urls) {
+        try {
+            const json = await reminkoJikanFetch(url);
+            const data = json?.data;
+            if (Array.isArray(data) && data.length) return data;
+        } catch (_) {
+            /* next */
+        }
+    }
+    return [];
 }
 
 function anime4kAdminUseSearchMal(mal) {
@@ -328,22 +394,30 @@ async function anime4kAdminSearchByTitle() {
 
     const merged = new Map();
     const tasks = [];
+    let jikanFailed = false;
+    let shikiFailed = false;
+
+    if (window.creatorAdminPanel?.listCatalogSiteAnime) {
+        tasks.push(
+            (async () => {
+                try {
+                    const res = await window.creatorAdminPanel.listCatalogSiteAnime();
+                    if (res?.success) anime4kAdminMergeCatalogSiteSearchHits(merged, res.rows, q);
+                } catch (_) {
+                    /* локальный каталог необязателен */
+                }
+            })()
+        );
+    }
 
     tasks.push(
         (async () => {
             try {
-                let list = [];
-                if (typeof jikanSearchAnimeMany === 'function') {
-                    list = await jikanSearchAnimeMany(q, 15);
-                } else if (typeof reminkoJikanFetch === 'function') {
-                    const json = await reminkoJikanFetch(
-                        `https://api.jikan.moe/v4/anime?q=${encodeURIComponent(q)}&limit=15`
-                    );
-                    list = json?.data || [];
-                }
+                const list = await anime4kAdminFetchJikanSearchList(q, 15);
                 anime4kAdminNormalizeJikanSearchHits(list).forEach((hit) => anime4kAdminMergeSearchHit(merged, hit));
+                if (!list.length) jikanFailed = true;
             } catch (_) {
-                /* Jikan недоступен — продолжаем с Shikimori */
+                jikanFailed = true;
             }
         })()
     );
@@ -351,10 +425,20 @@ async function anime4kAdminSearchByTitle() {
     if (window.shikimoriApi?.searchAnimesByQuery) {
         tasks.push(
             (async () => {
-                const list = await window.shikimoriApi.searchAnimesByQuery(q, 15);
-                anime4kAdminNormalizeShikiSearchHits(list).forEach((hit) => anime4kAdminMergeSearchHit(merged, hit));
+                try {
+                    const list = await window.shikimoriApi.searchAnimesByQuery(q, 15);
+                    if (!Array.isArray(list) || !list.length) {
+                        shikiFailed = true;
+                        return;
+                    }
+                    anime4kAdminNormalizeShikiSearchHits(list).forEach((hit) => anime4kAdminMergeSearchHit(merged, hit));
+                } catch (_) {
+                    shikiFailed = true;
+                }
             })()
         );
+    } else {
+        shikiFailed = true;
     }
 
     await Promise.all(tasks);
@@ -378,7 +462,15 @@ async function anime4kAdminSearchByTitle() {
         .slice(0, 20);
 
     anime4kAdminRenderSearchResults(rows);
-    anime4kAdminSetStatus(rows.length ? `Найдено: ${rows.length}` : 'Ничего не найдено', !rows.length);
+    if (rows.length) {
+        anime4kAdminSetStatus(`Найдено: ${rows.length}`);
+        return;
+    }
+    const hints = [];
+    if (jikanFailed) hints.push('Jikan временно недоступен');
+    if (shikiFailed) hints.push('Shikimori не ответил');
+    const hint = hints.length ? ` (${hints.join('; ')})` : '';
+    anime4kAdminSetStatus(`Ничего не найдено${hint}`, true);
 }
 
 function anime4kAdminSetStatus(text, isError) {
