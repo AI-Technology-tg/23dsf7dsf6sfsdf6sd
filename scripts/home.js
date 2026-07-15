@@ -730,7 +730,7 @@ function scheduleShikiForAnime(container, anime) {
     const searchTitle = anime.title_english || anime.title || '';
     window.shikimoriApi.enqueueFetchShikimoriByMalId(anime.mal_id, searchTitle).then((sh) => {
         applyShikiPatchToCards(container, anime, sh);
-    });
+    }).catch(() => {});
 }
 
 function applyShikimoriToStrip(container, originalList) {

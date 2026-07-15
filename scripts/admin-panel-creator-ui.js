@@ -155,9 +155,123 @@ function initAnime4kSection() {
     window.__reminkoAnime4kAdminBound = true;
     document.getElementById('anime4kAdminRefreshBtn')?.addEventListener('click', () => void loadAnime4kAdminPanel());
     document.getElementById('anime4kAdminFetchJikanBtn')?.addEventListener('click', () => void anime4kAdminFetchAndUpsert());
+    document.getElementById('anime4kAdminFetchFallbackBtn')?.addEventListener('click', () =>
+        void anime4kAdminFetchAndUpsert({ skipJikan: true })
+    );
     document.getElementById('anime4kAdminUploadBtn')?.addEventListener('click', () => void anime4kAdminUploadVideo());
     document.getElementById('anime4kAdminFileInput')?.addEventListener('change', () => anime4kAdminOnFileSelected());
     anime4kAdminUpdateMaxUploadLabel();
+}
+
+function anime4kBuildJikanStub(mal, meta) {
+    const m = meta || {};
+    const titleEn = m.title_en || m.title || `Anime MAL ${mal}`;
+    const titleRu = m.title_ru || titleEn;
+    const poster = m.poster || '';
+    return {
+        mal_id: mal,
+        title: titleRu,
+        title_english: titleEn,
+        title_japanese: m.title_jp || '',
+        images: poster
+            ? { jpg: { image_url: poster, large_image_url: poster, small_image_url: poster } }
+            : {},
+        synopsis: m.description || '',
+        type: m.type || 'Unknown',
+        episodes: m.episodes || null,
+        year: m.year || null,
+        status: m.status || 'Unknown',
+        _reminkoMetaSource: m.source || 'manual'
+    };
+}
+
+async function anime4kResolveMalMeta(mal, opts) {
+    const skipJikan = !!(opts && opts.skipJikan);
+    const withTimeout = (p, ms) =>
+        Promise.race([
+            p,
+            new Promise((resolve) => setTimeout(() => resolve(null), ms))
+        ]).catch(() => null);
+
+    if (!skipJikan) {
+        if (typeof reminkoJikanFetch === 'function') {
+            try {
+                const json = await withTimeout(
+                    reminkoJikanFetch(`https://api.jikan.moe/v4/anime/${mal}`),
+                    14000
+                );
+                if (json?.data?.mal_id) {
+                    return { jikan: json.data, source: 'jikan', title_ru: null, description_ru: null };
+                }
+            } catch (_) {
+                /* fallback */
+            }
+        }
+        if (typeof jikanFetchAnimeFullByMalId === 'function') {
+            const full = await withTimeout(jikanFetchAnimeFullByMalId(mal), 14000);
+            if (full?.mal_id) {
+                return { jikan: full, source: 'jikan', title_ru: null, description_ru: null };
+            }
+        }
+    }
+
+    if (window.shikimoriApi?.fetchShikimoriByMalId) {
+        const sh = await withTimeout(window.shikimoriApi.fetchShikimoriByMalId(mal, ''), 12000);
+        if (sh) {
+            let description = '';
+            if (window.shikimoriApi.stripHtml) {
+                description = window.shikimoriApi
+                    .stripHtml(sh.description_html || sh.description || '')
+                    .replace(/\s+/g, ' ')
+                    .trim();
+            }
+            const poster =
+                (sh.image && (sh.image.original || sh.image.preview)) ||
+                `https://shikimori.one/system/animes/${mal}/original.jpg`;
+            const jikan = anime4kBuildJikanStub(mal, {
+                title_ru: sh.russian || sh.name,
+                title_en: sh.name,
+                title_jp: sh.japanese || '',
+                description,
+                poster,
+                episodes: sh.episodes || null,
+                type: sh.kind || 'Unknown',
+                status: sh.status || 'Unknown',
+                source: 'shikimori'
+            });
+            return {
+                jikan,
+                source: 'shikimori',
+                title_ru: sh.russian || sh.name || null,
+                description_ru: description || null
+            };
+        }
+    }
+
+    const kodikId = 20000000 + mal;
+    const kodikAnime =
+        typeof getAnimeById === 'function'
+            ? getAnimeById(kodikId)
+            : window.KodikCatalogStore?.getById?.(kodikId);
+    if (kodikAnime) {
+        const jikan = anime4kBuildJikanStub(mal, {
+            title_ru: kodikAnime.title,
+            title_en: kodikAnime.titleAlt || kodikAnime.title,
+            description: kodikAnime.description || '',
+            poster: kodikAnime.posterUrl || kodikAnime.poster || '',
+            type: kodikAnime.type === 'Фильм' ? 'Movie' : 'TV',
+            source: 'kodik-catalog'
+        });
+        return {
+            jikan,
+            source: 'kodik-catalog',
+            title_ru: kodikAnime.title || null,
+            description_ru: kodikAnime.description || null
+        };
+    }
+
+    const jikan = anime4kBuildJikanStub(mal, { source: 'manual' });
+    return { jikan, source: 'manual', title_ru: null, description_ru: null };
 }
 
 function anime4kAdminMaxUploadBytes() {
@@ -275,7 +389,7 @@ async function loadAnime4kAdminPanel() {
                 <td>${row.published === false ? 'нет' : 'да'}</td>
                 <td style="white-space:nowrap;">
                     <button type="button" class="admin-btn admin-btn-small anime4k-save-video-btn" data-mal="${row.mal_id}">💾 URL</button>
-                    <button type="button" class="admin-btn admin-btn-small anime4k-del-btn" data-mal="${row.mal_id}">🗑</button>
+                    <button type="button" class="admin-btn admin-btn-small admin-btn-danger anime4k-del-btn" data-mal="${row.mal_id}" title="Удалить из ≈4K">🗑 Удалить</button>
                 </td>
             </tr>`;
         })
@@ -368,7 +482,7 @@ async function anime4kAdminUploadVideo() {
     }
 }
 
-async function anime4kAdminFetchAndUpsert() {
+async function anime4kAdminFetchAndUpsert(opts) {
     const statusEl = document.getElementById('anime4kAdminStatus');
     const input = document.getElementById('anime4kAdminMalInput');
     const mal = parseInt(input?.value, 10);
@@ -376,23 +490,40 @@ async function anime4kAdminFetchAndUpsert() {
         if (statusEl) statusEl.textContent = 'Укажите MAL id';
         return;
     }
-    if (statusEl) statusEl.textContent = 'Jikan…';
+    if (statusEl) statusEl.textContent = opts?.skipJikan ? 'Shikimori / каталог…' : 'Jikan…';
     try {
-        let jikanData = null;
-        if (typeof reminkoJikanFetch === 'function') {
-            const json = await reminkoJikanFetch(`https://api.jikan.moe/v4/anime/${mal}`);
-            jikanData = json?.data || null;
+        if (typeof window.KodikCatalogStore?.load === 'function') {
+            await Promise.race([
+                window.KodikCatalogStore.load(),
+                new Promise((r) => setTimeout(r, 5000))
+            ]).catch(() => null);
         }
-        if (!jikanData) {
-            const res = await fetch(`https://api.jikan.moe/v4/anime/${mal}`);
-            if (!res.ok) throw new Error('Jikan HTTP ' + res.status);
-            jikanData = (await res.json()).data;
+        const resolved = await anime4kResolveMalMeta(mal, opts);
+        if (!resolved?.jikan) {
+            throw new Error('Не удалось собрать данные по MAL id');
         }
-        const ups = await window.creatorAdminPanel.upsertCatalog4kAnime(jikanData, {});
-        if (statusEl) statusEl.textContent = ups.message || (ups.success ? 'Добавлено' : 'Ошибка');
+        const ups = await window.creatorAdminPanel.upsertCatalog4kAnime(resolved.jikan, {
+            title_ru: resolved.title_ru,
+            description_ru: resolved.description_ru
+        });
+        const srcNote =
+            resolved.source === 'jikan'
+                ? ' (Jikan)'
+                : resolved.source === 'shikimori'
+                  ? ' (Shikimori — Jikan недоступен)'
+                  : resolved.source === 'kodik-catalog'
+                    ? ' (каталог Kodik)'
+                    : ' (минимальная карточка)';
+        if (statusEl) {
+            statusEl.textContent = (ups.message || (ups.success ? 'Добавлено' : 'Ошибка')) + srcNote;
+        }
         if (ups.success) void loadAnime4kAdminPanel();
     } catch (e) {
-        if (statusEl) statusEl.textContent = e.message || 'Ошибка Jikan';
+        if (statusEl) {
+            statusEl.textContent =
+                (e.message || 'Ошибка') +
+                '. Если Jikan отдаёт 504 — нажмите «Без Jikan» или подождите и повторите.';
+        }
     }
 }
 

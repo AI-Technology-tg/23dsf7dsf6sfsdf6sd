@@ -404,9 +404,13 @@
                                 <input type="number" id="anime4kAdminMalInput" class="admin-input" placeholder="62352" value="62352" style="width:8rem;margin-left:0.35rem;">
                             </label>
                             <button type="button" class="admin-btn" id="anime4kAdminFetchJikanBtn">Jikan → добавить</button>
+                            <button type="button" class="admin-btn" id="anime4kAdminFetchFallbackBtn" title="Shikimori или каталог Kodik, если Jikan не отвечает">Без Jikan → добавить</button>
                             <button type="button" class="admin-btn" id="anime4kAdminRefreshBtn">🔄 Обновить список</button>
                             <span id="anime4kAdminStatus" class="admin-inline-hint"></span>
                         </div>
+                        <p class="admin-inline-hint" style="margin-top:0;">
+                            В таблице ниже — кнопка <strong>«Удалить»</strong> для каждого тайтла (только запись в БД, файл в Storage не трогается).
+                        </p>
                         <div class="setting-card" style="margin: 1rem 0; padding: 1rem;">
                             <h3 style="margin-top:0;">Загрузить MP4 в Storage</h3>
                             <p class="admin-inline-hint" style="color:#fbbf24;border-left:3px solid #f59e0b;padding-left:0.65rem;margin-bottom:0.75rem;">
@@ -769,15 +773,16 @@
     <script src="scripts/password-reset.js"></script>
     <script src="scripts/email-confirm.js"></script>
     <script src="scripts/remanga-catalog-store.js"></script>
+    <script src="scripts/kodik-catalog-store.js"></script>
     <script src="scripts/data.js"></script>
     <script src="scripts/jikan-api.js"></script>
     <script src="scripts/shikimori-api.js"></script>
     <script src="scripts/manga-data.js"></script>
     <script src="scripts/admin-panel.js"></script>
-    <script src="scripts/admin-panel-creator.js?v=4k-upload-limit"></script>
+    <script src="scripts/admin-panel-creator.js?v=4k-jikan-fallback"></script>
     <script src="scripts/ai-subscription.js"></script>
     <script src="scripts/loading.js"></script>
-    <script src="scripts/admin-panel-creator-ui.js?v=4k-upload-limit"></script>
+    <script src="scripts/admin-panel-creator-ui.js?v=4k-jikan-fallback"></script>
     <script src="scripts/apply-navigation.js?v=rem-theme-4"></script>
 </body>
 </html>

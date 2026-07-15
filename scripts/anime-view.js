@@ -27,32 +27,26 @@ function applyAnimeViewSeo(anime, extra) {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
+    const loadingTimeout = setTimeout(() => {
+        if (typeof hideLoading === 'function') hideLoading();
+    }, 12000);
+
+    const raceMs = (promise, ms) =>
+        Promise.race([
+            promise,
+            new Promise((resolve) => setTimeout(() => resolve(null), ms))
+        ]).catch(() => null);
+
     if (typeof window.KodikCatalogStore?.load === 'function') {
-        try {
-            await window.KodikCatalogStore.load();
-        } catch (_) {
-            /* ignore */
-        }
+        await raceMs(window.KodikCatalogStore.load(), 6000);
     }
     if (typeof reminkoLoadCalendarData === 'function') {
-        try {
-            await reminkoLoadCalendarData();
-        } catch (_) {
-            /* ignore */
-        }
+        await raceMs(reminkoLoadCalendarData(), 4000);
     }
 
-    // Убеждаемся, что загрузка показывается
     if (typeof showLoading === 'function') {
         showLoading();
     }
-    
-    // Защитный таймаут - скрыть загрузку максимум через 15 секунд
-    const loadingTimeout = setTimeout(() => {
-        if (typeof hideLoading === 'function') {
-            hideLoading();
-        }
-    }, 15000);
     
     const urlParams = new URLSearchParams(window.location.search);
     const malId = urlParams.get('mal_id');
@@ -1896,19 +1890,26 @@ function stopAnimeReleaseCountdown() {
 
 function hideAnimeWatchUnavailable() {
     const block = document.getElementById('animeWatchUnavailable');
-    const wrap = document.getElementById('animeKodikFrameWrap');
+    const kodikWrap = document.getElementById('animeKodikFrameWrap');
+    const allohaWrap = document.getElementById('animeAllohaFrameWrap');
     if (block) block.hidden = true;
-    if (wrap) wrap.hidden = false;
+    const tab = getActivePlayerTab();
+    if (kodikWrap) kodikWrap.hidden = tab !== 'kodik';
+    if (allohaWrap) allohaWrap.hidden = tab !== 'alloha';
     const inner = document.getElementById('animeCountdownInner');
     if (inner && typeof reminkoStopLiveCountdown === 'function') reminkoStopLiveCountdown(inner);
 }
 
 function showAnimeWatchUnavailable(iso) {
     const block = document.getElementById('animeWatchUnavailable');
-    const wrap = document.getElementById('animeKodikFrameWrap');
-    const iframe = document.getElementById('animeKodikIframe');
-    if (iframe) iframe.src = 'about:blank';
-    if (wrap) wrap.hidden = true;
+    const kodikWrap = document.getElementById('animeKodikFrameWrap');
+    const allohaWrap = document.getElementById('animeAllohaFrameWrap');
+    const kodikIframe = document.getElementById('animeKodikIframe');
+    const allohaIframe = document.getElementById('animeAllohaIframe');
+    if (kodikIframe) kodikIframe.src = 'about:blank';
+    if (allohaIframe) allohaIframe.src = 'about:blank';
+    if (kodikWrap) kodikWrap.hidden = true;
+    if (allohaWrap) allohaWrap.hidden = true;
     if (!block) return;
     block.hidden = false;
     syncAnimeViewCountdownIso(iso);
@@ -1916,8 +1917,22 @@ function showAnimeWatchUnavailable(iso) {
     startAnimeViewCountdowns(iso, { announcedOnly: announced });
 }
 
+function getActivePlayerTab() {
+    const active = document.querySelector('#animeInlinePlayerSection .anime-source-tab--active');
+    const tab = active?.getAttribute('data-tab');
+    if (tab === 'alloha' || tab === 'trailer' || tab === 'watch') return tab === 'watch' ? 'kodik' : tab;
+    return tab || 'kodik';
+}
+
+function applyActiveWatchProvider(anime, episode) {
+    const tab = getActivePlayerTab();
+    if (tab === 'alloha') void applyAllohaIframeSrc(anime, episode);
+    else if (tab === 'kodik' || tab === 'watch') void applyKodikIframeSrc(anime, episode);
+}
+
 window.switchAnimePlayerTab = function (name) {
-    const watch = document.getElementById('animeTabPanelWatch');
+    const kodik = document.getElementById('animeTabPanelKodik');
+    const alloha = document.getElementById('animeTabPanelAlloha');
     const trail = document.getElementById('animeTabPanelTrailer');
     const section = document.getElementById('animeInlinePlayerSection');
     section?.querySelectorAll?.('.anime-source-tab').forEach((b) => {
@@ -1925,9 +1940,24 @@ window.switchAnimePlayerTab = function (name) {
         b.classList.toggle('anime-source-tab--active', on);
         b.setAttribute('aria-selected', on ? 'true' : 'false');
     });
-    if (watch) watch.hidden = name !== 'watch';
+    if (kodik) kodik.hidden = name !== 'kodik' && name !== 'watch';
+    if (alloha) alloha.hidden = name !== 'alloha';
     if (trail) trail.hidden = name !== 'trailer';
-    if (name === 'trailer') {
+
+    const unavail = document.getElementById('animeWatchUnavailable');
+    if (unavail && name !== 'trailer') {
+        unavail.hidden = true;
+    }
+
+    if (name === 'kodik' || name === 'watch') {
+        const wrap = document.getElementById('animeKodikFrameWrap');
+        if (wrap) wrap.hidden = false;
+        if (currentPlayerAnime) void applyKodikIframeSrc(currentPlayerAnime, currentEpisode);
+    } else if (name === 'alloha') {
+        const wrap = document.getElementById('animeAllohaFrameWrap');
+        if (wrap) wrap.hidden = false;
+        if (currentPlayerAnime) void applyAllohaIframeSrc(currentPlayerAnime, currentEpisode);
+    } else if (name === 'trailer') {
         const iframe = document.getElementById('animeTrailerIframe');
         let srcFinal =
             (typeof window !== 'undefined' && window.__animeTrailerEmbedSrc) ||
@@ -1978,19 +2008,26 @@ async function fetchJikanAnimeByMalId(malId) {
     if (!Number.isFinite(mal) || mal <= 0) return null;
     const cached = reminkoReadSessionJikanData(mal);
     if (cached) return cached;
+
+    const withTimeout = (p, ms) =>
+        Promise.race([
+            p,
+            new Promise((resolve) => setTimeout(() => resolve(null), ms))
+        ]).catch(() => null);
+
     if (typeof jikanFetchAnimeFullByMalId === 'function') {
-        try {
-            return await jikanFetchAnimeFullByMalId(mal);
-        } catch (_) {
-            /* fallback fetch */
-        }
+        const full = await withTimeout(jikanFetchAnimeFullByMalId(mal), 14000);
+        if (full) return full;
     }
     try {
         const url = `https://api.jikan.moe/v4/anime/${mal}`;
         const json =
             typeof reminkoJikanFetch === 'function'
-                ? await reminkoJikanFetch(url)
-                : await fetch(url).then((r) => (r.ok ? r.json() : null));
+                ? await withTimeout(reminkoJikanFetch(url), 14000)
+                : await withTimeout(
+                      reminkoFetchWithTimeout(url).then((r) => (r.ok ? r.json() : null)),
+                      14000
+                  );
         return json && json.data ? json.data : null;
     } catch (_) {
         return null;
@@ -2040,14 +2077,16 @@ function generateInlineKodikSection(anime, opts = {}) {
         </div>`;
     }
 
-    // Всегда показываем таб «Смотреть»; «Трейлер» — только если Jikan (или каталог) дали ссылку
+    // Kodik + Alloha + опционально «Трейлер»
+    const providerTabs = `<button type="button" class="anime-source-tab anime-source-tab--active" data-tab="kodik" role="tab" aria-selected="true" tabindex="0">Kodik</button>
+            <button type="button" class="anime-source-tab" data-tab="alloha" role="tab" aria-selected="false" tabindex="0">Alloha</button>`;
     const tabBar = hasTrailer
         ? `<div class="anime-player-source-tabs" role="tablist" aria-label="Источник видео">
-            <button type="button" class="anime-source-tab anime-source-tab--active" data-tab="watch" role="tab" aria-selected="true" tabindex="0">Смотреть</button>
+            ${providerTabs}
             <button type="button" class="anime-source-tab" data-tab="trailer" role="tab" aria-selected="false" tabindex="0">Трейлер</button>
         </div>`
         : `<div class="anime-player-source-tabs" role="tablist" aria-label="Источник видео">
-            <button type="button" class="anime-source-tab anime-source-tab--active" data-tab="watch" role="tab" aria-selected="true" tabindex="0">Смотреть</button>
+            ${providerTabs}
         </div>`;
 
     const trailerPanel = hasTrailer
@@ -2063,9 +2102,9 @@ function generateInlineKodikSection(anime, opts = {}) {
     return `
         <div class="anime-detail-section anime-inline-kodik" id="animeInlinePlayerSection" data-countdown-iso="${safeIso}" data-trailer-src="${trailerData}">
             ${tabBar}
-            <div id="animeTabPanelWatch" class="anime-tab-panel anime-tab-panel--watch" data-panel="watch">
+            <div id="animeTabPanelKodik" class="anime-tab-panel anime-tab-panel--watch" data-panel="kodik">
                 <div id="animeWatchUnavailable" class="anime-watch-unavailable" hidden>
-                    <p class="anime-watch-unavailable-msg">Аниме ещё не вышло или пока недоступно в Kodik.</p>
+                    <p class="anime-watch-unavailable-msg">Аниме ещё не вышло или пока недоступно в выбранном плеере.</p>
                     <div class="anime-release-countdown">
                         <div class="countdown__text">До выхода след. серии осталось:</div>
                         <div class="countdown__wrp fx-col fx-center" id="animeCountdownInner"></div>
@@ -2084,6 +2123,21 @@ function generateInlineKodikSection(anime, opts = {}) {
                 <p class="anime-player-adblock-note">
                     Чтобы реже сталкиваться с рекламой во встроенном плеере, включите или установите блокировщик рекламы
                     (расширение для браузера или отдельную программу).
+                </p>
+            </div>
+            <div id="animeTabPanelAlloha" class="anime-tab-panel anime-tab-panel--alloha" data-panel="alloha" hidden>
+                <div id="allohaPlayerHint" class="anime-kodik-hint" hidden></div>
+                <div class="anime-kodik-frame-wrap" id="animeAllohaFrameWrap">
+                    <div id="animeAllohaPlaceholder" class="anime-kodik-placeholder" hidden>
+                        <p class="anime-kodik-placeholder__title">Плеер Alloha</p>
+                        <p class="anime-kodik-placeholder__text" id="animeAllohaPlaceholderText">Загрузка…</p>
+                    </div>
+                    <iframe id="animeAllohaIframe" class="anime-kodik-iframe" title="Плеер Alloha"
+                        allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+                        referrerpolicy="origin"></iframe>
+                </div>
+                <p class="anime-player-adblock-note">
+                    Плеер Alloha TV (Yani). Для работы на сайте нужен <code>ALLOHA_API_TOKEN</code> в Netlify.
                 </p>
             </div>
             ${trailerPanel}
@@ -2243,7 +2297,9 @@ async function applyKodikIframeSrc(anime, episode) {
     }
 
     const phHide = document.getElementById('animeKodikPlaceholder');
-    if (phHide) phHide.hidden = true;
+    const phTx = document.getElementById('animeKodikPlaceholderText');
+    if (phHide) phHide.hidden = false;
+    if (phTx) phTx.textContent = 'Загрузка плеера Kodik…';
 
     const K = window.KodikCatalogResolve;
     if (!K || typeof K.resolveEmbedBase !== 'function' || typeof K.buildIframeUrl !== 'function') {
@@ -2279,7 +2335,12 @@ async function applyKodikIframeSrc(anime, episode) {
     };
 
     try {
-        const base = await K.resolveEmbedBase(anime);
+        const base = await Promise.race([
+            K.resolveEmbedBase(anime),
+            new Promise((_, reject) =>
+                setTimeout(() => reject(new Error('Kodik: превышено время ожидания')), 22000)
+            )
+        ]);
         if (!currentPlayerAnime || String(currentPlayerAnime.id) !== String(anime.id)) return;
         if (currentEpisode !== ep) return;
         const playerUrl = K.buildIframeUrl(base.href, base.isSerial, ep);
@@ -2289,8 +2350,85 @@ async function applyKodikIframeSrc(anime, episode) {
         if (!currentPlayerAnime || String(currentPlayerAnime.id) !== String(anime.id)) return;
         if (currentEpisode !== ep) return;
         clearInlineKodikHint();
+        const ph = document.getElementById('animeKodikPlaceholder');
+        const phTx = document.getElementById('animeKodikPlaceholderText');
+        if (ph) ph.hidden = false;
+        if (phTx) {
+            phTx.textContent =
+                e && String(e.message || '').includes('время ожидания')
+                    ? 'Kodik не ответил вовремя. Попробуйте вкладку Alloha или обновите страницу.'
+                    : 'Плеер Kodik временно недоступен. Попробуйте вкладку Alloha.';
+        }
         iframe.src = 'about:blank';
-        showAnimeWatchUnavailable(iso);
+        if (!window.AllohaApi?.hasToken?.()) showAnimeWatchUnavailable(iso);
+    }
+}
+
+async function applyAllohaIframeSrc(anime, episode) {
+    const ep = Math.max(1, parseInt(episode, 10) || 1);
+    const section = document.getElementById('animeInlinePlayerSection');
+    const iso = section?.dataset?.countdownIso || '';
+    const iframe = document.getElementById('animeAllohaIframe');
+    const ph = document.getElementById('animeAllohaPlaceholder');
+    const phTx = document.getElementById('animeAllohaPlaceholderText');
+    const hintEl = document.getElementById('allohaPlayerHint');
+
+    if (!window.AllohaApi || typeof AllohaApi.hasToken !== 'function' || !AllohaApi.hasToken()) {
+        if (hintEl) {
+            hintEl.hidden = false;
+            hintEl.className = 'anime-kodik-hint anime-kodik-hint--warn';
+            hintEl.innerHTML =
+                'Плеер Alloha недоступен: задайте <code>ALLOHA_API_TOKEN</code> в Netlify ' +
+                '(или <code>alloha.apiToken</code> в config.local.js для локальной разработки).';
+        }
+        if (ph) ph.hidden = true;
+        if (iframe) iframe.removeAttribute('src');
+        return;
+    }
+
+    if (hintEl) {
+        hintEl.hidden = true;
+        hintEl.innerHTML = '';
+    }
+    if (ph) {
+        ph.hidden = false;
+    }
+    if (phTx) {
+        phTx.textContent = 'Загрузка плеера Alloha…';
+    }
+    if (iframe) iframe.removeAttribute('src');
+
+    hideAnimeWatchUnavailable();
+
+    try {
+        const url = await AllohaApi.resolveEmbedUrl(anime, ep);
+        if (!currentPlayerAnime || String(currentPlayerAnime.id) !== String(anime.id)) return;
+        if (currentEpisode !== ep) return;
+        if (!url) {
+            if (phTx) {
+                phTx.textContent = 'Alloha: аниме не найдено в каталоге или нет озвучки для этой серии.';
+            }
+            if (ph) ph.hidden = false;
+            if (iframe) iframe.src = 'about:blank';
+            return;
+        }
+        if (ph) ph.hidden = true;
+        if (iframe) {
+            iframe.src = url;
+            iframe.setAttribute('referrerpolicy', 'origin');
+        }
+        if (anime && animeEligibleForWatchHistory(anime)) {
+            scheduleWatchHistoryAfterMinute(anime.id, ep);
+        }
+    } catch (e) {
+        console.warn('[Alloha]', e);
+        if (!currentPlayerAnime || String(currentPlayerAnime.id) !== String(anime.id)) return;
+        if (currentEpisode !== ep) return;
+        if (phTx) {
+            phTx.textContent = 'Не удалось загрузить плеер Alloha. Попробуйте позже или выберите Kodik.';
+        }
+        if (ph) ph.hidden = false;
+        if (iframe) iframe.src = 'about:blank';
     }
 }
 
@@ -2356,13 +2494,16 @@ function initCatalogAnimeInlineKodik(anime) {
     }
     const secTabs = document.getElementById('animeInlinePlayerSection');
     secTabs?.querySelectorAll?.('.anime-source-tab').forEach((b) => {
-        const on = b.getAttribute('data-tab') === 'watch';
+        const tabName = b.getAttribute('data-tab');
+        const on = tabName === 'kodik' || tabName === 'watch';
         b.classList.toggle('anime-source-tab--active', on);
         b.setAttribute('aria-selected', on ? 'true' : 'false');
     });
-    const watchPanel = document.getElementById('animeTabPanelWatch');
+    const kodikPanel = document.getElementById('animeTabPanelKodik');
+    const allohaPanel = document.getElementById('animeTabPanelAlloha');
     const trailPanel = document.getElementById('animeTabPanelTrailer');
-    if (watchPanel) watchPanel.hidden = false;
+    if (kodikPanel) kodikPanel.hidden = false;
+    if (allohaPanel) allohaPanel.hidden = true;
     if (trailPanel) trailPanel.hidden = true;
 
     currentPlayerAnime = anime;
@@ -2381,13 +2522,13 @@ function tryApplyKodikWhenReady(anime, ep, attempt) {
     const n = attempt | 0;
     if (window.KodikApi && typeof KodikApi.hasToken === 'function' && KodikApi.hasToken() &&
         window.KodikCatalogResolve && typeof KodikCatalogResolve.resolveEmbedBase === 'function') {
-        void applyKodikIframeSrc(anime, ep);
+        void applyActiveWatchProvider(anime, ep);
         return;
     }
     if (n < 100) {
         setTimeout(() => tryApplyKodikWhenReady(anime, ep, n + 1), 50);
     } else {
-        void applyKodikIframeSrc(anime, ep);
+        void applyActiveWatchProvider(anime, ep);
     }
 }
 
@@ -2413,7 +2554,7 @@ function playAnime(animeId) {
         fillInlineEpisodeSelect(availableEpisodes, currentEpisode);
         updateInlineEpisodeNavButtons();
     }
-    void applyKodikIframeSrc(anime, currentEpisode);
+    void applyActiveWatchProvider(anime, currentEpisode);
     highlightEpisodeCardsInList();
     const sel = document.getElementById('animeKodikEpisodeSelect');
     if (sel) sel.value = String(currentEpisode);
@@ -2447,7 +2588,7 @@ function playEpisode(animeId, episodeNumber) {
         fillInlineEpisodeSelect(total, currentEpisode);
         updateInlineEpisodeNavButtons();
     }
-    void applyKodikIframeSrc(anime, currentEpisode);
+    void applyActiveWatchProvider(anime, currentEpisode);
     highlightEpisodeCardsInList();
     const sel = document.getElementById('animeKodikEpisodeSelect');
     if (sel) sel.value = String(currentEpisode);
@@ -2488,7 +2629,7 @@ function goToEpisode(ep) {
         addToWatchHistory(currentPlayerAnime.id, episode);
     }
 
-    void applyKodikIframeSrc(currentPlayerAnime, episode);
+    void applyActiveWatchProvider(currentPlayerAnime, episode);
     highlightEpisodeCardsInList();
     const sel = document.getElementById('animeKodikEpisodeSelect');
     if (sel) sel.value = String(episode);
@@ -2497,7 +2638,11 @@ function goToEpisode(ep) {
 }
 
 function toggleFullscreenPlayer() {
-    const wrap = document.querySelector('.anime-kodik-frame-wrap');
+    const tab = getActivePlayerTab();
+    const wrap =
+        tab === 'alloha'
+            ? document.getElementById('animeAllohaFrameWrap')
+            : document.getElementById('animeKodikFrameWrap') || document.querySelector('.anime-kodik-frame-wrap');
     if (!wrap) return;
     if (!document.fullscreenElement) {
         wrap.requestFullscreen?.().catch(() => {});
@@ -2643,6 +2788,6 @@ window.addEventListener('pageshow', (ev) => {
     currentEpisode = ep;
     iframe.src = 'about:blank';
     requestAnimationFrame(() => {
-        void applyKodikIframeSrc(anime, ep);
+        void applyActiveWatchProvider(anime, ep);
     });
 });

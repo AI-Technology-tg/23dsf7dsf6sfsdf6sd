@@ -1,17 +1,40 @@
 /**
  * Shikimori.one API — русские названия, описания, серии (episodes_aired).
- * Очередь 1 + пауза между запросами + последовательная проверка кандидатов (без параллельного шторма).
+ * На проде запросы идут через Netlify-прокси (обход CORS).
  */
 (function () {
     const SHIKI_BASE = 'https://shikimori.one/api';
     const CACHE_PREFIX = 'reminko_shiki_mal_';
     const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
-    /** Одновременно только одна «задача» fetchShikimoriByMalId */
     const MAX_QUEUE = 1;
     const MIN_GAP_MS = 550;
     let active = 0;
     const waiters = [];
     let lastRequestAt = 0;
+
+    function shikiCfg() {
+        return (typeof window !== 'undefined' && window.APP_CONFIG && window.APP_CONFIG.shikimori) || {};
+    }
+
+    function isLocalDevHost() {
+        if (typeof window === 'undefined' || !window.location) return true;
+        const h = window.location.hostname || '';
+        return h === 'localhost' || h === '127.0.0.1' || window.location.protocol === 'file:';
+    }
+
+    function proxyUrl() {
+        const rel = shikiCfg().apiProxyUrl || '/.netlify/functions/shikimori-proxy';
+        if (/^https?:\/\//i.test(rel)) return rel;
+        if (typeof window !== 'undefined' && window.location && window.location.origin) {
+            return window.location.origin.replace(/\/$/, '') + (rel.startsWith('/') ? rel : '/' + rel);
+        }
+        return rel;
+    }
+
+    function useShikiProxy() {
+        if (shikiCfg().useShikimoriProxy === false) return false;
+        return !isLocalDevHost();
+    }
 
     function shikiHeaders() {
         return { Accept: 'application/json' };
@@ -27,18 +50,37 @@
         if (gapWait) await sleep(gapWait);
         lastRequestAt = Date.now();
 
-        const res = await fetch(`${SHIKI_BASE}${path}`, { headers: shikiHeaders() });
+        const apiPath = path.startsWith('/') ? path : `/${path}`;
 
-        if (res.status === 429 && attempt < 6) {
-            const ra = parseInt(res.headers.get('Retry-After') || '', 10);
-            const base = Number.isFinite(ra) && ra > 0 ? ra * 1000 : 2500;
-            await sleep(base + attempt * 800);
-            lastRequestAt = 0;
-            return shikiFetch(path, attempt + 1);
+        try {
+            let res;
+            if (useShikiProxy()) {
+                const qIdx = apiPath.indexOf('?');
+                const pathOnly = qIdx >= 0 ? apiPath.slice(0, qIdx) : apiPath;
+                const url = new URL(proxyUrl());
+                url.searchParams.set('path', pathOnly);
+                if (qIdx >= 0) {
+                    const extra = new URLSearchParams(apiPath.slice(qIdx + 1));
+                    extra.forEach((v, k) => url.searchParams.set(k, v));
+                }
+                res = await fetch(url.toString(), { headers: shikiHeaders(), credentials: 'omit' });
+            } else {
+                res = await fetch(`${SHIKI_BASE}${apiPath}`, { headers: shikiHeaders(), credentials: 'omit' });
+            }
+
+            if (res.status === 429 && attempt < 6) {
+                const ra = parseInt(res.headers.get('Retry-After') || '', 10);
+                const base = Number.isFinite(ra) && ra > 0 ? ra * 1000 : 2500;
+                await sleep(base + attempt * 800);
+                lastRequestAt = 0;
+                return shikiFetch(path, attempt + 1);
+            }
+
+            if (!res.ok) return null;
+            return await res.json();
+        } catch (_) {
+            return null;
         }
-
-        if (!res.ok) return null;
-        return res.json();
     }
 
     function stripHtml(html) {
@@ -54,7 +96,8 @@
         while (active < MAX_QUEUE && waiters.length) {
             const job = waiters.shift();
             active++;
-            Promise.resolve(job.fn())
+            Promise.resolve()
+                .then(() => job.fn())
                 .then(job.resolve, job.reject)
                 .finally(() => {
                     active--;
@@ -93,58 +136,52 @@
         }
     }
 
-    /**
-     * Полный объект Shikimori по mal_id: один поиск, затем по одному GET /animes/:id (без Promise.all).
-     */
     async function fetchShikimoriByMalId(malId, searchTitle) {
         if (!malId) return null;
         const cached = readCache(malId);
         if (cached) return cached;
 
-        const direct = await shikiFetch(`/animes/${malId}`);
-        if (direct && direct.myanimelist_id === malId) {
-            writeCache(malId, direct);
-            return direct;
-        }
+        try {
+            const direct = await shikiFetch(`/animes/${malId}`);
+            if (direct && direct.myanimelist_id === malId) {
+                writeCache(malId, direct);
+                return direct;
+            }
 
-        const q = encodeURIComponent((searchTitle || '').trim() || String(malId));
-        const list = await shikiFetch(`/animes?search=${q}&limit=10`);
-        if (!Array.isArray(list) || list.length === 0) {
+            const q = encodeURIComponent((searchTitle || '').trim() || String(malId));
+            const list = await shikiFetch(`/animes?search=${q}&limit=10`);
+            if (!Array.isArray(list) || list.length === 0) {
+                writeCache(malId, null);
+                return null;
+            }
+
+            const maxCheck = Math.min(list.length, 6);
+            for (let i = 0; i < maxCheck; i++) {
+                const item = list[i];
+                if (!item || !item.id) continue;
+                const d = await shikiFetch(`/animes/${item.id}`);
+                if (d && d.myanimelist_id === malId) {
+                    writeCache(malId, d);
+                    return d;
+                }
+            }
+
             writeCache(malId, null);
             return null;
+        } catch (_) {
+            return null;
         }
-
-        const maxCheck = Math.min(list.length, 6);
-        for (let i = 0; i < maxCheck; i++) {
-            const item = list[i];
-            if (!item || !item.id) continue;
-            const d = await shikiFetch(`/animes/${item.id}`);
-            if (d && d.myanimelist_id === malId) {
-                writeCache(malId, d);
-                return d;
-            }
-        }
-
-        writeCache(malId, null);
-        return null;
     }
 
     function enqueueFetchShikimoriByMalId(malId, searchTitle) {
-        return enqueueShikiTask(() => fetchShikimoriByMalId(malId, searchTitle));
+        return enqueueShikiTask(() => fetchShikimoriByMalId(malId, searchTitle)).catch(() => null);
     }
 
-    /** Синхронно из кэша (sessionStorage) — для поиска по русскому названию без лишних запросов */
     function readCachedByMalId(malId) {
         if (!malId) return null;
         return readCache(malId);
     }
 
-    /**
-     * Поиск аниме по строке (в т.ч. русское название на Shikimori).
-     * @param {string} query
-     * @param {number} [limit]
-     * @returns {Promise<Array>}
-     */
     function searchAnimesByQuery(query, limit = 15) {
         const lim = Math.min(25, Math.max(1, parseInt(limit, 10) || 15));
         return enqueueShikiTask(async () => {
@@ -152,7 +189,7 @@
             if (!q) return [];
             const list = await shikiFetch(`/animes?search=${q}&limit=${lim}`);
             return Array.isArray(list) ? list : [];
-        });
+        }).catch(() => []);
     }
 
     function formatAiredTotal(jikanAnime, shiki) {
@@ -178,6 +215,7 @@
         readCachedByMalId,
         searchAnimesByQuery,
         stripHtml,
-        formatAiredTotal
+        formatAiredTotal,
+        useShikiProxy
     };
 })();

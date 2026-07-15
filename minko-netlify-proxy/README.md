@@ -15,6 +15,8 @@
 | Переменная | Нужна для |
 |------------|-----------|
 | **MINKO_FREE_API_KEY** | «Сонная Minko», бесплатный поток (как в локальном `.env`) |
+| **KODIK_API_TOKEN** | Прокси Kodik (`/.netlify/functions/kodik-proxy`) — поиск плеера |
+| **ALLOHA_API_TOKEN** | Прокси Alloha TV (`/.netlify/functions/alloha-proxy`) — второй плеер на странице аниме |
 | **OPENAI_API_KEY** | VIP-ответы и опционально запасной путь |
 | **XAI_API_KEY** | Grok, если Free API вернул мусор или ошибку |
 | **SUPABASE_URL** | URL проекта Supabase (для «выключателя» чата и логов) |

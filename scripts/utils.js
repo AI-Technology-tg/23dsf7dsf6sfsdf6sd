@@ -33,9 +33,10 @@ window.reminkoResolveAssetUrl = reminkoResolveAssetUrl;
 
 /** Jikan API: повтор при 429 и временных 502/503/504 (общий для всего сайта). */
 const REMINKO_JIKAN_RETRY_STATUSES = new Set([429, 502, 503, 504]);
-const REMINKO_JIKAN_MAX_ATTEMPTS = 1;
+const REMINKO_JIKAN_MAX_ATTEMPTS = 3;
 const REMINKO_JIKAN_CIRCUIT_MS = 2 * 60 * 1000;
 const REMINKO_JIKAN_JSON_CACHE_MS = 45 * 60 * 1000;
+const REMINKO_JIKAN_FETCH_TIMEOUT_MS = 12000;
 
 const _reminkoJikanInflight = new Map();
 const _reminkoJikanJsonCache = new Map();
@@ -76,6 +77,24 @@ function reminkoJikanCacheSet(url, data) {
     _reminkoJikanJsonCache.set(url, { data, ts: Date.now() });
 }
 
+function reminkoSleep(ms) {
+    return new Promise((r) => setTimeout(r, ms));
+}
+
+/** fetch с таймаутом — не даёт странице зависнуть на «висящем» HTTP. */
+async function reminkoFetchWithTimeout(url, opts, timeoutMs) {
+    const ms = Number.isFinite(timeoutMs) && timeoutMs > 0 ? timeoutMs : REMINKO_JIKAN_FETCH_TIMEOUT_MS;
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), ms);
+    try {
+        return await fetch(url, { ...(opts || {}), signal: ctrl.signal, credentials: 'omit' });
+    } finally {
+        clearTimeout(timer);
+    }
+}
+window.reminkoFetchWithTimeout = reminkoFetchWithTimeout;
+window.reminkoSleep = reminkoSleep;
+
 function reminkoJikanRetryDelayMs(status, attempt, retryAfterHeader) {
     const ra = parseInt(retryAfterHeader || '', 10);
     if (Number.isFinite(ra) && ra > 0) return ra * 1000;
@@ -98,10 +117,10 @@ function reminkoJikanFetchError(status) {
 async function reminkoJikanFetchCore(url, attempt = 0) {
     let res;
     try {
-        res = await fetch(url, { credentials: 'omit' });
+        res = await reminkoFetchWithTimeout(url, {}, REMINKO_JIKAN_FETCH_TIMEOUT_MS);
     } catch (netErr) {
         if (attempt < REMINKO_JIKAN_MAX_ATTEMPTS - 1) {
-            await new Promise((r) => setTimeout(r, reminkoJikanRetryDelayMs(503, attempt, '')));
+            await reminkoSleep(reminkoJikanRetryDelayMs(503, attempt, ''));
             return reminkoJikanFetchCore(url, attempt + 1);
         }
         reminkoJikanTripCircuit();
@@ -116,9 +135,7 @@ async function reminkoJikanFetchCore(url, attempt = 0) {
             const stale = reminkoJikanCacheGet(url, true);
             if (stale) return stale;
             if (attempt < REMINKO_JIKAN_MAX_ATTEMPTS - 1) {
-                await new Promise((r) =>
-                    setTimeout(r, reminkoJikanRetryDelayMs(res.status, attempt, res.headers.get('Retry-After')))
-                );
+                await reminkoSleep(reminkoJikanRetryDelayMs(res.status, attempt, res.headers.get('Retry-After')));
                 return reminkoJikanFetchCore(url, attempt + 1);
             }
         }

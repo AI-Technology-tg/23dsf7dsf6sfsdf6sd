@@ -109,6 +109,33 @@ const APP_CONFIG = {
             window.APP_CONFIG?.kodik?.loadChangeDomainsScript === true
     },
 
+    /** Shikimori REST — на проде через /.netlify/functions/shikimori-proxy (CORS) */
+    shikimori: {
+        apiProxyUrl:
+            typeof window.APP_CONFIG?.shikimori?.apiProxyUrl === 'string' &&
+            window.APP_CONFIG.shikimori.apiProxyUrl.trim()
+                ? window.APP_CONFIG.shikimori.apiProxyUrl.trim()
+                : '/.netlify/functions/shikimori-proxy',
+        useShikimoriProxy: window.APP_CONFIG?.shikimori?.useShikimoriProxy !== false
+    },
+
+    /**
+     * Alloha TV — iframe-плеер. На проде: ALLOHA_API_TOKEN в Netlify + прокси alloha-proxy.
+     * Локально: alloha.apiToken в config.local.js.
+     */
+    alloha: {
+        apiProxyUrl:
+            typeof window.APP_CONFIG?.alloha?.apiProxyUrl === 'string' &&
+            window.APP_CONFIG.alloha.apiProxyUrl.trim()
+                ? window.APP_CONFIG.alloha.apiProxyUrl.trim()
+                : '/.netlify/functions/alloha-proxy',
+        useAllohaProxy: window.APP_CONFIG?.alloha?.useAllohaProxy !== false,
+        apiToken:
+            typeof window.APP_CONFIG?.alloha?.apiToken === 'string'
+                ? window.APP_CONFIG.alloha.apiToken.trim()
+                : ''
+    },
+
     /** Каталог русской манги ReManga (сборка: node scripts/build/remanga-build-catalog.js) */
     remanga: {
         catalogPath:
