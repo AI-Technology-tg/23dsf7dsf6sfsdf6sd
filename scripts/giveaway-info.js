@@ -206,6 +206,181 @@
         el.classList.toggle('is-error', !ok && !!text);
     }
 
+    function getSelectedPreregPlatform() {
+        var checked = document.querySelector('input[name="giveawayPreregPlatform"]:checked');
+        return checked ? checked.value : 'tiktok';
+    }
+
+    function applyPreregPlatformFields() {
+        var platform = getSelectedPreregPlatform();
+        var tiktokWrap = $('giveawayPreregTiktokWrap');
+        var instagramWrap = $('giveawayPreregInstagramWrap');
+        var fields = $('giveawayPreregFields');
+        if (!fields) return;
+
+        fields.classList.toggle('info-giveaway-prereg-fields--both', platform === 'both');
+
+        if (platform === 'tiktok') {
+            if (tiktokWrap) tiktokWrap.hidden = false;
+            if (instagramWrap) instagramWrap.hidden = true;
+        } else if (platform === 'instagram') {
+            if (tiktokWrap) tiktokWrap.hidden = true;
+            if (instagramWrap) instagramWrap.hidden = false;
+        } else {
+            if (tiktokWrap) tiktokWrap.hidden = false;
+            if (instagramWrap) instagramWrap.hidden = false;
+        }
+    }
+
+    function setPreregPlatform(value) {
+        var radio = document.querySelector('input[name="giveawayPreregPlatform"][value="' + value + '"]');
+        if (radio) radio.checked = true;
+        applyPreregPlatformFields();
+    }
+
+    function formatPreregHandleDisplay(handle) {
+        if (!handle) return '—';
+        return '@' + handle;
+    }
+
+    function renderPreregDoneGrid(row) {
+        var grid = $('giveawayPreregDoneGrid');
+        if (!grid || !row) return;
+        var items = [];
+        if (row.platform === 'tiktok' || row.platform === 'both') {
+            items.push({ label: 'TikTok', value: formatPreregHandleDisplay(row.tiktok_handle) });
+        }
+        if (row.platform === 'instagram' || row.platform === 'both') {
+            items.push({ label: 'Instagram', value: formatPreregHandleDisplay(row.instagram_handle) });
+        }
+        grid.innerHTML = items
+            .map(function (item) {
+                return (
+                    '<div class="info-giveaway-prereg-done-item">' +
+                    '<span class="info-giveaway-prereg-done-label">' +
+                    item.label +
+                    '</span>' +
+                    '<strong class="info-giveaway-prereg-done-value">' +
+                    item.value +
+                    '</strong>' +
+                    '</div>'
+                );
+            })
+            .join('');
+    }
+
+    function showPreregFormMode() {
+        var form = $('giveawayPreregForm');
+        var done = $('giveawayPreregDone');
+        if (form) form.hidden = false;
+        if (done) done.hidden = true;
+    }
+
+    function showPreregDoneMode(row) {
+        var form = $('giveawayPreregForm');
+        var done = $('giveawayPreregDone');
+        if (form) form.hidden = true;
+        if (done) done.hidden = false;
+        renderPreregDoneGrid(row);
+    }
+
+    function fillPreregFormFromRow(row) {
+        if (!row) return;
+        setPreregPlatform(row.platform || 'tiktok');
+        var tiktokInput = $('giveawayPreregTiktok');
+        var instagramInput = $('giveawayPreregInstagram');
+        if (tiktokInput) tiktokInput.value = row.tiktok_handle || '';
+        if (instagramInput) instagramInput.value = row.instagram_handle || '';
+    }
+
+    async function loadGiveawayPreregPanel() {
+        var block = $('giveawayPreregBlock');
+        if (!block) return;
+
+        var closedNote = $('giveawayPreregClosed');
+        var loginHint = $('giveawayPreregLoginHint');
+        var form = $('giveawayPreregForm');
+        var done = $('giveawayPreregDone');
+        var ended = isGiveawayEnded();
+
+        if (closedNote) closedNote.hidden = !ended;
+        if (ended) {
+            if (loginHint) loginHint.hidden = true;
+            if (form) form.hidden = true;
+            if (done) done.hidden = true;
+            return;
+        }
+
+        var logged = await isLoggedIn();
+        if (loginHint) loginHint.hidden = logged;
+        if (!logged) {
+            if (form) form.hidden = true;
+            if (done) done.hidden = true;
+            return;
+        }
+
+        if (typeof supabaseClient === 'undefined' || !supabaseClient) return;
+
+        try {
+            var res = await supabaseClient.rpc('giveaway_prereg_my_status');
+            var row = Array.isArray(res.data) ? res.data[0] : res.data;
+            if (res.error || !row || !row.is_registered) {
+                showPreregFormMode();
+                applyPreregPlatformFields();
+                return;
+            }
+            fillPreregFormFromRow(row);
+            showPreregDoneMode(row);
+        } catch (_) {
+            showPreregFormMode();
+            applyPreregPlatformFields();
+        }
+    }
+
+    async function onPreregSubmit() {
+        var btn = $('giveawayPreregSubmitBtn');
+        var msg = $('giveawayPreregMsg');
+        if (isGiveawayEnded()) {
+            showMsg(msg, 'Предрегистрация закрыта — розыгрыш завершён.', false);
+            return;
+        }
+        if (!(await isLoggedIn())) {
+            showMsg(msg, 'Войдите или зарегистрируйтесь на сайте.', false);
+            if (typeof openLoginModal === 'function') openLoginModal();
+            return;
+        }
+
+        var platform = getSelectedPreregPlatform();
+        var tiktok = ($('giveawayPreregTiktok') && $('giveawayPreregTiktok').value) || '';
+        var instagram = ($('giveawayPreregInstagram') && $('giveawayPreregInstagram').value) || '';
+
+        if (btn) btn.disabled = true;
+        showMsg(msg, 'Сохраняем…', true);
+
+        try {
+            var res = await supabaseClient.rpc('giveaway_prereg_save', {
+                p_platform: platform,
+                p_tiktok_handle: platform === 'instagram' ? null : tiktok,
+                p_instagram_handle: platform === 'tiktok' ? null : instagram
+            });
+            if (res.error) throw res.error;
+            var row = Array.isArray(res.data) ? res.data[0] : res.data;
+            if (!row || !row.success) throw new Error((row && row.message) || 'Не удалось сохранить');
+            showMsg(msg, row.message || 'Предрегистрация сохранена', true);
+            await loadGiveawayPreregPanel();
+        } catch (e) {
+            showMsg(msg, (e && e.message) || 'Ошибка сохранения. Попробуйте позже.', false);
+        } finally {
+            if (btn) btn.disabled = false;
+        }
+    }
+
+    function onPreregEditClick() {
+        showPreregFormMode();
+        applyPreregPlatformFields();
+        showMsg($('giveawayPreregMsg'), '', true);
+    }
+
     async function isLoggedIn() {
         if (typeof supabaseClient === 'undefined' || !supabaseClient) return false;
         try {
@@ -341,6 +516,7 @@
         window.addEventListener('reminko:navigation-applied', function () {
             initGiveawayCountdown();
             void loadGiveawayPanel();
+            void loadGiveawayPreregPanel();
         });
         document.addEventListener('click', function (e) {
             var tab = e.target.closest('.info-tabs [data-tab="giveaway"]');
@@ -348,9 +524,24 @@
                 setTimeout(function () {
                     initGiveawayCountdown();
                     void loadGiveawayPanel();
+                    void loadGiveawayPreregPanel();
                 }, 0);
             }
         });
+
+        document.querySelectorAll('input[name="giveawayPreregPlatform"]').forEach(function (el) {
+            el.addEventListener('change', applyPreregPlatformFields);
+        });
+        $('giveawayPreregSubmitBtn')?.addEventListener('click', function () {
+            void onPreregSubmit();
+        });
+        $('giveawayPreregChangeBtn')?.addEventListener('click', onPreregEditClick);
+        $('giveawayPreregOpenLoginBtn')?.addEventListener('click', function () {
+            if (typeof openLoginModal === 'function') openLoginModal();
+        });
+
+        applyPreregPlatformFields();
+        void loadGiveawayPreregPanel();
     }
 
     window.reminkoGiveawayStartsAt = GIVEAWAY_START_ISO;

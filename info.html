@@ -302,6 +302,74 @@
                             >Telegram Re-Minko</a>
                         </article>
 
+                        <article class="info-giveaway-card info-giveaway-card--prereg" id="giveawayPreregBlock">
+                            <div class="info-giveaway-card-icon" aria-hidden="true">📝</div>
+                            <h3 class="info-giveaway-card-title">Предрегистрация</h3>
+                            <p class="info-giveaway-card-text">
+                                Укажите, где будете публиковать обзор — TikTok, Instagram или обе платформы — и ник аккаунта через&nbsp;@.
+                            </p>
+
+                            <div id="giveawayPreregLoginHint" class="info-giveaway-login-hint" hidden>
+                                <p>Для предрегистрации нужен аккаунт на Re-Minko.</p>
+                                <button type="button" class="info-link-btn info-link-btn--ghost info-link-btn--giveaway" id="giveawayPreregOpenLoginBtn">Войти / зарегистрироваться</button>
+                            </div>
+
+                            <div id="giveawayPreregForm" class="info-giveaway-prereg" hidden>
+                                <fieldset class="info-giveaway-prereg-platforms">
+                                    <legend class="info-giveaway-prereg-legend">Платформа</legend>
+                                    <div class="info-giveaway-prereg-chips" role="radiogroup" aria-label="Платформа для обзора">
+                                        <label class="info-giveaway-prereg-chip">
+                                            <input type="radio" name="giveawayPreregPlatform" value="tiktok" checked>
+                                            <span>TikTok</span>
+                                        </label>
+                                        <label class="info-giveaway-prereg-chip">
+                                            <input type="radio" name="giveawayPreregPlatform" value="instagram">
+                                            <span>Instagram</span>
+                                        </label>
+                                        <label class="info-giveaway-prereg-chip">
+                                            <input type="radio" name="giveawayPreregPlatform" value="both">
+                                            <span>Обе</span>
+                                        </label>
+                                    </div>
+                                </fieldset>
+
+                                <div class="info-giveaway-prereg-fields" id="giveawayPreregFields">
+                                    <label class="info-giveaway-prereg-field" id="giveawayPreregTiktokWrap">
+                                        <span class="info-giveaway-prereg-label">TikTok</span>
+                                        <span class="info-giveaway-prereg-input-wrap">
+                                            <span class="info-giveaway-prereg-at" aria-hidden="true">@</span>
+                                            <input type="text" class="info-giveaway-prereg-input" id="giveawayPreregTiktok" placeholder="username" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="30">
+                                        </span>
+                                    </label>
+                                    <label class="info-giveaway-prereg-field" id="giveawayPreregInstagramWrap" hidden>
+                                        <span class="info-giveaway-prereg-label">Instagram</span>
+                                        <span class="info-giveaway-prereg-input-wrap">
+                                            <span class="info-giveaway-prereg-at" aria-hidden="true">@</span>
+                                            <input type="text" class="info-giveaway-prereg-input" id="giveawayPreregInstagram" placeholder="username" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="30">
+                                        </span>
+                                    </label>
+                                </div>
+
+                                <div class="info-giveaway-prereg-actions">
+                                    <button type="button" class="info-giveaway-join-btn info-giveaway-join-btn--prereg" id="giveawayPreregSubmitBtn">
+                                        <span class="info-giveaway-join-btn__shine" aria-hidden="true"></span>
+                                        <span class="info-giveaway-join-btn__label">Сохранить предрегистрацию</span>
+                                    </button>
+                                </div>
+                                <p id="giveawayPreregMsg" class="info-giveaway-msg" aria-live="polite"></p>
+                            </div>
+
+                            <div id="giveawayPreregDone" class="info-giveaway-prereg-done" hidden>
+                                <p class="info-giveaway-prereg-done-lead">Вы предзарегистрированы:</p>
+                                <div class="info-giveaway-prereg-done-grid" id="giveawayPreregDoneGrid"></div>
+                                <button type="button" class="info-link-btn info-link-btn--ghost info-link-btn--giveaway" id="giveawayPreregChangeBtn">Изменить данные</button>
+                            </div>
+
+                            <p id="giveawayPreregClosed" class="info-giveaway-ended" hidden>
+                                Предрегистрация закрыта — розыгрыш завершён.
+                            </p>
+                        </article>
+
                         <div class="info-giveaway-cta">
                             <div id="giveawayLoginHint" class="info-giveaway-login-hint" hidden>
                                 <p>Для участия нужен аккаунт на Re-Minko.</p>
@@ -392,7 +460,7 @@
     <script src="scripts/loading.js"></script>
     <script src="scripts/giveaway.js?v=giveaway-1"></script>
     <script src="scripts/info-page.js"></script>
-    <script src="scripts/giveaway-info.js?v=giveaway-7"></script>
+    <script src="scripts/giveaway-info.js?v=giveaway-8"></script>
     <script src="scripts/apply-navigation.js?v=rem-theme-4"></script>
 </body>
 </html>
