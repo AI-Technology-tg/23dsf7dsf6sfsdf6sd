@@ -67,14 +67,31 @@
     position: relative;
     width: 100%;
     background: #000;
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
 }
 
 .a4k-player__viewport {
     position: relative;
     width: 100%;
     aspect-ratio: 16 / 9;
-    background: #000;
     cursor: pointer;
+    overflow: hidden;
+    background:
+        linear-gradient(rgba(18, 14, 28, 0.55), rgba(18, 14, 28, 0.68)),
+        url('../Fons/seitFon.jpg') center / cover no-repeat;
+}
+
+.a4k-player__viewport--ready {
+    background: #000;
+}
+
+.a4k-player__video--before-start,
+.anime4k-player__video--before-start {
+    opacity: 0;
+    pointer-events: none;
 }
 
 .a4k-player__video,
@@ -286,34 +303,71 @@
     }
 }
 
-.a4k-player__select,
-.anime4k-player__preset {
-    height: 38px;
-    max-width: 9.5rem;
-    border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    background: rgba(255, 255, 255, 0.05);
-    color: var(--text-color, #fff);
-    font-size: 0.72rem;
-    padding: 0 0.45rem;
+/* Полноэкранный режим — весь shell с контролами */
+.a4k-player__shell:fullscreen,
+.a4k-player__shell:-webkit-full-screen,
+.a4k-player__shell.a4k-player__shell--fullscreen {
+    display: flex;
+    flex-direction: column;
+    width: 100vw;
+    height: 100vh;
+    max-height: 100vh;
+    background: #000;
+    border-radius: 0;
+    border: none;
 }
 
-.a4k-player__select--fps {
-    max-width: 5.5rem;
+.a4k-player__shell:fullscreen .a4k-player__stage,
+.a4k-player__shell:-webkit-full-screen .a4k-player__stage,
+.a4k-player__shell.a4k-player__shell--fullscreen .a4k-player__stage {
+    flex: 1 1 auto;
+    min-height: 0;
 }
 
-.a4k-player__hint,
-.anime4k-player__hint {
-    margin: 0;
-    padding: 0.55rem 0.85rem 0.75rem;
-    font-size: 0.76rem;
-    color: var(--text-secondary);
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
+.a4k-player__shell:fullscreen .a4k-player__viewport,
+.a4k-player__shell:-webkit-full-screen .a4k-player__viewport,
+.a4k-player__shell.a4k-player__shell--fullscreen .a4k-player__viewport {
+    flex: 1 1 auto;
+    width: 100%;
+    height: 100%;
+    aspect-ratio: unset;
+    min-height: 0;
 }
 
-.a4k-player__hint strong,
-.anime4k-player__hint strong {
-    color: #c4b5fd;
+.a4k-player__shell:fullscreen .a4k-player__controls,
+.a4k-player__shell:-webkit-full-screen .a4k-player__controls,
+.a4k-player__shell.a4k-player__shell--fullscreen .a4k-player__controls {
+    flex-shrink: 0;
+    z-index: 6;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.a4k-player__shell:fullscreen .a4k-player__head,
+.a4k-player__shell:-webkit-full-screen .a4k-player__head,
+.a4k-player__shell.a4k-player__shell--fullscreen .a4k-player__head {
+    flex-shrink: 0;
+    z-index: 6;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.a4k-player__shell--ui-hidden.a4k-player__shell--fullscreen .a4k-player__controls,
+.a4k-player__shell--ui-hidden.a4k-player__shell--fullscreen .a4k-player__head {
+    opacity: 0;
+    transform: translateY(8px);
+    pointer-events: none;
+}
+
+.a4k-player__shell--ui-hidden.a4k-player__shell--fullscreen .a4k-player__center-btn {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.a4k-player__shell--ui-hidden.a4k-player__shell--fullscreen {
+    cursor: none;
+}
+
+.a4k-player__shell--ui-hidden.a4k-player__shell--fullscreen .a4k-player__viewport {
+    cursor: none;
 }
 
 /* Меньше нагрузки на сайт, пока Anime4K активен */
@@ -425,28 +479,10 @@ body.reminko-anime4k-ultra .sidebar-layout::after {
     background: #000;
 }
 
-.a4k-player__stage:fullscreen,
-.anime4k-player__stage:fullscreen {
-    display: flex;
-    flex-direction: column;
-    background: #000;
-}
-
-.a4k-player__stage:fullscreen .a4k-player__viewport,
-.anime4k-player__stage:fullscreen .anime4k-player__viewport {
-    flex: 1;
-    min-height: 0;
-    aspect-ratio: unset;
-}
-
 @media (max-width: 720px) {
     .a4k-player__bar,
     .anime4k-player__bar {
         gap: 0.35rem;
-    }
-
-    .a4k-player__select--fps {
-        display: none;
     }
 
     .a4k-player__vol-wrap .a4k-player__volume {

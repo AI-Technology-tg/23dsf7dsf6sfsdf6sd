@@ -1,5 +1,5 @@
 /**
- * Плеер ≈4K: Anime4K в реальном времени (оптимизированный).
+ * Плеер ≈4K: Anime4K в реальном времени.
  */
 (function (global) {
     'use strict';
@@ -9,28 +9,23 @@
         'После включения сайт, плеер и ваше устройство могут заметно потерять производительность — возможны лаги и подтормаживания видео.\n\n' +
         'Если уверены в мощности ПК или телефона — включайте. Иначе смотрите без улучшения.';
 
+    /** Максимальное качество Anime4K (без выбора в UI) */
+    const ANIME4K_MAX_FPS = 30;
+
     function getA4K() {
         return global.Anime4KJS || null;
     }
 
-    function buildPresetMap(A4K) {
-        return {
-            fast_c: A4K.ANIME4K_HIGHEREND_MODE_C_FAST,
-            fast_a: A4K.ANIME4K_HIGHEREND_MODE_A_FAST,
-            fast_b: A4K.ANIME4K_HIGHEREND_MODE_B_FAST,
-            simple_s: A4K.ANIME4KJS_SIMPLE_S_2X,
-            simple_m: A4K.ANIME4KJS_SIMPLE_M_2X,
-            simple_l: A4K.ANIME4KJS_SIMPLE_L_2X,
-            higher_c: A4K.ANIME4K_HIGHEREND_MODE_C,
-            higher_a: A4K.ANIME4K_HIGHEREND_MODE_A,
-            higher_b: A4K.ANIME4K_HIGHEREND_MODE_B
-        };
-    }
-
-    function getUltraFps(selectEl) {
-        const n = parseInt(selectEl?.value, 10);
-        if (n === 20 || n === 24 || n === 30) return n;
-        return 24;
+    function getMaxAnime4kPreset(A4K) {
+        if (!A4K) return null;
+        return (
+            A4K.ANIME4K_HIGHEREND_MODE_C ||
+            A4K.ANIME4K_HIGHEREND_MODE_B ||
+            A4K.ANIME4K_HIGHEREND_MODE_A ||
+            A4K.ANIME4K_HIGHEREND_MODE_C_FAST ||
+            A4K.ANIME4KJS_SIMPLE_L_2X ||
+            null
+        );
     }
 
     function isSourceHeavyForUpscale(video) {
@@ -59,12 +54,10 @@
         return `<svg class="a4k-player__icon" viewBox="0 0 24 24" aria-hidden="true">${icons[name] || ''}</svg>`;
     }
 
-    function playerShellHtml(title) {
-        const safeTitle =
-            typeof escapeHtmlText === 'function' ? escapeHtmlText(title || 'Просмотр') : String(title || 'Просмотр');
+    function playerShellHtml() {
         return `
         <div class="a4k-player anime4k-player" id="anime4kPlayerRoot">
-            <div class="a4k-player__shell">
+            <div class="a4k-player__shell" id="anime4kPlayerShell">
                 <header class="a4k-player__head">
                     <div class="a4k-player__brand">
                         <span class="a4k-player__brand-mark">Re-Minko</span>
@@ -82,7 +75,7 @@
                     </div>
                     <div class="a4k-player__overlay-msg" id="anime4kOverlayMsg" hidden></div>
                 </div>
-                <div class="a4k-player__controls">
+                <div class="a4k-player__controls" id="anime4kControls">
                     <input type="range" class="a4k-player__seek anime4k-player__seek" id="anime4kSeek" min="0" max="1000" value="0" aria-label="Позиция">
                     <div class="a4k-player__bar">
                         <button type="button" class="a4k-player__btn anime4k-player__btn" id="anime4kPlayBtn" title="Play/Pause" aria-label="Play/Pause">${svgIcon('play')}</button>
@@ -96,54 +89,55 @@
                             <span class="a4k-player__ultra-dot"></span>
                             Anime4K
                         </button>
-                        <select class="a4k-player__select anime4k-player__preset" id="anime4kPreset" title="Профиль" aria-label="Профиль Anime4K">
-                            <option value="fast_c" selected>Баланс (быстрый)</option>
-                            <option value="simple_s">Лёгкий</option>
-                            <option value="simple_m">Средний</option>
-                            <option value="fast_a">Качество A</option>
-                            <option value="fast_b">Качество B</option>
-                            <option value="higher_c">Макс. (тяжёлый)</option>
-                        </select>
-                        <select class="a4k-player__select a4k-player__select--fps" id="anime4kFps" title="FPS улучшения" aria-label="FPS Anime4K">
-                            <option value="20">20 FPS</option>
-                            <option value="24" selected>24 FPS</option>
-                            <option value="30">30 FPS</option>
-                        </select>
                         <button type="button" class="a4k-player__btn anime4k-player__btn" id="anime4kFsBtn" title="Полный экран" aria-label="Полный экран">${svgIcon('fs')}</button>
                     </div>
                 </div>
             </div>
-            <p class="a4k-player__hint anime4k-player__hint">${safeTitle} · <strong>U</strong> — Anime4K · <strong>Space</strong> — пауза</p>
         </div>`;
     }
 
     function mountAnime4kPlayer(container, options) {
         if (!container) return null;
-        const title = options?.title || '';
         const videoUrl = options?.videoUrl || '';
 
-        container.innerHTML = playerShellHtml(title);
+        container.innerHTML = playerShellHtml();
 
         const A4K = getA4K();
+        const shell = container.querySelector('#anime4kPlayerShell');
         const video = container.querySelector('#anime4kVideo');
         const canvas = container.querySelector('#anime4kCanvas');
         const liveLabel = container.querySelector('#anime4kLiveLabel');
-        const stage = container.querySelector('#anime4kStage');
         const playBtn = container.querySelector('#anime4kPlayBtn');
         const centerPlay = container.querySelector('#anime4kCenterPlay');
         const seek = container.querySelector('#anime4kSeek');
         const volume = container.querySelector('#anime4kVolume');
         const timeLabel = container.querySelector('#anime4kTime');
         const ultraBtn = container.querySelector('#anime4kUltraBtn');
-        const presetSelect = container.querySelector('#anime4kPreset');
-        const fpsSelect = container.querySelector('#anime4kFps');
         const fsBtn = container.querySelector('#anime4kFsBtn');
         const overlay = container.querySelector('#anime4kOverlayMsg');
         const viewport = container.querySelector('#anime4kViewport');
+        const controls = container.querySelector('#anime4kControls');
 
         let upscaler = null;
         let ultraOn = false;
         let sourceHeavy = false;
+        let controlsHideTimer = null;
+
+        function isFullscreen() {
+            const fsEl = document.fullscreenElement || document.webkitFullscreenElement;
+            return !!(fsEl && shell && (fsEl === shell || shell.contains(fsEl)));
+        }
+
+        function revealControls() {
+            shell?.classList.remove('a4k-player__shell--ui-hidden');
+            if (controlsHideTimer) clearTimeout(controlsHideTimer);
+            if (!isFullscreen() || video?.paused) return;
+            controlsHideTimer = setTimeout(() => {
+                if (isFullscreen() && video && !video.paused) {
+                    shell?.classList.add('a4k-player__shell--ui-hidden');
+                }
+            }, 3200);
+        }
 
         function setPlayIcon(playing) {
             const icon = playing ? svgIcon('pause') : svgIcon('play');
@@ -152,6 +146,8 @@
                 centerPlay.innerHTML = icon;
                 centerPlay.classList.toggle('a4k-player__center-btn--hidden', playing);
             }
+            if (playing) revealControls();
+            else shell?.classList.remove('a4k-player__shell--ui-hidden');
         }
 
         function showOverlay(text) {
@@ -197,11 +193,9 @@
 
         function createUpscaler() {
             if (!A4K?.VideoUpscaler?.isSupported?.()) return null;
-            const presets = buildPresetMap(A4K);
-            const key = presetSelect?.value || 'fast_c';
-            const preset = presets[key] || presets.fast_c || presets.simple_m;
-            const fps = getUltraFps(fpsSelect);
-            return new A4K.VideoUpscaler(preset, fps);
+            const preset = getMaxAnime4kPreset(A4K);
+            if (!preset) return null;
+            return new A4K.VideoUpscaler(preset, ANIME4K_MAX_FPS);
         }
 
         function setUltra(on, opts) {
@@ -242,6 +236,18 @@
             if (ultraOn) showOverlay('');
         }
 
+        async function toggleFullscreen() {
+            if (!shell) return;
+            const fsEl = document.fullscreenElement || document.webkitFullscreenElement;
+            if (fsEl) {
+                if (document.exitFullscreen) await document.exitFullscreen();
+                else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+                return;
+            }
+            if (shell.requestFullscreen) await shell.requestFullscreen();
+            else if (shell.webkitRequestFullscreen) shell.webkitRequestFullscreen();
+        }
+
         if (!videoUrl) {
             showOverlay('Видео ещё не загружено. Создатель зальёт MP4 в «≈4K каталог».');
             return { video, setUltra, destroy: destroyUpscaler };
@@ -249,6 +255,7 @@
 
         video.src = videoUrl;
         video.volume = 0.8;
+        video.classList.add('a4k-player__video--before-start');
 
         video.addEventListener('loadedmetadata', () => {
             sourceHeavy = isSourceHeavyForUpscale(video);
@@ -264,13 +271,9 @@
             }
         });
 
-        video.addEventListener('timeupdate', () => {
-            if (!video.duration || seek?.matches(':active')) return;
-            seek.value = String(Math.round((video.currentTime / video.duration) * 1000));
-            timeLabel.textContent = `${formatTime(video.currentTime)} / ${formatTime(video.duration)}`;
-        });
-
         video.addEventListener('play', () => {
+            video.classList.remove('a4k-player__video--before-start');
+            viewport?.classList.add('a4k-player__viewport--ready');
             setPlayIcon(true);
             syncUpscalerPlayback();
         });
@@ -289,30 +292,49 @@
             else video.pause();
         };
 
-        playBtn?.addEventListener('click', togglePlay);
-        centerPlay?.addEventListener('click', togglePlay);
+        playBtn?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            togglePlay();
+        });
+        centerPlay?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            togglePlay();
+        });
         viewport?.addEventListener('click', (e) => {
-            if (e.target.closest('button, input, select, .a4k-player__bar')) return;
+            if (e.target.closest('button, input, .a4k-player__controls')) return;
             togglePlay();
         });
 
         seek?.addEventListener('input', () => {
             if (!video.duration) return;
             video.currentTime = (Number(seek.value) / 1000) * video.duration;
+            revealControls();
         });
         volume?.addEventListener('input', () => {
             video.volume = Number(volume.value) / 100;
         });
-        ultraBtn?.addEventListener('click', () => setUltra(!ultraOn));
-        presetSelect?.addEventListener('change', () => {
-            if (ultraOn) setUltra(true, { silent: true });
+        ultraBtn?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            setUltra(!ultraOn);
         });
-        fpsSelect?.addEventListener('change', () => {
-            if (ultraOn) setUltra(true, { silent: true });
+        fsBtn?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            void toggleFullscreen();
         });
-        fsBtn?.addEventListener('click', () => {
-            if (!document.fullscreenElement) void stage?.requestFullscreen();
-            else void document.exitFullscreen();
+
+        shell?.addEventListener('mousemove', revealControls);
+        shell?.addEventListener('touchstart', revealControls, { passive: true });
+        controls?.addEventListener('click', (e) => e.stopPropagation());
+
+        document.addEventListener('fullscreenchange', () => {
+            shell?.classList.toggle('a4k-player__shell--fullscreen', isFullscreen());
+            if (!isFullscreen()) shell?.classList.remove('a4k-player__shell--ui-hidden');
+            else revealControls();
+        });
+        document.addEventListener('webkitfullscreenchange', () => {
+            shell?.classList.toggle('a4k-player__shell--fullscreen', isFullscreen());
+            if (!isFullscreen()) shell?.classList.remove('a4k-player__shell--ui-hidden');
+            else revealControls();
         });
 
         document.addEventListener('keydown', function onKey(e) {
@@ -322,18 +344,32 @@
                 return;
             }
             if (e.target.matches('input, select, textarea')) return;
+            const inPlayer = shell?.contains(document.activeElement) || isFullscreen();
+            const rect = shell?.getBoundingClientRect();
+            const visible = rect && rect.top < innerHeight && rect.bottom > 0;
+            if (!inPlayer && !visible) return;
+
             if (e.code === 'Space') {
-                const rect = stage?.getBoundingClientRect();
-                if (rect && rect.top < innerHeight && rect.bottom > 0) {
-                    e.preventDefault();
-                    togglePlay();
-                }
+                e.preventDefault();
+                togglePlay();
             } else if (e.code === 'KeyU') {
-                ultraBtn?.click();
+                setUltra(!ultraOn);
+            } else if (e.code === 'KeyF') {
+                e.preventDefault();
+                void toggleFullscreen();
+            } else if (e.code === 'ArrowLeft') {
+                e.preventDefault();
+                video.currentTime = Math.max(0, video.currentTime - 10);
+                revealControls();
+            } else if (e.code === 'ArrowRight') {
+                e.preventDefault();
+                video.currentTime = Math.min(video.duration || 0, video.currentTime + 10);
+                revealControls();
             }
         });
 
         const cleanup = () => {
+            if (controlsHideTimer) clearTimeout(controlsHideTimer);
             destroyUpscaler();
             setBodyUltra(false);
         };
