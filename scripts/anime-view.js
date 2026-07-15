@@ -72,6 +72,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         animeId = sessionStorage.getItem('viewAnimeId');
     }
 
+    if (animeId && typeof window.Anime4kCatalogStore?.isAnime4kId === 'function') {
+        const idNum4k = parseInt(animeId, 10);
+        if (window.Anime4kCatalogStore.isAnime4kId(idNum4k)) {
+            window.location.replace(`../anime/view-4k.html?id=${encodeURIComponent(String(idNum4k))}`);
+            return;
+        }
+    }
+
     // Виртуальная карточка (id = 10_000_000 + mal_id): анонсы и Jikan с главной
     if (animeId) {
         const idNum = parseInt(animeId, 10);

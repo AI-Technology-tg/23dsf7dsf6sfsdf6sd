@@ -1180,6 +1180,131 @@ class CreatorAdminPanel {
         }
     }
 
+    async listCatalog4kAnime() {
+        if (!supabaseClient) return { success: false, message: 'Supabase не инициализирован', rows: [] };
+        const gate = await this._assertCallerIsSiteCreator();
+        if (!gate.ok) return { success: false, message: gate.message, rows: [] };
+        try {
+            const { data, error } = await supabaseClient
+                .from('catalog_4k_anime')
+                .select('mal_id, created_at, jikan, title_ru, description_ru, video_url, poster_url, published')
+                .order('created_at', { ascending: false });
+            if (error) throw error;
+            return { success: true, rows: data || [] };
+        } catch (e) {
+            console.error('[CreatorAdmin] listCatalog4kAnime', e);
+            return { success: false, message: e.message || 'Ошибка загрузки catalog_4k_anime', rows: [] };
+        }
+    }
+
+    async upsertCatalog4kAnime(jikanFull, options = {}) {
+        if (!supabaseClient) return { success: false, message: 'Нет клиента Supabase' };
+        const a = await this._assertCallerIsSiteCreator();
+        if (!a.ok) return { success: false, message: a.message };
+        const mal = jikanFull && jikanFull.mal_id;
+        if (!mal) return { success: false, message: 'В ответе Jikan нет mal_id' };
+        const tr =
+            options.title_ru != null && String(options.title_ru).trim()
+                ? String(options.title_ru).trim()
+                : null;
+        const dr =
+            options.description_ru != null && String(options.description_ru).trim()
+                ? String(options.description_ru).trim()
+                : null;
+        const videoUrl =
+            options.video_url != null && String(options.video_url).trim()
+                ? String(options.video_url).trim()
+                : null;
+        const posterUrl =
+            options.poster_url != null && String(options.poster_url).trim()
+                ? String(options.poster_url).trim()
+                : null;
+        const published = options.published !== false;
+        try {
+            const payload = {
+                mal_id: mal,
+                jikan: jikanFull,
+                added_by: a.user.id,
+                title_ru: tr,
+                description_ru: dr,
+                published
+            };
+            if (videoUrl != null) payload.video_url = videoUrl;
+            if (posterUrl != null) payload.poster_url = posterUrl;
+            const { error } = await supabaseClient.from('catalog_4k_anime').upsert(payload, { onConflict: 'mal_id' });
+            if (error) throw error;
+            return { success: true, message: 'Добавлено в ≈4K каталог', mal_id: mal };
+        } catch (e) {
+            console.error('[CreatorAdmin] upsertCatalog4kAnime', e);
+            return { success: false, message: e.message || 'Ошибка записи в Supabase' };
+        }
+    }
+
+    async updateCatalog4kVideoUrl(malId, videoUrl) {
+        if (!supabaseClient) return { success: false, message: 'Нет клиента' };
+        const a = await this._assertCallerIsSiteCreator();
+        if (!a.ok) return { success: false, message: a.message };
+        const mid = parseInt(malId, 10);
+        if (!mid || Number.isNaN(mid)) return { success: false, message: 'Некорректный mal_id' };
+        try {
+            const { error } = await supabaseClient
+                .from('catalog_4k_anime')
+                .update({ video_url: videoUrl ? String(videoUrl).trim() : null })
+                .eq('mal_id', mid);
+            if (error) throw error;
+            return { success: true, message: 'URL видео обновлён' };
+        } catch (e) {
+            console.error('[CreatorAdmin] updateCatalog4kVideoUrl', e);
+            return { success: false, message: e.message || 'Ошибка обновления' };
+        }
+    }
+
+    async uploadCatalog4kVideo(malId, file) {
+        if (!supabaseClient) return { success: false, message: 'Нет клиента Supabase' };
+        const a = await this._assertCallerIsSiteCreator();
+        if (!a.ok) return { success: false, message: a.message };
+        const mid = parseInt(malId, 10);
+        if (!mid || Number.isNaN(mid)) return { success: false, message: 'Некорректный mal_id' };
+        if (!file || !(file instanceof Blob)) return { success: false, message: 'Нет файла' };
+        const name = (file.name && String(file.name).trim()) || 'video.mp4';
+        const safeName = name.replace(/[^\w.\-()+]/g, '_').slice(0, 120);
+        const path = `${mid}/${Date.now()}_${safeName}`;
+        try {
+            const { error: upErr } = await supabaseClient.storage
+                .from('anime-4k-videos')
+                .upload(path, file, { upsert: true, contentType: file.type || 'video/mp4', cacheControl: '3600' });
+            if (upErr) throw upErr;
+            const { data: pub } = supabaseClient.storage.from('anime-4k-videos').getPublicUrl(path);
+            const url = pub && pub.publicUrl ? pub.publicUrl : '';
+            if (!url) throw new Error('Не удалось получить public URL');
+            const { error: dbErr } = await supabaseClient
+                .from('catalog_4k_anime')
+                .update({ video_url: url })
+                .eq('mal_id', mid);
+            if (dbErr) throw dbErr;
+            return { success: true, message: 'Видео загружено и привязано к каталогу', video_url: url };
+        } catch (e) {
+            console.error('[CreatorAdmin] uploadCatalog4kVideo', e);
+            return { success: false, message: e.message || 'Ошибка загрузки в Storage' };
+        }
+    }
+
+    async deleteCatalog4kAnime(malId) {
+        if (!supabaseClient) return { success: false, message: 'Нет клиента' };
+        const a = await this._assertCallerIsSiteCreator();
+        if (!a.ok) return { success: false, message: a.message };
+        const mid = parseInt(malId, 10);
+        if (!mid || Number.isNaN(mid)) return { success: false, message: 'Некорректный mal_id' };
+        try {
+            const { error } = await supabaseClient.from('catalog_4k_anime').delete().eq('mal_id', mid);
+            if (error) throw error;
+            return { success: true, message: 'Удалено из ≈4K каталога' };
+        } catch (e) {
+            console.error('[CreatorAdmin] deleteCatalog4kAnime', e);
+            return { success: false, message: e.message || 'Ошибка удаления' };
+        }
+    }
+
     /**
      * Посещения сайта: сводка (RPC) + последние события. Только учётка создателя.
      * @param {number} days 1…90

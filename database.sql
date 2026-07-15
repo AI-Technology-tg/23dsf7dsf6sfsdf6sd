@@ -233,6 +233,19 @@ CREATE TABLE IF NOT EXISTS public.catalog_site_anime (
 ALTER TABLE public.catalog_site_anime ADD COLUMN IF NOT EXISTS title_ru TEXT;
 ALTER TABLE public.catalog_site_anime ADD COLUMN IF NOT EXISTS description_ru TEXT;
 
+-- Изолированный ≈4K каталог (id на сайте = 22_000_000 + mal_id)
+CREATE TABLE IF NOT EXISTS public.catalog_4k_anime (
+  mal_id INTEGER PRIMARY KEY,
+  jikan JSONB NOT NULL,
+  title_ru TEXT,
+  description_ru TEXT,
+  video_url TEXT,
+  poster_url TEXT,
+  added_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+  published BOOLEAN NOT NULL DEFAULT true
+);
+
 -- Публичный флаг Minko AI (удалённое вкл/выкл чата). Строка id=1 — читают все с сайта и Netlify.
 CREATE TABLE IF NOT EXISTS public.minko_ai_public_state (
   id INTEGER PRIMARY KEY CHECK (id = 1),
@@ -561,6 +574,7 @@ DECLARE
     'user_achievements',
     'custom_anime',
     'catalog_site_anime',
+    'catalog_4k_anime',
     'minko_ai_public_state',
     'minko_ai_server_logs',
     'avatar_ai_generations',
@@ -898,6 +912,32 @@ CREATE POLICY "catalog_site_anime_update" ON public.catalog_site_anime FOR UPDAT
   USING (lower(trim(coalesce(auth.jwt() ->> 'email', ''))) = 'creator@reminko.com')
   WITH CHECK (lower(trim(coalesce(auth.jwt() ->> 'email', ''))) = 'creator@reminko.com');
 CREATE POLICY "catalog_site_anime_delete" ON public.catalog_site_anime FOR DELETE TO authenticated
+  USING (lower(trim(coalesce(auth.jwt() ->> 'email', ''))) = 'creator@reminko.com');
+
+ALTER TABLE public.catalog_4k_anime ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "catalog_4k_anime_select" ON public.catalog_4k_anime;
+CREATE POLICY "catalog_4k_anime_select" ON public.catalog_4k_anime
+  FOR SELECT USING (published = true OR lower(trim(coalesce(auth.jwt() ->> 'email', ''))) = 'creator@reminko.com');
+
+DROP POLICY IF EXISTS "catalog_4k_anime_insert_authenticated" ON public.catalog_4k_anime;
+DROP POLICY IF EXISTS "catalog_4k_anime_insert_anon" ON public.catalog_4k_anime;
+CREATE POLICY "catalog_4k_anime_insert_authenticated" ON public.catalog_4k_anime
+  FOR INSERT TO authenticated
+  WITH CHECK (added_by IS NOT NULL AND auth.uid() = added_by);
+CREATE POLICY "catalog_4k_anime_insert_anon" ON public.catalog_4k_anime
+  FOR INSERT TO anon
+  WITH CHECK (added_by IS NULL);
+
+DROP POLICY IF EXISTS "catalog_4k_anime_update" ON public.catalog_4k_anime;
+CREATE POLICY "catalog_4k_anime_update" ON public.catalog_4k_anime
+  FOR UPDATE TO authenticated
+  USING (lower(trim(coalesce(auth.jwt() ->> 'email', ''))) = 'creator@reminko.com')
+  WITH CHECK (lower(trim(coalesce(auth.jwt() ->> 'email', ''))) = 'creator@reminko.com');
+
+DROP POLICY IF EXISTS "catalog_4k_anime_delete" ON public.catalog_4k_anime;
+CREATE POLICY "catalog_4k_anime_delete" ON public.catalog_4k_anime
+  FOR DELETE TO authenticated
   USING (lower(trim(coalesce(auth.jwt() ->> 'email', ''))) = 'creator@reminko.com');
 
 -- user_achievements

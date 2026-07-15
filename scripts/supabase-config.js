@@ -266,6 +266,8 @@ function reminkoPathAllowedDuringMaintenance(pathname, extraRoutes) {
     if (reminkoPathIsInfoPage(pathname)) return true;
     if (reminkoPathIsLegalPage(pathname)) return true;
     if (file === 'index.html' || (p.endsWith('/') && (!file || !file.includes('.')))) return true;
+    if (p.includes('/catalog/anime-4k') || file === 'anime-4k.html') return true;
+    if (p.includes('/anime/') && file === 'view-4k.html') return true;
     if (p.includes('/catalog/anime') || (file === 'anime.html' && p.includes('catalog'))) return true;
     if (p.includes('/anime/') && file === 'view.html') return true;
     if (p.includes('/catalog/manga') || (file === 'manga.html' && p.includes('catalog'))) return true;

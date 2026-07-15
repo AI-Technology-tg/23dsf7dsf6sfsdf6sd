@@ -137,6 +137,8 @@ function switchTab(tabName) {
         void loadMinkoAiServerPanel();
     } else if (tabName === 'giveaway') {
         void loadGiveawayAdminPanel();
+    } else if (tabName === 'anime4k') {
+        void loadAnime4kAdminPanel();
     } else if (tabName === 'settings') {
         void loadMaintenanceSettings();
     }
@@ -146,6 +148,131 @@ function initGiveawaySection() {
     if (window.__reminkoGiveawayAdminBound) return;
     window.__reminkoGiveawayAdminBound = true;
     document.getElementById('giveawayAdminRefreshBtn')?.addEventListener('click', () => void loadGiveawayAdminPanel());
+}
+
+function initAnime4kSection() {
+    if (window.__reminkoAnime4kAdminBound) return;
+    window.__reminkoAnime4kAdminBound = true;
+    document.getElementById('anime4kAdminRefreshBtn')?.addEventListener('click', () => void loadAnime4kAdminPanel());
+    document.getElementById('anime4kAdminFetchJikanBtn')?.addEventListener('click', () => void anime4kAdminFetchAndUpsert());
+    document.getElementById('anime4kAdminUploadBtn')?.addEventListener('click', () => void anime4kAdminUploadVideo());
+}
+
+async function loadAnime4kAdminPanel() {
+    const tbody = document.getElementById('anime4kAdminTableBody');
+    const statusEl = document.getElementById('anime4kAdminStatus');
+    if (!tbody || !window.creatorAdminPanel) return;
+
+    if (statusEl) statusEl.textContent = 'Загрузка…';
+    tbody.innerHTML = '<tr><td colspan="5">Загрузка…</td></tr>';
+
+    const res = await window.creatorAdminPanel.listCatalog4kAnime();
+    if (!res.success) {
+        tbody.innerHTML = `<tr><td colspan="5" style="color:#f87171;">${adminPanelEscapeHtml(res.message || 'Ошибка')}</td></tr>`;
+        if (statusEl) statusEl.textContent = '';
+        return;
+    }
+
+    const rows = res.rows || [];
+    if (statusEl) statusEl.textContent = `Тайтлов: ${rows.length}`;
+    if (!rows.length) {
+        tbody.innerHTML = '<tr><td colspan="5">Пусто — добавьте MAL id через Jikan</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = rows
+        .map((row) => {
+            const j = row.jikan && typeof row.jikan === 'object' ? row.jikan : {};
+            const title = row.title_ru || j.title_english || j.title || '—';
+            const siteId = 22000000 + Number(row.mal_id);
+            const vid = row.video_url || '';
+            const vidShort = vid.length > 48 ? vid.slice(0, 45) + '…' : vid || '—';
+            return `<tr data-mal="${row.mal_id}">
+                <td>${row.mal_id}<br><small style="opacity:.7">id ${siteId}</small></td>
+                <td>${adminPanelEscapeHtml(title)}</td>
+                <td>
+                    <input type="url" class="admin-input anime4k-admin-video-input" data-mal="${row.mal_id}" value="${adminPanelEscapeHtml(vid)}" placeholder="https://…/video.mp4" style="min-width:14rem;">
+                    <div style="font-size:0.75rem;opacity:.65;margin-top:0.2rem;" title="${adminPanelEscapeHtml(vid)}">${adminPanelEscapeHtml(vidShort)}</div>
+                </td>
+                <td>${row.published === false ? 'нет' : 'да'}</td>
+                <td style="white-space:nowrap;">
+                    <button type="button" class="admin-btn admin-btn-small anime4k-save-video-btn" data-mal="${row.mal_id}">💾 URL</button>
+                    <button type="button" class="admin-btn admin-btn-small anime4k-del-btn" data-mal="${row.mal_id}">🗑</button>
+                </td>
+            </tr>`;
+        })
+        .join('');
+
+    tbody.querySelectorAll('.anime4k-save-video-btn').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+            const mal = btn.getAttribute('data-mal');
+            const input = tbody.querySelector(`.anime4k-admin-video-input[data-mal="${mal}"]`);
+            const url = input ? input.value.trim() : '';
+            const upd = await window.creatorAdminPanel.updateCatalog4kVideoUrl(mal, url);
+            if (statusEl) statusEl.textContent = upd.message || (upd.success ? 'OK' : 'Ошибка');
+            if (upd.success) void loadAnime4kAdminPanel();
+        });
+    });
+    tbody.querySelectorAll('.anime4k-del-btn').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+            const mal = btn.getAttribute('data-mal');
+            if (!confirm(`Удалить MAL ${mal} из ≈4K каталога?`)) return;
+            const del = await window.creatorAdminPanel.deleteCatalog4kAnime(mal);
+            if (statusEl) statusEl.textContent = del.message || '';
+            void loadAnime4kAdminPanel();
+        });
+    });
+}
+
+async function anime4kAdminUploadVideo() {
+    const statusEl = document.getElementById('anime4kAdminStatus');
+    const fileInput = document.getElementById('anime4kAdminFileInput');
+    const malInput = document.getElementById('anime4kAdminMalInput');
+    const file = fileInput?.files && fileInput.files[0];
+    const mal = parseInt(malInput?.value, 10);
+    if (!file) {
+        if (statusEl) statusEl.textContent = 'Выберите MP4 файл';
+        return;
+    }
+    if (!mal || Number.isNaN(mal)) {
+        if (statusEl) statusEl.textContent = 'Укажите MAL id';
+        return;
+    }
+    if (statusEl) statusEl.textContent = `Загрузка ${(file.size / (1024 * 1024)).toFixed(0)} MB…`;
+    const res = await window.creatorAdminPanel.uploadCatalog4kVideo(mal, file);
+    if (statusEl) statusEl.textContent = res.message || (res.success ? 'OK' : 'Ошибка');
+    if (res.success) {
+        if (fileInput) fileInput.value = '';
+        void loadAnime4kAdminPanel();
+    }
+}
+
+async function anime4kAdminFetchAndUpsert() {
+    const statusEl = document.getElementById('anime4kAdminStatus');
+    const input = document.getElementById('anime4kAdminMalInput');
+    const mal = parseInt(input?.value, 10);
+    if (!mal || Number.isNaN(mal)) {
+        if (statusEl) statusEl.textContent = 'Укажите MAL id';
+        return;
+    }
+    if (statusEl) statusEl.textContent = 'Jikan…';
+    try {
+        let jikanData = null;
+        if (typeof reminkoJikanFetch === 'function') {
+            const json = await reminkoJikanFetch(`https://api.jikan.moe/v4/anime/${mal}`);
+            jikanData = json?.data || null;
+        }
+        if (!jikanData) {
+            const res = await fetch(`https://api.jikan.moe/v4/anime/${mal}`);
+            if (!res.ok) throw new Error('Jikan HTTP ' + res.status);
+            jikanData = (await res.json()).data;
+        }
+        const ups = await window.creatorAdminPanel.upsertCatalog4kAnime(jikanData, {});
+        if (statusEl) statusEl.textContent = ups.message || (ups.success ? 'Добавлено' : 'Ошибка');
+        if (ups.success) void loadAnime4kAdminPanel();
+    } catch (e) {
+        if (statusEl) statusEl.textContent = e.message || 'Ошибка Jikan';
+    }
 }
 
 async function loadGiveawayAdminPanel() {
@@ -1530,6 +1657,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     initMaintenanceSettingsSection();
     initMinkoAiServerPanel();
     initGiveawaySection();
+    initAnime4kSection();
     initTestsSection();
 
     await loadDashboard();

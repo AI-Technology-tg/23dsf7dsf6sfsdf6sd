@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <style id="reminko-critical-first-paint">
+      html { background-color: #0b0b12; }
+      body { margin: 0; background-color: #0b0b12; color: #e5e7eb; }
+      #loadingScreen {
+        position: fixed !important; inset: 0 !important; z-index: 2147483646 !important;
+        background: #000 !important; display: flex !important; flex-direction: column;
+        justify-content: center; align-items: center;
+      }
+      body:not(.reminko-content-revealed) .main-layout {
+        opacity: 0 !important; visibility: hidden !important; pointer-events: none !important;
+      }
+    </style>
+    <script src="../scripts/desktop-only-guard.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>≈4K просмотр — Re-Minko</title>
+    <meta name="description" content="Смотреть аниме в ≈4K каталоге Re-Minko: улучшенное качество и плеер Anime4K." />
+    <link rel="apple-touch-icon" sizes="180x180" href="../Fons/vavo/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="../Fons/vavo/favicon-32x32.png">
+    <link rel="stylesheet" href="../styles/main.css?v=mobile-v4-9">
+    <link rel="stylesheet" href="../styles/sidebar-layout.css">
+    <link rel="stylesheet" href="../styles/anime-view.css">
+    <link rel="stylesheet" href="../styles/anime4k-catalog.css?v=4k-2">
+    <link rel="stylesheet" href="../styles/anime4k-player.css?v=4k-4">
+    <link rel="stylesheet" href="../styles/loading.css">
+    <link rel="stylesheet" href="../styles/notifications.css">
+</head>
+<body>
+    <div class="loading-screen" id="loadingScreen">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Загрузка<span class="loading-dots"></span></div>
+    </div>
+
+    <div class="main-layout">
+        <main class="main-content-wrapper anime-view-container">
+            <div id="animeContent"><div class="loading">Загрузка...</div></div>
+        </main>
+    </div>
+
+    <script src="../config.local.js" onerror="window.__reminkoNoLocalConfig=true"></script>
+    <script src="../scripts/config.js"></script>
+    <script src="../scripts/mature-content.js"></script>
+    <script src="../scripts/data.js"></script>
+    <script src="../scripts/shikimori-api.js"></script>
+    <script src="../scripts/jikan-api.js"></script>
+    <script src="../scripts/utils.js"></script>
+    <script src="../scripts/utils-notifications.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../scripts/supabase-config.js"></script>
+    <script src="../scripts/oauth-auth.js"></script>
+    <script src="../scripts/navigation.js"></script>
+    <script src="../scripts/auth.js"></script>
+    <script src="../scripts/notifications.js"></script>
+    <script src="../scripts/register.js"></script>
+    <script src="../scripts/main.js"></script>
+    <script src="../scripts/loading.js"></script>
+    <script src="../scripts/vendor/anime4k.js"></script>
+    <script src="../scripts/anime4k-catalog-store.js"></script>
+    <script src="../scripts/anime4k-data.js"></script>
+    <script src="../scripts/anime4k-player.js?v=4k-4"></script>
+    <script src="../scripts/anime-view-4k.js?v=4k-3"></script>
+    <script src="../scripts/apply-navigation.js?v=rem-theme-4"></script>
+    <script src="../scripts/site-visit-tracker.js"></script>
+</body>
+</html>

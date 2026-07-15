@@ -13,6 +13,7 @@ class NavigationManager {
         const filename = path.split('/').pop() || 'index.html';
         
         if (filename === 'index.html' || path.endsWith('/')) return 'home';
+        if (filename.includes('anime-4k.html')) return 'catalog-4k';
         if (filename.includes('anime.html')) return 'catalog';
         if (filename.includes('manga.html')) return 'manga';
         if (filename === 'profile.html') return 'profile';
@@ -32,6 +33,7 @@ class NavigationManager {
             if (path.includes('anime')) return 'anime-view';
             if (path.includes('manga')) return 'manga-view';
         }
+        if (filename === 'view-4k.html') return 'anime-view-4k';
         if (filename === 'reader.html') return 'manga-reader';
         
         return 'home';
@@ -115,8 +117,10 @@ class NavigationManager {
     // Проверка, показывать ли фильтры каталога (только в каталогах)
     shouldShowCatalogFilters() {
         return this.currentPage === 'catalog' || 
+               this.currentPage === 'catalog-4k' ||
                this.currentPage === 'manga' || 
                this.currentPage === 'anime-view' || 
+               this.currentPage === 'anime-view-4k' ||
                this.currentPage === 'manga-view';
     }
 
@@ -147,6 +151,15 @@ class NavigationManager {
                             <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
                         </svg>
                         <span>Каталог манги</span>
+                    </a>
+                    <a href="${this.basePath}catalog/anime-4k.html" class="sidebar-link ${activeClass('catalog-4k')} ${activeClass('anime-view-4k')}" data-page="catalog-4k">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="2" y="3" width="20" height="14" rx="2"></rect>
+                            <path d="M8 21h8"></path>
+                            <path d="M12 17v4"></path>
+                            <path d="m7 7 3 3 7-7"></path>
+                        </svg>
+                        <span>≈4K каталог</span>
                     </a>
                     <div class="sidebar-divider"></div>
                     <a href="${this.basePath}minko-ai.html" class="sidebar-link ${activeClass('ai')}" data-page="ai" data-maint-lock="minko_ai">
@@ -297,19 +310,34 @@ class NavigationManager {
             }
         };
 
-        const showSuggestions = (query) => {
+        const showSuggestions = async (query) => {
             if (query.length < 2 || typeof searchAnime !== 'function') {
                 dropdown.style.display = 'none';
                 return;
             }
+
+            if (typeof window.Anime4kCatalogStore?.load === 'function') {
+                try {
+                    await window.Anime4kCatalogStore.load();
+                } catch (_) {
+                    /* ignore */
+                }
+            }
             
-            let results = searchAnime(query).slice(0, 14);
+            let defaultAnime = searchAnime(query).slice(0, 10);
+            let anime4kHits = typeof searchAnime4k === 'function' ? searchAnime4k(query).slice(0, 6) : [];
             
             // Also search manga if available
+            let mangaResults = [];
             if (typeof window.searchManga === 'function') {
-                const mangaResults = window.searchManga(query).slice(0, 6);
-                results = [...results.slice(0, 10), ...mangaResults.map(m => ({...m, _isManga: true}))];
+                mangaResults = window.searchManga(query).slice(0, 4);
             }
+
+            const results = [
+                ...defaultAnime.map((a) => ({ ...a, _catalog: 'default' })),
+                ...anime4kHits.map((a) => ({ ...a, _catalog: '4k', _isAnime4k: true })),
+                ...mangaResults.map((m) => ({ ...m, _isManga: true }))
+            ];
             
             if (results.length === 0) {
                 dropdown.innerHTML = '<div class="search-dropdown-empty">Ничего не найдено</div>';
@@ -319,16 +347,25 @@ class NavigationManager {
             
             dropdown.innerHTML = results.map(item => {
                 const isManga = item._isManga;
-                const href = isManga 
-                    ? `${basePath}manga/view.html?id=${item.id}` 
-                    : `${basePath}anime/view.html?id=${item.id}`;
+                const is4k = item._isAnime4k || item.isAnime4k;
+                let href;
+                if (isManga) {
+                    href = `${basePath}manga/view.html?id=${item.id}`;
+                } else if (is4k) {
+                    href = `${basePath}anime/view-4k.html?id=${item.id}`;
+                } else {
+                    href = `${basePath}anime/view.html?id=${item.id}`;
+                }
                 const gradient = typeof generateGradient === 'function' ? generateGradient(item.id) : 'linear-gradient(135deg, #6366f1, #8b5cf6)';
-                const badge = isManga ? '<span class="search-item-badge badge-manga">Манга</span>' : '';
+                let badge = '';
+                if (isManga) badge = '<span class="search-item-badge badge-manga">Манга</span>';
+                else if (is4k) badge = '<span class="search-item-badge badge-4k">≈4K</span>';
+                else badge = '<span class="search-item-badge badge-anime">Каталог</span>';
                 const year = item.year || '';
                 const cached = searchPosterFromCache(item, isManga);
                 const posterInner = cached
                     ? `<img class="search-item-poster-img" src="${cached.replace(/"/g, '&quot;')}" alt="" loading="lazy">`
-                    : '';
+                    : (item.posterUrl ? `<img class="search-item-poster-img" src="${String(item.posterUrl).replace(/"/g, '&quot;')}" alt="" loading="lazy">` : '');
                 return `<a href="${href}" class="search-dropdown-item">
                     <div class="search-item-poster" style="background: ${gradient};">${posterInner}</div>
                     <div class="search-item-info">
@@ -336,7 +373,7 @@ class NavigationManager {
                         <div class="search-item-meta">${year}${item.type ? ' · ' + item.type : ''}${item.genres ? ' · ' + item.genres.slice(0, 2).join(', ') : ''}</div>
                     </div>
                 </a>`;
-            }).join('') + `<a href="${basePath}catalog/anime.html?search=${encodeURIComponent(query)}" class="search-dropdown-footer">Показать все результаты</a>`;
+            }).join('') + `<a href="${basePath}catalog/anime.html?search=${encodeURIComponent(query)}" class="search-dropdown-footer">Все в каталоге аниме</a>`;
             dropdown.style.display = 'block';
             hydrateNavSearchPosters(dropdown, results);
         };

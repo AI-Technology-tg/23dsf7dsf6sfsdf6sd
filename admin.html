@@ -70,6 +70,7 @@
                     <button class="admin-tab" data-tab="notifications">🔔 Уведомления</button>
                     <button class="admin-tab" data-tab="minkoServer">🤖 Сервер Minko AI</button>
                     <button class="admin-tab" data-tab="giveaway">🎁 Розыгрыш</button>
+                    <button class="admin-tab" data-tab="anime4k">📺 ≈4K каталог</button>
                     <button class="admin-tab" data-tab="settings">⚙️ Настройки</button>
                     <button class="admin-tab" data-tab="tests">🧪 Тесты</button>
                 </div>
@@ -384,6 +385,49 @@
                                 </thead>
                                 <tbody id="giveawayPreregAdminTableBody">
                                     <tr><td colspan="6">Загрузка…</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ≈4K каталог -->
+                <div class="admin-tab-content" id="tabAnime4k">
+                    <div class="admin-section">
+                        <h2>≈4K каталог аниме</h2>
+                        <p class="admin-inline-hint" style="max-width: 52rem; line-height: 1.5;">
+                            Изолированный каталог с собственным плеером Anime4K. id на сайте = 22&nbsp;000&nbsp;000 + mal_id.
+                            Видео — публичный MP4 (H.264 + AAC) в bucket <code>anime-4k-videos</code>.
+                        </p>
+                        <div style="display:flex;flex-wrap:wrap;gap:0.65rem;align-items:flex-end;margin:1rem 0;">
+                            <label>MAL id
+                                <input type="number" id="anime4kAdminMalInput" class="admin-input" placeholder="59062" value="59062" style="width:8rem;margin-left:0.35rem;">
+                            </label>
+                            <button type="button" class="admin-btn" id="anime4kAdminFetchJikanBtn">Jikan → добавить</button>
+                            <button type="button" class="admin-btn" id="anime4kAdminRefreshBtn">🔄 Обновить список</button>
+                            <span id="anime4kAdminStatus" class="admin-inline-hint"></span>
+                        </div>
+                        <div class="setting-card" style="margin: 1rem 0; padding: 1rem;">
+                            <h3 style="margin-top:0;">Загрузить MP4 в Storage</h3>
+                            <p class="admin-inline-hint">H.264 + AAC, до ~5 GB. После remux: <code>chainsaw-man-reze-1080p.mp4</code></p>
+                            <div style="display:flex;flex-wrap:wrap;gap:0.65rem;align-items:center;margin-top:0.75rem;">
+                                <input type="file" id="anime4kAdminFileInput" accept="video/mp4,video/webm" />
+                                <button type="button" class="admin-btn" id="anime4kAdminUploadBtn">⬆ Загрузить и привязать</button>
+                            </div>
+                        </div>
+                        <div style="overflow-x:auto;margin-top:1rem;">
+                            <table class="users-table" id="anime4kAdminTable">
+                                <thead>
+                                    <tr>
+                                        <th>MAL</th>
+                                        <th>Название</th>
+                                        <th>video_url</th>
+                                        <th>Опубл.</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="anime4kAdminTableBody">
+                                    <tr><td colspan="5">Загрузка…</td></tr>
                                 </tbody>
                             </table>
                         </div>

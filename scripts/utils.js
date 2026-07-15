@@ -474,7 +474,9 @@ function createAnimeCard(anime, clickHandler) {
         ? `background-image:url('${posterSafe}');background-size:cover;background-position:center;`
         : `background:${gradient};`;
     
-    const seoHref = reminkoContentViewUrl('anime', anime.id);
+    const seoHref = anime.isAnime4k
+        ? reminkoContentViewUrl('anime4k', anime.id)
+        : reminkoContentViewUrl('anime', anime.id);
 
     card.innerHTML = `
         <a class="anime-card-seo-link" href="${seoHref}" tabindex="-1" aria-hidden="true">${stats.title}</a>
@@ -514,6 +516,10 @@ function createAnimeCard(anime, clickHandler) {
             } catch (_) {
                 /* ignore */
             }
+        }
+        if (anime.isAnime4k && typeof openAnime4kPage === 'function') {
+            openAnime4kPage(anime.id);
+            return;
         }
         if (typeof openAnimePage === 'function') {
             openAnimePage(anime.id);
@@ -743,8 +749,12 @@ function loadAnimePosterLazy(card, title, fallbackGradient) {
 /** URL страницы тайтла с ?id= для SEO и навигации */
 function reminkoContentViewUrl(kind, contentId) {
     const prefix = typeof reminkoGetHtmlBasePath === 'function' ? reminkoGetHtmlBasePath() : '';
-    const page = kind === 'manga' ? 'manga/view.html' : 'anime/view.html';
     const id = contentId != null && String(contentId).trim() !== '' ? String(contentId) : '';
+    const is4k =
+        kind === 'anime4k' ||
+        (typeof window.Anime4kCatalogStore?.isAnime4kId === 'function' &&
+            window.Anime4kCatalogStore.isAnime4kId(id));
+    const page = kind === 'manga' ? 'manga/view.html' : is4k ? 'anime/view-4k.html' : 'anime/view.html';
     return id ? `${prefix}${page}?id=${encodeURIComponent(id)}` : `${prefix}${page}`;
 }
 
