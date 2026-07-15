@@ -1396,6 +1396,64 @@ $$;
 REVOKE ALL ON FUNCTION public.site_visit_online_count(integer) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.site_visit_online_count(integer) TO anon, authenticated;
 
+-- Список «сейчас в сети» для панели создателя.
+CREATE OR REPLACE FUNCTION public.site_visit_creator_online_users(p_window_minutes integer DEFAULT 5)
+RETURNS jsonb
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_minutes integer := LEAST(15, GREATEST(1, COALESCE(p_window_minutes, 5)));
+  v_since timestamptz := now() - make_interval(mins => v_minutes);
+  j jsonb;
+BEGIN
+  IF auth.uid() IS NULL OR NOT public.is_site_creator_user_id(auth.uid()) THEN
+    RAISE EXCEPTION 'forbidden' USING ERRCODE = '42501';
+  END IF;
+
+  SELECT COALESCE(
+    jsonb_agg(
+      jsonb_build_object(
+        'visitor_id', l.visitor_id,
+        'user_id', l.user_id,
+        'username', p.username,
+        'email', p.email,
+        'last_path', l.last_path,
+        'last_page_title', l.last_page_title,
+        'last_seen', l.last_seen
+      )
+      ORDER BY l.last_seen DESC
+    ),
+    '[]'::jsonb
+  )
+  INTO j
+  FROM (
+    SELECT DISTINCT ON (e.visitor_id)
+      e.visitor_id,
+      e.user_id,
+      e.path AS last_path,
+      e.page_title AS last_page_title,
+      e.created_at AS last_seen
+    FROM public.site_visit_events e
+    WHERE e.created_at >= v_since
+      AND (
+        e.event_kind = 'pageview'
+        OR (e.event_kind = 'action' AND e.event_label = 'heartbeat')
+      )
+    ORDER BY e.visitor_id, e.created_at DESC
+  ) l
+  LEFT JOIN public.profiles p ON p.id = l.user_id;
+
+  RETURN j;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.site_visit_creator_online_users(integer) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.site_visit_creator_online_users(integer) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.site_visit_creator_online_users(integer) TO service_role;
+
 -- Глобальная пауза комнаты: любой участник (плеер/сеть); снимает только хост.
 CREATE OR REPLACE FUNCTION public.wt_raise_sync_hold(p_session_id uuid, p_reason text DEFAULT 'issue')
 RETURNS void
@@ -1937,6 +1995,9 @@ GRANT EXECUTE ON FUNCTION public.site_visit_creator_live(integer) TO authenticat
 
 REVOKE ALL ON FUNCTION public.site_visit_online_count(integer) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.site_visit_online_count(integer) TO anon, authenticated;
+
+REVOKE ALL ON FUNCTION public.site_visit_creator_online_users(integer) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.site_visit_creator_online_users(integer) TO authenticated, service_role;
 
 REVOKE ALL ON FUNCTION public.wt_raise_sync_hold(uuid, text) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.wt_raise_sync_hold(uuid, text) TO authenticated, service_role;

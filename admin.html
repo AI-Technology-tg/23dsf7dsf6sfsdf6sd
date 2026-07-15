@@ -89,62 +89,33 @@
                     </div>
 
                     <div class="admin-section visitor-analytics-section" id="visitorAnalyticsSection">
-                        <h2>🌐 Посетители и страницы</h2>
-                        <p class="admin-inline-hint" style="margin: 0 0 1rem;">
-                            Собираются просмотры с обычных страниц сайта (панель создателя не учитывается). Гость получает стабильный анонимный id в браузере;
-                            у авторизованных фиксируется учётная запись.
-                        </p>
-                        <div class="filters-row visitor-analytics-toolbar">
-                            <label class="visitor-analytics-period-label">
-                                Период
-                                <select id="visitorAnalyticsPeriod" class="filter-select" title="За сколько дней с полуночи (UTC) показывать данные">
-                                    <option value="1">1 день</option>
-                                    <option value="7" selected>7 дней</option>
-                                    <option value="30">30 дней</option>
-                                    <option value="90">90 дней</option>
+                        <header class="va-compact__head">
+                            <div>
+                                <h2 class="va-compact__title">Посетители</h2>
+                                <p class="va-compact__sub">Анонимный id в браузере · аккаунт, если вошёл · admin не считается</p>
+                            </div>
+                            <div class="va-compact__toolbar">
+                                <select id="visitorAnalyticsPeriod" class="filter-select va-compact__select" title="Период сводки">
+                                    <option value="1">1 д</option>
+                                    <option value="7" selected>7 д</option>
+                                    <option value="30">30 д</option>
+                                    <option value="90">90 д</option>
                                 </select>
-                            </label>
-                            <label class="visitor-analytics-period-label">
-                                Устройство
-                                <select id="visitorAnalyticsDeviceFilter" class="filter-select" title="Фильтр по типу устройства">
-                                    <option value="">Все</option>
-                                    <option value="desktop">Desktop</option>
-                                    <option value="mobile">Mobile</option>
-                                    <option value="tablet">Tablet</option>
-                                    <option value="tv">TV</option>
-                                    <option value="bot">Bot</option>
+                                <select id="visitorOnlineWindow" class="filter-select va-compact__select" title="Окно «в сети»">
+                                    <option value="5" selected>5 мин</option>
+                                    <option value="10">10 мин</option>
+                                    <option value="15">15 мин</option>
                                 </select>
-                            </label>
-                            <label class="visitor-analytics-period-label">
-                                Тип события
-                                <select id="visitorAnalyticsEventFilter" class="filter-select" title="Фильтр по событиям">
-                                    <option value="">Все</option>
-                                    <option value="pageview">pageview</option>
-                                    <option value="action">action</option>
-                                    <option value="login">action: login</option>
-                                </select>
-                            </label>
-                            <label class="visitor-analytics-period-label">
-                                Сортировка
-                                <select id="visitorAnalyticsSort" class="filter-select" title="Порядок в ленте и таблицах">
-                                    <option value="time_desc">Сначала новые</option>
-                                    <option value="time_asc">Сначала старые</option>
-                                    <option value="path_asc">Путь A→Я</option>
-                                    <option value="path_desc">Путь Я→A</option>
-                                </select>
-                            </label>
-                            <button type="button" class="admin-btn admin-btn-secondary" id="visitorAnalyticsRefreshBtn">Обновить</button>
-                            <label class="visitor-analytics-period-label">
-                                <input type="checkbox" id="visitorAnalyticsRealtimeToggle" checked>
-                                Live (15с)
-                            </label>
-                        </div>
-                        <div id="visitorAnalyticsContent" class="visitor-analytics-content">
+                                <button type="button" class="admin-btn admin-btn-small" id="visitorAnalyticsRefreshBtn">Обновить</button>
+                                <label class="va-compact__live">
+                                    <input type="checkbox" id="visitorAnalyticsRealtimeToggle" checked>
+                                    Live
+                                </label>
+                            </div>
+                        </header>
+                        <div id="visitorAnalyticsContent" class="visitor-analytics-content va-compact">
                             <p class="admin-inline-hint">Загрузка…</p>
                         </div>
-                        <p class="admin-inline-hint" style="margin-top: 0.75rem;">
-                            События <strong>login</strong> пишутся при входе в аккаунт (включая OAuth): смотрите в ленте ниже и в колонке «Тип» таблицы как <code>action: login</code>.
-                        </p>
                     </div>
 
                     <div class="admin-section">

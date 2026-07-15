@@ -1570,6 +1570,28 @@ class CreatorAdminPanel {
         }
     }
 
+    /** Кто сейчас на сайте (уникальные visitor_id за последние N минут). Только создатель. */
+    async getSiteOnlineUsers(windowMinutes = 5) {
+        if (!supabaseClient) return { rows: [], error: 'Supabase не инициализирован' };
+        const a = await this._assertCallerIsSiteCreator();
+        if (!a.ok) return { rows: [], error: a.message };
+        const mins = Math.min(15, Math.max(1, parseInt(windowMinutes, 10) || 5));
+        try {
+            const rpcRes = await this._rpcWithFallback('site_visit_creator_online_users', [
+                { p_window_minutes: mins },
+                { window_minutes: mins },
+                {}
+            ]);
+            if (rpcRes.error) throw rpcRes.error;
+            const raw = rpcRes.data;
+            const rows = Array.isArray(raw) ? raw : raw && typeof raw === 'object' ? raw : [];
+            return { rows, error: null };
+        } catch (e) {
+            console.error('[CreatorAdmin] getSiteOnlineUsers', e);
+            return { rows: [], error: e.message || 'Не удалось загрузить список онлайн' };
+        }
+    }
+
     /** Состояние удалённого сервера Minko AI (Supabase + опционально Netlify hook) */
     async getMinkoAiServerBundle() {
         if (!supabaseClient) return { ok: false, message: 'Нет Supabase' };

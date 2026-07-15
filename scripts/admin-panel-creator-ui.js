@@ -886,9 +886,7 @@ function bindDashboardControls() {
 
     const period = document.getElementById('visitorAnalyticsPeriod');
     period?.addEventListener('change', () => void loadVisitorAnalyticsPanel());
-    document.getElementById('visitorAnalyticsDeviceFilter')?.addEventListener('change', () => void loadVisitorAnalyticsPanel());
-    document.getElementById('visitorAnalyticsEventFilter')?.addEventListener('change', () => void loadVisitorAnalyticsPanel());
-    document.getElementById('visitorAnalyticsSort')?.addEventListener('change', () => void loadVisitorAnalyticsPanel());
+    document.getElementById('visitorOnlineWindow')?.addEventListener('change', () => void loadVisitorAnalyticsPanel());
     document.getElementById('visitorAnalyticsRefreshBtn')?.addEventListener('click', () => void loadVisitorAnalyticsPanel());
     document.getElementById('visitorAnalyticsRealtimeToggle')?.addEventListener('change', refreshVisitorRealtimeState);
     document.getElementById('openMinkoAiLogsModalBtn')?.addEventListener('click', () => void openMinkoAiLogsModal());
@@ -1022,167 +1020,161 @@ async function loadCreatorAuditLogsPanel() {
 async function loadVisitorAnalyticsPanel() {
     const el = document.getElementById('visitorAnalyticsContent');
     if (!el || !window.creatorAdminPanel) return;
-    const daysSel = document.getElementById('visitorAnalyticsPeriod');
-    const days = daysSel ? parseInt(daysSel.value, 10) || 7 : 7;
-    const deviceFilter = document.getElementById('visitorAnalyticsDeviceFilter')?.value || '';
-    const eventFilter = document.getElementById('visitorAnalyticsEventFilter')?.value || '';
-    const sortMode = document.getElementById('visitorAnalyticsSort')?.value || 'time_desc';
+    const days = parseInt(document.getElementById('visitorAnalyticsPeriod')?.value, 10) || 7;
+    const onlineMins = parseInt(document.getElementById('visitorOnlineWindow')?.value, 10) || 5;
     const liveEnabled = !!document.getElementById('visitorAnalyticsRealtimeToggle')?.checked;
 
     el.innerHTML = '<p class="admin-inline-hint">Загрузка…</p>';
-    const { bundle, recent, error } = await window.creatorAdminPanel.getSiteVisitAnalytics(days);
+    const [{ bundle, recent, error }, onlineRes] = await Promise.all([
+        window.creatorAdminPanel.getSiteVisitAnalytics(days),
+        window.creatorAdminPanel.getSiteOnlineUsers(onlineMins)
+    ]);
+
     if (error) {
         el.innerHTML = `<p class="admin-inline-hint" style="color:#f87171;">${adminPanelEscapeHtml(error)}</p>`;
         return;
     }
 
-    const s = bundle && bundle.summary ? bundle.summary : {};
-    const live = bundle && bundle.live ? bundle.live : null;
-    const byDay = Array.isArray(bundle && bundle.by_day) ? bundle.by_day : [];
-    const recentRows = Array.isArray(recent) ? recent : [];
+    const s = bundle?.summary || {};
+    const live = bundle?.live || null;
+    const byDay = Array.isArray(bundle?.by_day) ? bundle.by_day : [];
+    const topPathsFromRpc = Array.isArray(bundle?.top_paths) ? bundle.top_paths : [];
+    const onlineRows = onlineRes.rows || [];
+    const onlineErr = onlineRes.error;
 
-    function detectDeviceType(row) {
-        const ua = String(row?.user_agent || '').toLowerCase();
-        const meta = row?.meta && typeof row.meta === 'object' ? row.meta : {};
-        const platform = String(meta.platform || meta.os || '').toLowerCase();
-        const has = (s) => ua.includes(s) || platform.includes(s);
-        if (has('bot') || has('crawler') || has('spider') || has('yandex')) return 'bot';
-        if (has('smart-tv') || has('smarttv') || has('tizen') || has('webos') || has('hbbtv')) return 'tv';
-        if (has('ipad') || has('tablet')) return 'tablet';
-        if (has('android') && !has('mobile')) return 'tablet';
-        if (has('iphone') || has('mobile') || has('windows phone')) return 'mobile';
-        return 'desktop';
+    const pageviewRows = (recent || []).filter((r) => r.event_kind === 'pageview');
+
+    const topPaths =
+        topPathsFromRpc.length > 0
+            ? topPathsFromRpc
+            : (() => {
+                  const m = new Map();
+                  pageviewRows.forEach((r) => {
+                      const p = String(r.path || '/').trim() || '/';
+                      m.set(p, (m.get(p) || 0) + 1);
+                  });
+                  return [...m.entries()]
+                      .sort((a, b) => b[1] - a[1])
+                      .slice(0, 10)
+                      .map(([path, cnt]) => ({ path, cnt }));
+              })();
+
+    const fmtTime = (iso) => {
+        if (!iso) return '—';
+        return new Date(iso).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    };
+
+    const fmtPath = (p) => {
+        const s = String(p || '/');
+        return s.length > 42 ? s.slice(0, 39) + '…' : s;
+    };
+
+    let html = `<p class="va-compact__updated">Обновлено ${new Date().toLocaleTimeString('ru-RU')}${liveEnabled ? ' · live' : ''}</p>`;
+
+    html += '<div class="va-compact__stats">';
+    html += `<div class="va-compact__stat"><span>Онлайн</span><strong>${onlineRows.length}</strong></div>`;
+    html += `<div class="va-compact__stat"><span>За период</span><strong>${Number(s.unique_visitors || 0)}</strong></div>`;
+    html += `<div class="va-compact__stat"><span>Просмотры</span><strong>${Number(s.pageviews || 0)}</strong></div>`;
+    html += `<div class="va-compact__stat"><span>Аккаунты</span><strong>${Number(s.unique_logged_accounts || 0)}</strong></div>`;
+    if (live && Number(live.unique_visitors || 0) > 0) {
+        html += `<div class="va-compact__stat va-compact__stat--live"><span>15 мин</span><strong>${Number(live.unique_visitors || 0)}</strong></div>`;
     }
-
-    function matchesEventFilter(row) {
-        if (!eventFilter) return true;
-        if (eventFilter === 'pageview') return row.event_kind === 'pageview';
-        if (eventFilter === 'action') return row.event_kind === 'action';
-        if (eventFilter === 'login') return row.event_kind === 'action' && String(row.event_label || '') === 'login';
-        return true;
-    }
-
-    let filteredRecent = recentRows
-        .map((r) => ({ ...r, _device: detectDeviceType(r) }))
-        .filter((r) => (!deviceFilter ? true : r._device === deviceFilter))
-        .filter(matchesEventFilter);
-
-    const sortByTimeDesc = (a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0);
-    const sortByTimeAsc = (a, b) => new Date(a.created_at || 0) - new Date(b.created_at || 0);
-    const sortByPathAsc = (a, b) => String(a.path || '').localeCompare(String(b.path || ''), 'ru');
-    const sortByPathDesc = (a, b) => String(b.path || '').localeCompare(String(a.path || ''), 'ru');
-    if (sortMode === 'time_asc') filteredRecent.sort(sortByTimeAsc);
-    else if (sortMode === 'path_asc') filteredRecent.sort(sortByPathAsc);
-    else if (sortMode === 'path_desc') filteredRecent.sort(sortByPathDesc);
-    else filteredRecent.sort(sortByTimeDesc);
-
-    const topPathMap = new Map();
-    const deviceCountMap = new Map();
-    filteredRecent.forEach((row) => {
-        const p = String(row.path || '').trim() || '—';
-        topPathMap.set(p, (topPathMap.get(p) || 0) + 1);
-        const d = String(row._device || 'desktop');
-        deviceCountMap.set(d, (deviceCountMap.get(d) || 0) + 1);
-    });
-    const topPaths = [...topPathMap.entries()].map(([path, cnt]) => ({ path, cnt }));
-    topPaths.sort((a, b) => {
-        if (sortMode === 'path_asc') return String(a.path).localeCompare(String(b.path), 'ru');
-        if (sortMode === 'path_desc') return String(b.path).localeCompare(String(a.path), 'ru');
-        if (sortMode === 'time_asc') return a.cnt - b.cnt;
-        return b.cnt - a.cnt;
-    });
-
-    let html = '';
-    html += `<p class="visitor-analytics-live-status">Обновлено: ${new Date().toLocaleTimeString('ru-RU')} · Live: ${liveEnabled ? 'включен' : 'выключен'}</p>`;
-    html += '<div class="visitor-analytics-grid">';
-    html += `<div class="visitor-analytics-card"><h4>Уникальные посетители</h4><div class="vac-value">${Number(
-        s.unique_visitors || 0
-    )}</div></div>`;
-    html += `<div class="visitor-analytics-card"><h4>Просмотры страниц</h4><div class="vac-value">${Number(
-        s.pageviews || 0
-    )}</div></div>`;
-    html += `<div class="visitor-analytics-card"><h4>Событий всего</h4><div class="vac-value">${Number(
-        s.total_events || 0
-    )}</div></div>`;
-    html += `<div class="visitor-analytics-card"><h4>Уникальных аккаунтов</h4><div class="vac-value">${Number(
-        s.unique_logged_accounts || 0
-    )}</div></div>`;
     html += '</div>';
 
-    if (live && Number(live.events || 0) > 0) {
-        html += `<div class="visitor-analytics-card" style="margin-bottom:1rem;">
-            <h4>Реальное время (последние ${Number(live.window_minutes || 15)} минут)</h4>
-            <div class="vac-value" style="font-size:1.1rem;line-height:1.45;">
-                Событий: <strong>${Number(live.events || 0)}</strong> ·
-                Pageview: <strong>${Number(live.pageviews || 0)}</strong> ·
-                Login: <strong>${Number(live.logins || 0)}</strong> ·
-                Уникальных гостей: <strong>${Number(live.unique_visitors || 0)}</strong>
-            </div>
+    html += '<div class="va-compact__grid">';
+    html += `<section class="va-compact__panel va-compact__panel--online">
+        <div class="va-compact__panel-head">
+            <h3>Сейчас в сети</h3>
+            <span class="va-compact__pill">${onlineRows.length} · ${onlineMins} мин</span>
         </div>`;
-    }
-
-    if (filteredRecent.length) {
-        const deviceOrder = ['desktop', 'mobile', 'tablet', 'tv', 'bot'];
-        const deviceSummary = deviceOrder
-            .filter((d) => deviceCountMap.has(d))
-            .map((d) => `${d}: ${deviceCountMap.get(d)}`)
-            .join(' · ');
-        html += `<p class="admin-inline-hint" style="margin:0.25rem 0 1rem;">После фильтров: ${filteredRecent.length} событий${deviceSummary ? ` · ${adminPanelEscapeHtml(deviceSummary)}` : ''}</p>`;
-    }
-
-    if (byDay.length) {
-        html += '<h3 class="visitor-analytics-subh">По дням (UTC)</h3><div class="visitor-analytics-byday">';
-        byDay.forEach((row) => {
-            html += `<span><strong>${adminPanelEscapeHtml(String(row.day ?? '—'))}</strong>: ${Number(row.cnt ?? 0)}</span>`;
+    if (onlineErr) {
+        html += `<p class="va-compact__empty va-compact__empty--err">${adminPanelEscapeHtml(onlineErr)}</p>`;
+    } else if (!onlineRows.length) {
+        html += '<p class="va-compact__empty">Никого нет в выбранном окне.</p>';
+    } else {
+        html += '<ul class="va-online-list">';
+        onlineRows.slice(0, 80).forEach((row) => {
+            const uid = row.user_id && String(row.user_id).trim();
+            const isUser = !!uid;
+            const name = isUser
+                ? adminPanelEscapeHtml(row.username || row.email || 'Без имени')
+                : adminPanelEscapeHtml(String(row.visitor_id || '').slice(0, 12) + '…');
+            const sub = isUser
+                ? adminPanelEscapeHtml(String(row.email || row.user_id).slice(0, 36))
+                : `<span class="vac-mono">guest ${adminPanelEscapeHtml(String(row.visitor_id || '').slice(0, 18))}…</span>`;
+            const path = fmtPath(row.last_path);
+            const time = fmtTime(row.last_seen);
+            html += `<li class="va-online-item ${isUser ? 'va-online-item--user' : ''}">
+                <span class="va-online-dot" aria-hidden="true"></span>
+                <div class="va-online-main">
+                    <div class="va-online-row1">
+                        ${
+                            isUser
+                                ? `<button type="button" class="va-online-name va-online-name--link" data-va-user="${adminPanelEscapeHtml(uid)}" title="Открыть профиль">${name}</button>`
+                                : `<span class="va-online-name">${name}</span>`
+                        }
+                        <time class="va-online-time">${adminPanelEscapeHtml(time)}</time>
+                    </div>
+                    <div class="va-online-row2">${sub}</div>
+                    <div class="va-online-row3 vac-mono" title="${adminPanelEscapeHtml(String(row.last_path || ''))}">${adminPanelEscapeHtml(path)}</div>
+                </div>
+            </li>`;
         });
-        html += '</div>';
-    }
-
-    if (topPaths.length) {
-        html += '<h3 class="visitor-analytics-subh">Популярные страницы (по текущему фильтру)</h3>';
-        html +=
-            '<div class="visitor-analytics-table-wrap"><table class="visitor-analytics-table"><thead><tr><th>Путь</th><th>Счётчик</th></tr></thead><tbody>';
-        topPaths.slice(0, 12).forEach((row) => {
-            html += `<tr><td class="vac-mono">${adminPanelEscapeHtml(String(row.path ?? '—'))}</td><td>${Number(
-                row.cnt ?? 0
-            )}</td></tr>`;
-        });
-        html += '</tbody></table></div>';
-        if (topPaths.length > 12) {
-            html += `<p class="admin-inline-hint" style="margin-top:-0.6rem;margin-bottom:0.9rem;">Показано 12 из ${topPaths.length} путей. Используйте фильтры, чтобы сузить список.</p>`;
+        html += '</ul>';
+        if (onlineRows.length > 80) {
+            html += `<p class="va-compact__more">+ ещё ${onlineRows.length - 80}</p>`;
         }
     }
+    html += '</section>';
 
-    html += '<h3 class="visitor-analytics-subh">Лента событий</h3>';
-    html +=
-        '<div class="visitor-analytics-table-wrap"><table class="visitor-analytics-table"><thead><tr><th>Время</th><th>Устройство</th><th>Тип</th><th>Путь</th><th>Заголовок</th><th>User id</th><th>Гость</th></tr></thead><tbody>';
-    if (!filteredRecent.length) {
-        html += '<tr><td colspan="7">За выбранный период записей нет.</td></tr>';
+    html += `<section class="va-compact__panel">
+        <div class="va-compact__panel-head"><h3>Популярные страницы</h3></div>`;
+    if (!topPaths.length) {
+        html += '<p class="va-compact__empty">Нет данных.</p>';
     } else {
-        filteredRecent.slice(0, 40).forEach((r) => {
-            const dt = r.created_at
-                ? new Date(r.created_at).toLocaleString('ru-RU', { dateStyle: 'short', timeStyle: 'medium' })
-                : '—';
-            const kind =
-                r.event_kind === 'action'
-                    ? 'action' + (r.event_label ? ': ' + adminPanelEscapeHtml(String(r.event_label).slice(0, 100)) : '')
-                    : adminPanelEscapeHtml(String(r.event_kind || 'pageview'));
+        html += '<ul class="va-paths-list">';
+        topPaths.slice(0, 8).forEach((row) => {
+            html += `<li><span class="vac-mono" title="${adminPanelEscapeHtml(String(row.path || ''))}">${adminPanelEscapeHtml(fmtPath(row.path))}</span><strong>${Number(row.cnt || 0)}</strong></li>`;
+        });
+        html += '</ul>';
+    }
+    html += '</section>';
+    html += '</div>';
+
+    if (byDay.length) {
+        html += `<details class="va-compact__details"><summary>По дням (UTC)</summary><div class="va-compact__byday">`;
+        byDay.forEach((row) => {
+            html += `<span>${adminPanelEscapeHtml(String(row.day ?? '—'))}: <strong>${Number(row.cnt ?? 0)}</strong></span>`;
+        });
+        html += '</div></details>';
+    }
+
+    html += `<details class="va-compact__details"><summary>Последние просмотры (${Math.min(pageviewRows.length, 25)})</summary>`;
+    html += '<div class="va-compact__table-wrap"><table class="va-compact__table"><thead><tr><th>Время</th><th>Кто</th><th>Страница</th></tr></thead><tbody>';
+    if (!pageviewRows.length) {
+        html += '<tr><td colspan="3">Пусто</td></tr>';
+    } else {
+        pageviewRows.slice(0, 25).forEach((r) => {
+            const who = r.user_id
+                ? `<button type="button" class="va-online-name va-online-name--link" data-va-user="${adminPanelEscapeHtml(String(r.user_id))}">${adminPanelEscapeHtml(String(r.user_id).slice(0, 8))}…</button>`
+                : `<span class="vac-mono">${adminPanelEscapeHtml(String(r.visitor_id || '').slice(0, 10))}…</span>`;
             html += `<tr>
-                <td>${adminPanelEscapeHtml(dt)}</td>
-                <td>${adminPanelEscapeHtml(String(r._device || 'desktop'))}</td>
-                <td>${kind}</td>
-                <td class="vac-mono">${adminPanelEscapeHtml(String(r.path || '—').slice(0, 120))}</td>
-                <td>${adminPanelEscapeHtml(String(r.page_title || '—').slice(0, 60))}</td>
-                <td class="vac-mono">${r.user_id ? adminPanelEscapeHtml(String(r.user_id).slice(0, 10)) + '…' : '—'}</td>
-                <td class="vac-mono">${r.visitor_id ? adminPanelEscapeHtml(String(r.visitor_id).slice(0, 10)) + '…' : '—'}</td>
+                <td>${adminPanelEscapeHtml(fmtTime(r.created_at))}</td>
+                <td>${who}</td>
+                <td class="vac-mono" title="${adminPanelEscapeHtml(String(r.path || ''))}">${adminPanelEscapeHtml(fmtPath(r.path))}</td>
             </tr>`;
         });
     }
-    html += '</tbody></table></div>';
-    if (filteredRecent.length > 40) {
-        html += `<p class="admin-inline-hint" style="margin-top:-0.6rem;">Показаны последние 40 событий из ${filteredRecent.length}. Для детализации сузьте фильтр.</p>`;
-    }
+    html += '</tbody></table></div></details>';
+
     el.innerHTML = html;
+
+    el.querySelectorAll('[data-va-user]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const uid = btn.getAttribute('data-va-user');
+            if (uid && typeof showUserActions === 'function') void showUserActions(uid);
+        });
+    });
 }
 
 function initUsersSection() {
