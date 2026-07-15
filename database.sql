@@ -1402,7 +1402,7 @@ RETURNS jsonb
 LANGUAGE plpgsql
 STABLE
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, auth
 AS $$
 DECLARE
   v_minutes integer := LEAST(15, GREATEST(1, COALESCE(p_window_minutes, 5)));
@@ -1419,7 +1419,7 @@ BEGIN
         'visitor_id', l.visitor_id,
         'user_id', l.user_id,
         'username', p.username,
-        'email', p.email,
+        'email', u.email,
         'last_path', l.last_path,
         'last_page_title', l.last_page_title,
         'last_seen', l.last_seen
@@ -1444,7 +1444,8 @@ BEGIN
       )
     ORDER BY e.visitor_id, e.created_at DESC
   ) l
-  LEFT JOIN public.profiles p ON p.id = l.user_id;
+  LEFT JOIN public.profiles p ON p.id = l.user_id
+  LEFT JOIN auth.users u ON u.id = l.user_id;
 
   RETURN j;
 END;
