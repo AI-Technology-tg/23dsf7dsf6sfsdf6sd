@@ -140,9 +140,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         let animeId = urlParams.get('id') || sessionStorage.getItem('viewAnime4kId');
         const idNum = parseInt(animeId, 10);
 
-        // Старый неверный id: 59062 = Gachiakuta, фильм Reze = 57555 (site id 22057555)
-        if (idNum === 22059062) {
-            window.location.replace(`${window.location.pathname}?id=22057555`);
+        // Старые неверные id → сборник 1-й фильм (62352 / site 22062352)
+        if (idNum === 22059062 || idNum === 22057555) {
+            window.location.replace(`${window.location.pathname}?id=22062352`);
             return;
         }
 
