@@ -4,11 +4,6 @@
 (function (global) {
     'use strict';
 
-    const ULTRA_CONFIRM =
-        'Включить Anime4K?\n\n' +
-        'После включения сайт, плеер и ваше устройство могут заметно потерять производительность — возможны лаги и подтормаживания видео.\n\n' +
-        'Если уверены в мощности ПК или телефона — включайте. Иначе смотрите без улучшения.';
-
     /** Максимальное качество Anime4K (без выбора в UI) */
     const ANIME4K_MAX_FPS = 30;
 
@@ -201,10 +196,6 @@
         function setUltra(on, opts) {
             const silent = !!(opts && opts.silent);
             const force = !!(opts && opts.force);
-
-            if (on && !ultraOn && !silent) {
-                if (!window.confirm(ULTRA_CONFIRM)) return;
-            }
 
             if (on && sourceHeavy && !force) {
                 showOverlay(
