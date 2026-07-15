@@ -537,6 +537,9 @@ async function anime4kAdminSaveEditor() {
     if (res.success) {
         anime4kAdminSetStatus(res.message || 'Сохранено');
         if (typeof showSuccess === 'function') showSuccess(res.message || 'Карточка сохранена');
+        if (typeof window.Anime4kCatalogStore?.refresh === 'function') {
+            await window.Anime4kCatalogStore.refresh();
+        }
         await loadAnime4kAdminPanel(__anime4kSelectedMal);
     } else {
         anime4kAdminSetStatus(res.message || 'Ошибка', true);

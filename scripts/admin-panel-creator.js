@@ -1396,8 +1396,19 @@ class CreatorAdminPanel {
         }
 
         try {
-            const { error } = await supabaseClient.from('catalog_4k_anime').update(payload).eq('mal_id', mid);
+            const { data, error } = await supabaseClient
+                .from('catalog_4k_anime')
+                .update(payload)
+                .eq('mal_id', mid)
+                .select('mal_id')
+                .maybeSingle();
             if (error) throw error;
+            if (!data) {
+                return {
+                    success: false,
+                    message: 'Запись не обновлена — нет доступа или тайтл не найден в ≈4K каталоге'
+                };
+            }
             return { success: true, message: 'Карточка ≈4K сохранена' };
         } catch (e) {
             console.error('[CreatorAdmin] updateCatalog4kAnimeMeta', e);

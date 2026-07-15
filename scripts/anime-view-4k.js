@@ -42,7 +42,12 @@ async function renderAnime4kDetail(anime) {
     const year = anime.year || j.year || '';
     const studios = anime.studio || (j.studios || []).map((s) => s.name).join(', ') || '—';
     const genres = anime.genres || [];
-    const synopsis = anime.description || j.synopsis || 'Описание появится позже.';
+    const hasCustomDescription = !!(
+        anime._4kRow?.description_ru != null && String(anime._4kRow.description_ru).trim()
+    );
+    const synopsis = hasCustomDescription
+        ? String(anime._4kRow.description_ru).trim()
+        : anime.description || j.synopsis || 'Описание появится позже.';
     const score = anime.rating != null && !Number.isNaN(Number(anime.rating)) ? Number(anime.rating).toFixed(1) : '—';
     const epLine = j.type === 'Movie' ? '1 / 1 (фильм)' : `${anime.episodes || '?'} эп.`;
 
@@ -123,7 +128,7 @@ async function renderAnime4kDetail(anime) {
                         document.title = `${sh.russian} — ≈4K | Re-Minko`;
                     }
                 }
-                if (window.shikimoriApi?.stripHtml && sh.description_html) {
+                if (window.shikimoriApi?.stripHtml && sh.description_html && !hasCustomDescription) {
                     const lateDesc = window.shikimoriApi.stripHtml(sh.description_html).replace(/\s+/g, ' ').trim();
                     const de = document.querySelector('.anime-detail-description');
                     if (de && lateDesc && looksRu(lateDesc)) de.textContent = lateDesc;

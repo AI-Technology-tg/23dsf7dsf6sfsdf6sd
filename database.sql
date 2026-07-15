@@ -918,13 +918,19 @@ ALTER TABLE public.catalog_4k_anime ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "catalog_4k_anime_select" ON public.catalog_4k_anime;
 CREATE POLICY "catalog_4k_anime_select" ON public.catalog_4k_anime
-  FOR SELECT USING (published = true OR lower(trim(coalesce(auth.jwt() ->> 'email', ''))) = 'creator@reminko.com');
+  FOR SELECT USING (
+    published = true
+    OR public.is_site_creator_user_id(auth.uid())
+  );
 
 DROP POLICY IF EXISTS "catalog_4k_anime_insert_authenticated" ON public.catalog_4k_anime;
 DROP POLICY IF EXISTS "catalog_4k_anime_insert_anon" ON public.catalog_4k_anime;
 CREATE POLICY "catalog_4k_anime_insert_authenticated" ON public.catalog_4k_anime
   FOR INSERT TO authenticated
-  WITH CHECK (added_by IS NOT NULL AND auth.uid() = added_by);
+  WITH CHECK (
+    public.is_site_creator_user_id(auth.uid())
+    OR (added_by IS NOT NULL AND auth.uid() = added_by)
+  );
 CREATE POLICY "catalog_4k_anime_insert_anon" ON public.catalog_4k_anime
   FOR INSERT TO anon
   WITH CHECK (added_by IS NULL);
@@ -932,13 +938,13 @@ CREATE POLICY "catalog_4k_anime_insert_anon" ON public.catalog_4k_anime
 DROP POLICY IF EXISTS "catalog_4k_anime_update" ON public.catalog_4k_anime;
 CREATE POLICY "catalog_4k_anime_update" ON public.catalog_4k_anime
   FOR UPDATE TO authenticated
-  USING (lower(trim(coalesce(auth.jwt() ->> 'email', ''))) = 'creator@reminko.com')
-  WITH CHECK (lower(trim(coalesce(auth.jwt() ->> 'email', ''))) = 'creator@reminko.com');
+  USING (public.is_site_creator_user_id(auth.uid()))
+  WITH CHECK (public.is_site_creator_user_id(auth.uid()));
 
 DROP POLICY IF EXISTS "catalog_4k_anime_delete" ON public.catalog_4k_anime;
 CREATE POLICY "catalog_4k_anime_delete" ON public.catalog_4k_anime
   FOR DELETE TO authenticated
-  USING (lower(trim(coalesce(auth.jwt() ->> 'email', ''))) = 'creator@reminko.com');
+  USING (public.is_site_creator_user_id(auth.uid()));
 
 -- user_achievements
 DROP POLICY IF EXISTS "achievements_select_all" ON public.user_achievements;
