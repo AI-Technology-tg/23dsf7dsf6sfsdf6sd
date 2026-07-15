@@ -1708,3 +1708,43 @@
         width: min(230px, 76vw);
     }
 }
+
+.anime4k-admin-upload-progress {
+    margin-top: 1rem;
+    padding: 0.85rem 0.95rem;
+    border-radius: 12px;
+    border: 1px solid rgba(124, 58, 237, 0.35);
+    background: rgba(30, 27, 75, 0.35);
+}
+
+.anime4k-admin-upload-progress[hidden] {
+    display: none !important;
+}
+
+.anime4k-admin-upload-progress__track {
+    height: 12px;
+    border-radius: 999px;
+    overflow: hidden;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.anime4k-admin-upload-progress__bar {
+    height: 100%;
+    width: 0%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #7c3aed, #a78bfa);
+    transition: width 0.25s ease;
+}
+
+.anime4k-admin-upload-progress__text {
+    margin: 0.55rem 0 0;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.anime4k-admin-upload-progress__hint {
+    margin: 0.35rem 0 0;
+    font-size: 0.8rem;
+}

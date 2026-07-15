@@ -1,4 +1,93 @@
 // Админ панель Создателя - полнофункциональная
+
+function reminkoFormatUploadBytes(bytes) {
+    const n = Number(bytes) || 0;
+    if (n >= 1024 ** 3) return `${(n / 1024 ** 3).toFixed(2)} GB`;
+    if (n >= 1024 ** 2) return `${(n / 1024 ** 2).toFixed(1)} MB`;
+    if (n >= 1024) return `${Math.round(n / 1024)} KB`;
+    return `${n} B`;
+}
+
+function reminkoUploadAnime4kToStorage(bucket, storagePath, file, onProgress) {
+    return new Promise(async (resolve, reject) => {
+        if (!supabaseClient) {
+            reject(new Error('Нет клиента Supabase'));
+            return;
+        }
+        const { data: sessionData, error: sessionErr } = await supabaseClient.auth.getSession();
+        if (sessionErr) {
+            reject(sessionErr);
+            return;
+        }
+        const token = sessionData?.session?.access_token;
+        if (!token) {
+            reject(new Error('Войдите в аккаунт создателя'));
+            return;
+        }
+
+        const baseUrl =
+            (typeof window !== 'undefined' && window.SUPABASE_URL) ||
+            (typeof SUPABASE_URL !== 'undefined' ? SUPABASE_URL : '');
+        const apiKey =
+            (typeof window !== 'undefined' && window.SUPABASE_ANON_KEY) ||
+            (typeof SUPABASE_ANON_KEY !== 'undefined' ? SUPABASE_ANON_KEY : '');
+        if (!baseUrl || !apiKey) {
+            reject(new Error('Supabase URL не настроен'));
+            return;
+        }
+
+        const encodedPath = String(storagePath)
+            .split('/')
+            .map((part) => encodeURIComponent(part))
+            .join('/');
+        const url = `${String(baseUrl).replace(/\/$/, '')}/storage/v1/object/${bucket}/${encodedPath}`;
+        const started = Date.now();
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', url);
+        xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+        xhr.setRequestHeader('apikey', apiKey);
+        xhr.setRequestHeader('Content-Type', file.type || 'video/mp4');
+        xhr.setRequestHeader('x-upsert', 'true');
+        xhr.setRequestHeader('cache-control', '3600');
+
+        xhr.upload.onprogress = (evt) => {
+            if (typeof onProgress !== 'function') return;
+            const total = evt.lengthComputable ? evt.total : file.size || 0;
+            const loaded = evt.loaded || 0;
+            const pct = total > 0 ? Math.min(95, Math.round((loaded / total) * 95)) : 0;
+            const elapsed = Math.max(0.001, (Date.now() - started) / 1000);
+            const speed = loaded / elapsed;
+            const etaSec = speed > 0 && total > loaded ? (total - loaded) / speed : null;
+            onProgress({
+                phase: 'storage',
+                percent: pct,
+                loaded,
+                total,
+                etaSec,
+                label: `Загрузка в Storage: ${reminkoFormatUploadBytes(loaded)} / ${reminkoFormatUploadBytes(total)}`
+            });
+        };
+
+        xhr.onload = () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+                resolve(true);
+                return;
+            }
+            let msg = `Storage HTTP ${xhr.status}`;
+            try {
+                const j = JSON.parse(xhr.responseText);
+                if (j?.message) msg = j.message;
+                else if (j?.error) msg = j.error;
+            } catch (_) {}
+            reject(new Error(msg));
+        };
+        xhr.onerror = () =>
+            reject(new Error('Сеть оборвалась. Не закрывайте вкладку и проверьте интернет.'));
+        xhr.onabort = () => reject(new Error('Загрузка отменена'));
+        xhr.send(file);
+    });
+}
+
 class CreatorAdminPanel {
     constructor() {
         this.isCreator = false;
@@ -1259,21 +1348,24 @@ class CreatorAdminPanel {
         }
     }
 
-    async uploadCatalog4kVideo(malId, file) {
+    async uploadCatalog4kVideo(malId, file, options = {}) {
         if (!supabaseClient) return { success: false, message: 'Нет клиента Supabase' };
         const a = await this._assertCallerIsSiteCreator();
         if (!a.ok) return { success: false, message: a.message };
         const mid = parseInt(malId, 10);
         if (!mid || Number.isNaN(mid)) return { success: false, message: 'Некорректный mal_id' };
         if (!file || !(file instanceof Blob)) return { success: false, message: 'Нет файла' };
+        const onProgress = typeof options.onProgress === 'function' ? options.onProgress : null;
+        const report = (payload) => {
+            if (onProgress) onProgress(payload);
+        };
         const name = (file.name && String(file.name).trim()) || 'video.mp4';
         const safeName = name.replace(/[^\w.\-()+]/g, '_').slice(0, 120);
         const path = `${mid}/${Date.now()}_${safeName}`;
         try {
-            const { error: upErr } = await supabaseClient.storage
-                .from('anime-4k-videos')
-                .upload(path, file, { upsert: true, contentType: file.type || 'video/mp4', cacheControl: '3600' });
-            if (upErr) throw upErr;
+            report({ phase: 'prepare', percent: 0, label: 'Проверка доступа…' });
+            await reminkoUploadAnime4kToStorage('anime-4k-videos', path, file, report);
+            report({ phase: 'db', percent: 97, label: 'Сохранение ссылки в каталоге…' });
             const { data: pub } = supabaseClient.storage.from('anime-4k-videos').getPublicUrl(path);
             const url = pub && pub.publicUrl ? pub.publicUrl : '';
             if (!url) throw new Error('Не удалось получить public URL');
@@ -1282,6 +1374,7 @@ class CreatorAdminPanel {
                 .update({ video_url: url })
                 .eq('mal_id', mid);
             if (dbErr) throw dbErr;
+            report({ phase: 'done', percent: 100, label: 'Готово! Видео привязано к каталогу.' });
             return { success: true, message: 'Видео загружено и привязано к каталогу', video_url: url };
         } catch (e) {
             console.error('[CreatorAdmin] uploadCatalog4kVideo', e);

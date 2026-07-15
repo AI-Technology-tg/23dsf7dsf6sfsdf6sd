@@ -38,7 +38,7 @@
     <link rel="stylesheet" href="styles/loading.css">
     <link rel="stylesheet" href="styles/notifications.css">
     <link rel="stylesheet" href="styles/register-flow.css">
-    <link rel="stylesheet" href="styles/admin-panel.css">
+    <link rel="stylesheet" href="styles/admin-panel.css?v=4k-upload-progress">
     <link rel="stylesheet" href="styles/minko-edit.css">
 </head>
 <body>
@@ -414,6 +414,13 @@
                                 <input type="file" id="anime4kAdminFileInput" accept="video/mp4,video/webm" />
                                 <button type="button" class="admin-btn" id="anime4kAdminUploadBtn">⬆ Загрузить и привязать</button>
                             </div>
+                            <div class="anime4k-admin-upload-progress" id="anime4kAdminUploadProgress" hidden>
+                                <div class="anime4k-admin-upload-progress__track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                                    <div class="anime4k-admin-upload-progress__bar" id="anime4kAdminUploadProgressBar"></div>
+                                </div>
+                                <p class="anime4k-admin-upload-progress__text" id="anime4kAdminUploadProgressText">0%</p>
+                                <p class="admin-inline-hint anime4k-admin-upload-progress__hint">Большой файл (до 5 GB) может грузиться 15–40 минут. Не закрывайте вкладку и не обновляйте страницу.</p>
+                            </div>
                         </div>
                         <div style="overflow-x:auto;margin-top:1rem;">
                             <table class="users-table" id="anime4kAdminTable">
@@ -762,10 +769,10 @@
     <script src="scripts/shikimori-api.js"></script>
     <script src="scripts/manga-data.js"></script>
     <script src="scripts/admin-panel.js"></script>
-    <script src="scripts/admin-panel-creator.js"></script>
+    <script src="scripts/admin-panel-creator.js?v=4k-upload-progress"></script>
     <script src="scripts/ai-subscription.js"></script>
     <script src="scripts/loading.js"></script>
-    <script src="scripts/admin-panel-creator-ui.js"></script>
+    <script src="scripts/admin-panel-creator-ui.js?v=4k-upload-progress"></script>
     <script src="scripts/apply-navigation.js?v=rem-theme-4"></script>
 </body>
 </html>

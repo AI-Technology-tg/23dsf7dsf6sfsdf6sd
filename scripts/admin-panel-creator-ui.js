@@ -158,6 +158,48 @@ function initAnime4kSection() {
     document.getElementById('anime4kAdminUploadBtn')?.addEventListener('click', () => void anime4kAdminUploadVideo());
 }
 
+function anime4kFormatUploadEta(sec) {
+    if (sec == null || !Number.isFinite(sec) || sec < 0) return '—';
+    const s = Math.round(sec);
+    const m = Math.floor(s / 60);
+    const r = s % 60;
+    if (m >= 60) {
+        const h = Math.floor(m / 60);
+        const rm = m % 60;
+        return `${h} ч ${rm} мин`;
+    }
+    return m > 0 ? `${m} мин ${r} сек` : `${r} сек`;
+}
+
+function anime4kSetUploadProgress(payload) {
+    const wrap = document.getElementById('anime4kAdminUploadProgress');
+    const bar = document.getElementById('anime4kAdminUploadProgressBar');
+    const text = document.getElementById('anime4kAdminUploadProgressText');
+    const track = wrap?.querySelector('.anime4k-admin-upload-progress__track');
+    if (!wrap) return;
+    wrap.hidden = false;
+    const pct = Math.max(0, Math.min(100, Number(payload?.percent) || 0));
+    if (bar) bar.style.width = `${pct}%`;
+    if (track) track.setAttribute('aria-valuenow', String(pct));
+    let line = payload?.label || `${pct}%`;
+    if (payload?.phase === 'storage' && payload.etaSec != null) {
+        line += ` · осталось ~${anime4kFormatUploadEta(payload.etaSec)}`;
+    }
+    if (text) text.textContent = line;
+}
+
+function anime4kHideUploadProgress(delayMs) {
+    const wrap = document.getElementById('anime4kAdminUploadProgress');
+    if (!wrap) return;
+    const hide = () => {
+        wrap.hidden = true;
+        const bar = document.getElementById('anime4kAdminUploadProgressBar');
+        if (bar) bar.style.width = '0%';
+    };
+    if (delayMs > 0) setTimeout(hide, delayMs);
+    else hide();
+}
+
 async function loadAnime4kAdminPanel() {
     const tbody = document.getElementById('anime4kAdminTableBody');
     const statusEl = document.getElementById('anime4kAdminStatus');
@@ -228,6 +270,7 @@ async function anime4kAdminUploadVideo() {
     const statusEl = document.getElementById('anime4kAdminStatus');
     const fileInput = document.getElementById('anime4kAdminFileInput');
     const malInput = document.getElementById('anime4kAdminMalInput');
+    const uploadBtn = document.getElementById('anime4kAdminUploadBtn');
     const file = fileInput?.files && fileInput.files[0];
     const mal = parseInt(malInput?.value, 10);
     if (!file) {
@@ -238,12 +281,39 @@ async function anime4kAdminUploadVideo() {
         if (statusEl) statusEl.textContent = 'Укажите MAL id';
         return;
     }
-    if (statusEl) statusEl.textContent = `Загрузка ${(file.size / (1024 * 1024)).toFixed(0)} MB…`;
-    const res = await window.creatorAdminPanel.uploadCatalog4kVideo(mal, file);
+    if (uploadBtn) uploadBtn.disabled = true;
+    if (fileInput) fileInput.disabled = true;
+    anime4kSetUploadProgress({
+        phase: 'prepare',
+        percent: 0,
+        label: `Подготовка… ${(file.size / (1024 * 1024)).toFixed(0)} MB`
+    });
+    if (statusEl) statusEl.textContent = 'Загрузка…';
+    let res;
+    try {
+        res = await window.creatorAdminPanel.uploadCatalog4kVideo(mal, file, {
+            onProgress: (payload) => {
+                anime4kSetUploadProgress(payload);
+                if (statusEl && payload?.percent != null) statusEl.textContent = `${payload.percent}%`;
+            }
+        });
+    } finally {
+        if (uploadBtn) uploadBtn.disabled = false;
+        if (fileInput) fileInput.disabled = false;
+    }
     if (statusEl) statusEl.textContent = res.message || (res.success ? 'OK' : 'Ошибка');
     if (res.success) {
+        anime4kSetUploadProgress({ phase: 'done', percent: 100, label: res.message || 'Готово!' });
         if (fileInput) fileInput.value = '';
         void loadAnime4kAdminPanel();
+        anime4kHideUploadProgress(4000);
+    } else {
+        anime4kSetUploadProgress({
+            phase: 'error',
+            percent: 0,
+            label: res.message || 'Ошибка загрузки'
+        });
+        anime4kHideUploadProgress(8000);
     }
 }
 
