@@ -122,7 +122,7 @@ function run() {
     console.log('');
     console.log('Дальше:');
     console.log('1. Supabase → Storage → anime-4k-videos → Upload');
-    console.log('2. Создатель → ≈4K каталог → MAL 59062 → вставить Public URL → 💾 URL');
+    console.log('2. Создатель → ≈4K каталог → MAL 57555 → вставить Public URL → 💾 URL');
 }
 
 run();
