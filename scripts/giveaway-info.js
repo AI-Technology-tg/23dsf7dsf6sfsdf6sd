@@ -69,14 +69,14 @@
         if (countdown) countdown.hidden = ended;
 
         if (kicker) {
-            if (ended) kicker.textContent = 'Розыгрыш завершён';
-            else if (!started) kicker.textContent = '⏳ До начала розыгрыша';
-            else kicker.textContent = '⏳ До конца розыгрыша';
+            if (ended) kicker.textContent = 'Конкурс завершён';
+            else if (!started) kicker.textContent = 'Обратный отсчёт · до старта';
+            else kicker.textContent = 'Обратный отсчёт · до финиша';
         }
 
         if (joinBtn) {
             joinBtn.disabled = !active;
-            if (ended) joinBtn.title = 'Розыгрыш завершён';
+            if (ended) joinBtn.title = 'Конкурс завершён';
             else if (!started) joinBtn.title = 'Участие откроется 18 июля 2026';
             else joinBtn.title = '';
         }
@@ -102,7 +102,7 @@
 
     function renderGiveawayCountdownHtml(parts) {
         if (!parts) {
-            return '<div class="info-giveaway-cd-ended">Розыгрыш завершён</div>';
+            return '<div class="info-giveaway-cd-ended">Конкурс завершён</div>';
         }
         var cells = [
             { val: parts.days, one: 'день', few: 'дня', many: 'дней' },
@@ -218,17 +218,13 @@
         var fields = $('giveawayPreregFields');
         if (!fields) return;
 
-        fields.classList.toggle('info-giveaway-prereg-fields--both', platform === 'both');
+        fields.setAttribute('data-mode', platform === 'both' ? 'both' : 'single');
 
-        if (platform === 'tiktok') {
-            if (tiktokWrap) tiktokWrap.hidden = false;
-            if (instagramWrap) instagramWrap.hidden = true;
-        } else if (platform === 'instagram') {
-            if (tiktokWrap) tiktokWrap.hidden = true;
-            if (instagramWrap) instagramWrap.hidden = false;
-        } else {
-            if (tiktokWrap) tiktokWrap.hidden = false;
-            if (instagramWrap) instagramWrap.hidden = false;
+        if (tiktokWrap) {
+            tiktokWrap.classList.toggle('is-active', platform === 'tiktok' || platform === 'both');
+        }
+        if (instagramWrap) {
+            instagramWrap.classList.toggle('is-active', platform === 'instagram' || platform === 'both');
         }
     }
 
@@ -256,11 +252,11 @@
         grid.innerHTML = items
             .map(function (item) {
                 return (
-                    '<div class="info-giveaway-prereg-done-item">' +
-                    '<span class="info-giveaway-prereg-done-label">' +
+                    '<div class="gw-prereg-done-item">' +
+                    '<span class="gw-prereg-done-label">' +
                     item.label +
                     '</span>' +
-                    '<strong class="info-giveaway-prereg-done-value">' +
+                    '<strong class="gw-prereg-done-value">' +
                     item.value +
                     '</strong>' +
                     '</div>'
@@ -341,7 +337,7 @@
         var btn = $('giveawayPreregSubmitBtn');
         var msg = $('giveawayPreregMsg');
         if (isGiveawayEnded()) {
-            showMsg(msg, 'Предрегистрация закрыта — розыгрыш завершён.', false);
+            showMsg(msg, 'Предрегистрация закрыта — конкурс завершён.', false);
             return;
         }
         if (!(await isLoggedIn())) {
@@ -444,7 +440,7 @@
         var btn = $('giveawayJoinBtn');
         var msg = $('giveawayJoinMsg');
         if (isGiveawayEnded()) {
-            showMsg(msg, 'Розыгрыш уже завершён. Следите за итогами в Telegram.', false);
+            showMsg(msg, 'Конкурс уже завершён. Итоги — в Telegram.', false);
             return;
         }
         if (!isGiveawayStarted()) {
@@ -498,12 +494,21 @@
         }
     }
 
+    function activateGiveawayPanelAnimation() {
+        var panel = document.querySelector('[data-tab-panel="giveaway"]');
+        if (!panel) return;
+        panel.classList.remove('is-live');
+        void panel.offsetWidth;
+        panel.classList.add('is-live');
+    }
+
     function bindGiveawayInfo() {
         if (!document.querySelector('[data-tab-panel="giveaway"]')) return;
         if (window.__reminkoGiveawayInfoBound) return;
         window.__reminkoGiveawayInfoBound = true;
 
         initGiveawayCountdown();
+        activateGiveawayPanelAnimation();
 
         $('giveawayJoinBtn')?.addEventListener('click', function () {
             void onJoinClick();
@@ -515,6 +520,7 @@
 
         window.addEventListener('reminko:navigation-applied', function () {
             initGiveawayCountdown();
+            activateGiveawayPanelAnimation();
             void loadGiveawayPanel();
             void loadGiveawayPreregPanel();
         });
@@ -523,6 +529,7 @@
             if (tab) {
                 setTimeout(function () {
                     initGiveawayCountdown();
+                    activateGiveawayPanelAnimation();
                     void loadGiveawayPanel();
                     void loadGiveawayPreregPanel();
                 }, 0);
