@@ -49,26 +49,6 @@ async function renderAnime4kDetail(anime) {
     document.title = `${titleRu} — ≈4K | Re-Minko`;
     applyAnime4kViewSeo(anime);
 
-    const compare =
-        typeof getAnime4kCompareAssets === 'function' ? getAnime4kCompareAssets(anime.mal_id) : null;
-    const compareSectionHtml = compare
-        ? `
-            <div class="anime-detail-section anime4k-static-compare" id="anime4kStaticCompare">
-                <h2 class="section-title anime4k-static-compare__title">Сравнение кадра · ${escape4kHtml(compare.atLabel)}</h2>
-                <p class="anime4k-static-compare__desc">Один и тот же момент фильма на отметке <strong>${escape4kHtml(compare.atLabel)}</strong>: слева исходное 1080p, справа после Anime4K. Картинки готовы — плеер запускать не нужно.</p>
-                <div class="anime4k-static-compare__grid">
-                    <figure class="anime4k-static-compare__shot">
-                        <figcaption>1080p · исходник</figcaption>
-                        <img class="anime4k-static-compare__img" src="${escape4kHtml(compare.rawUrl)}" alt="1080p кадр ${escape4kHtml(compare.atLabel)}" width="1920" height="804" loading="eager" decoding="async">
-                    </figure>
-                    <figure class="anime4k-static-compare__shot anime4k-static-compare__shot--ultra">
-                        <figcaption>≈4K · Anime4K</figcaption>
-                        <img class="anime4k-static-compare__img" src="${escape4kHtml(compare.ultraUrl)}" alt="Anime4K кадр ${escape4kHtml(compare.atLabel)}" width="3840" height="1608" loading="eager" decoding="async">
-                    </figure>
-                </div>
-            </div>`
-        : '';
-
     container.innerHTML = `
         <a href="${previousUrl}" class="back-button">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -101,7 +81,6 @@ async function renderAnime4kDetail(anime) {
                     <p class="anime-detail-description">${escape4kHtml(synopsis)}</p>
                 </div>
             </div>
-            ${compareSectionHtml}
             <div class="anime-detail-section anime-inline-4k" id="anime4kPlayerSection">
                 <h2 class="section-title anime-inline-4k__title">Смотреть</h2>
                 <p class="anime-inline-4k__desc">Включите <strong>Anime4K</strong> в плеере, чтобы увидеть улучшение в реальном времени.</p>

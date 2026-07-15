@@ -130,25 +130,9 @@
         window.location.href = `${prefix}anime/view-4k.html?id=${encodeURIComponent(String(animeId))}`;
     }
 
-    /** Готовые кадры сравнения (статика, без плеера). Ключ — mal_id. */
-    const ANIME4K_COMPARE_BY_MAL = {
-        59062: {
-            atLabel: '53:58',
-            rawUrl: '../Fons/anime4k-compare/chainsaw-reze/raw-53m58.jpg',
-            ultraUrl: '../Fons/anime4k-compare/chainsaw-reze/ultra-53m58.jpg'
-        }
-    };
-
-    function getAnime4kCompareAssets(malId) {
-        const key = Number(malId);
-        if (!key || Number.isNaN(key)) return null;
-        return ANIME4K_COMPARE_BY_MAL[key] || null;
-    }
-
     global.getAllAnime4k = getAllAnime4k;
     global.getAnime4kById = getAnime4kById;
     global.searchAnime4k = searchAnime4k;
     global.openAnime4kPage = openAnime4kPage;
-    global.getAnime4kCompareAssets = getAnime4kCompareAssets;
     global.rowToAnime4kCard = rowToAnime4kCard;
 })(typeof window !== 'undefined' ? window : globalThis);

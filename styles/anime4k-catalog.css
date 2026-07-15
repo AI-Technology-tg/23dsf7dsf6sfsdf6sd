@@ -79,67 +79,6 @@
     color: #a7f3d0;
 }
 
-.anime4k-static-compare {
-    margin-bottom: 1.5rem;
-}
-
-.anime4k-static-compare__title {
-    margin-bottom: 0.35rem;
-}
-
-.anime4k-static-compare__desc {
-    margin: 0 0 0.85rem;
-    font-size: 0.88rem;
-    color: var(--text-secondary);
-    line-height: 1.5;
-}
-
-.anime4k-static-compare__desc strong {
-    color: #c4b5fd;
-    font-weight: 700;
-}
-
-.anime4k-static-compare__grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.75rem;
-}
-
-.anime4k-static-compare__shot {
-    margin: 0;
-    border-radius: 12px;
-    overflow: hidden;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    background: #000;
-}
-
-.anime4k-static-compare__shot figcaption {
-    padding: 0.45rem 0.65rem;
-    font-size: 0.72rem;
-    font-weight: 800;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    background: rgba(0, 0, 0, 0.55);
-    color: #e5e7eb;
-}
-
-.anime4k-static-compare__shot--ultra figcaption {
-    background: rgba(124, 58, 237, 0.75);
-}
-
-.anime4k-static-compare__img {
-    display: block;
-    width: 100%;
-    height: auto;
-    background: #000;
-}
-
-@media (max-width: 720px) {
-    .anime4k-static-compare__grid {
-        grid-template-columns: 1fr;
-    }
-}
-
 .badge-4k {
     background: rgba(124, 58, 237, 0.25);
     color: #c4b5fd;
