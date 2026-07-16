@@ -316,15 +316,24 @@ class NavigationManager {
                             <span>Условия использования</span>
                         </a>
                     </div>
-                    <div class="sidebar-liveinternet-wrap" aria-hidden="true">
-                        <!--LiveInternet counter-->
-                        <a href="https://www.liveinternet.ru/click" target="_blank" rel="noopener noreferrer">
-                            <img id="licnt3A61" width="88" height="15" style="border:0"
-                                title="LiveInternet: показано число посетителей за сегодня"
-                                src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAEALAAAAAABAAEAAAIBTAA7"
-                                alt="" />
-                        </a>
-                        <!--/LiveInternet-->
+                    <div class="sidebar-analytics-footer">
+                        <div class="sidebar-liveinternet-wrap" aria-hidden="true">
+                            <!--LiveInternet counter-->
+                            <a href="https://www.liveinternet.ru/click" target="_blank" rel="noopener noreferrer">
+                                <img id="licnt3A61" width="88" height="15" style="border:0"
+                                    title="LiveInternet: показано число посетителей за сегодня"
+                                    src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAEALAAAAAABAAEAAAIBTAA7"
+                                    alt="" />
+                            </a>
+                            <!--/LiveInternet-->
+                        </div>
+                        <div class="sidebar-yandex-metrika" aria-hidden="true">
+                            <noscript>
+                                <div>
+                                    <img src="https://mc.yandex.ru/watch/110777722" width="1" height="1" alt="" />
+                                </div>
+                            </noscript>
+                        </div>
                     </div>
                 </nav>
             </aside>
@@ -646,6 +655,48 @@ class NavigationManager {
         }
     }
 
+    /** Яндекс.Метрика — без видимого виджета на сайте */
+    initYandexMetrika() {
+        if (window.__reminkoYandexMetrikaInit) return;
+        window.__reminkoYandexMetrikaInit = true;
+
+        const counterId = 110777722;
+        const tagUrl = `https://mc.yandex.ru/metrika/tag.js?id=${counterId}`;
+
+        const boot = () => {
+            try {
+                for (let j = 0; j < document.scripts.length; j++) {
+                    if (document.scripts[j].src === tagUrl) return;
+                }
+                window.ym =
+                    window.ym ||
+                    function () {
+                        (window.ym.a = window.ym.a || []).push(arguments);
+                    };
+                window.ym.l = Date.now();
+                const s = document.createElement('script');
+                s.async = true;
+                s.src = tagUrl;
+                document.head.appendChild(s);
+                window.ym(counterId, 'init', {
+                    clickmap: true,
+                    trackLinks: true,
+                    accurateTrackBounce: true,
+                    webvisor: true,
+                    ecommerce: 'dataLayer'
+                });
+            } catch (_) {
+                /* ignore */
+            }
+        };
+
+        if ('requestIdleCallback' in window) {
+            requestIdleCallback(boot, { timeout: 4000 });
+        } else {
+            setTimeout(boot, 1200);
+        }
+    }
+
     initSiteOnlineWidget() {
         const countEl = document.getElementById('topOnlineCount');
         if (!countEl) return;
@@ -702,6 +753,7 @@ class NavigationManager {
         this.initDisabledNavLinks();
         this.updateAuthLinks();
         this.initLiveInternetCounter();
+        this.initYandexMetrika();
         this.initSiteOnlineWidget();
 
         const navManagerInstance = this;
