@@ -526,27 +526,6 @@
 }
 
 .sidebar-analytics-footer {
-    margin-top: auto;
-    padding: 0.65rem 0.65rem 0.35rem;
-    text-align: center;
-}
-
-.sidebar-liveinternet-wrap {
-    opacity: 0.42;
-    filter: grayscale(0.35);
-}
-
-.sidebar-liveinternet-wrap:hover {
-    opacity: 0.72;
-}
-
-.sidebar-liveinternet-wrap a {
-    display: inline-block;
-    line-height: 0;
-}
-
-/* Метрика — полностью скрыта, работает только скрипт */
-.sidebar-yandex-metrika {
     position: absolute;
     width: 1px;
     height: 1px;
@@ -556,6 +535,27 @@
     clip: rect(0, 0, 0, 0);
     white-space: nowrap;
     border: 0;
+}
+
+.sidebar-liveinternet-wrap a {
+    display: inline-block;
+    line-height: 0;
+}
+
+.sidebar-liveinternet-wrap img {
+    width: 1px;
+    height: 1px;
+    border: 0;
+}
+
+/* Yandex Metrika noscript — внутри скрытого блока analytics */
+.sidebar-yandex-metrika {
+    position: static;
+    width: auto;
+    height: auto;
+    clip: auto;
+    margin: 0;
+    overflow: visible;
 }
 
 .sidebar-link {

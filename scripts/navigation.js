@@ -316,18 +316,18 @@ class NavigationManager {
                             <span>Условия использования</span>
                         </a>
                     </div>
-                    <div class="sidebar-analytics-footer">
-                        <div class="sidebar-liveinternet-wrap" aria-hidden="true">
-                            <!--LiveInternet counter-->
-                            <a href="https://www.liveinternet.ru/click" target="_blank" rel="noopener noreferrer">
-                                <img id="licnt3A61" width="88" height="15" style="border:0"
-                                    title="LiveInternet: показано число посетителей за сегодня"
+                    <div class="sidebar-analytics-footer" aria-hidden="true">
+                        <div class="sidebar-liveinternet-wrap">
+                            <!--LiveInternet counter (скрыт, учёт через img)-->
+                            <a href="https://www.liveinternet.ru/click" target="_blank" rel="noopener noreferrer" tabindex="-1">
+                                <img id="licnt3A61" width="1" height="1" style="border:0"
+                                    title="LiveInternet"
                                     src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAEALAAAAAABAAEAAAIBTAA7"
                                     alt="" />
                             </a>
                             <!--/LiveInternet-->
                         </div>
-                        <div class="sidebar-yandex-metrika" aria-hidden="true">
+                        <div class="sidebar-yandex-metrika">
                             <noscript>
                                 <div>
                                     <img src="https://mc.yandex.ru/watch/110777722" width="1" height="1" alt="" />
