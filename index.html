@@ -263,6 +263,18 @@
                 <div class="home-horizontal-scroll home-recent-scroll" id="recentlyWatchedGrid"></div>
             </section>
 
+            <!-- Расписание: Shikimori + Kodik -->
+            <section class="home-section home-section--schedule" id="kodikHomeSchedule" hidden aria-hidden="true">
+                <div class="section-header">
+                    <h2 class="section-title">Расписание выхода</h2>
+                    <span class="section-badge badge-upcoming">Shikimori</span>
+                </div>
+                <p class="section-subtitle">Ближайшие серии и премьеры — живые даты Shikimori, каталог Kodik для просмотра</p>
+                <div class="home-schedule-grid" id="homeScheduleGrid">
+                    <div class="home-loading-placeholder">Загрузка расписания…</div>
+                </div>
+            </section>
+
             <!-- Kodik: анонсы / выходит / популярное -->
             <section class="home-section home-section--kodik" id="kodikHomeAnnounced" hidden aria-hidden="true">
                 <div class="section-header section-header--with-toggle">
@@ -276,7 +288,7 @@
                         <button type="button" class="home-type-toggle-btn" data-media="film" role="tab" aria-selected="false">Фильмы</button>
                     </div>
                 </div>
-                <p class="section-subtitle">Анонсы из Jikan — премьеры сериалов и фильмов, которые ещё не вышли</p>
+                <p class="section-subtitle">Премьеры из каталога Kodik — даты выхода из Shikimori</p>
                 <div class="home-horizontal-scroll" id="kodikAnnouncedGrid">
                     <div class="home-loading-placeholder">Загрузка каталога…</div>
                 </div>
@@ -294,7 +306,7 @@
                         <button type="button" class="home-type-toggle-btn" data-media="film" role="tab" aria-selected="false">Фильмы</button>
                     </div>
                 </div>
-                <p class="section-subtitle">Уже вышла минимум 1 серия — тайтл ещё в эфире</p>
+                <p class="section-subtitle">Онгоинги Kodik — таймер до следующей серии из Shikimori</p>
                 <div class="home-horizontal-scroll" id="kodikAiringGrid">
                     <div class="home-loading-placeholder">Загрузка каталога…</div>
                 </div>

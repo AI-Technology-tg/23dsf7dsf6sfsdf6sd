@@ -146,6 +146,17 @@
             }
         }
 
+        const calMal =
+            shiki?.myanimelist_id ||
+            shiki?.id ||
+            data?.mal_id ||
+            extra?.calendar?.mal_id ||
+            extra?._calendar?.mal_id;
+        if (calMal && typeof reminkoShikimoriCalendarRowForMal === 'function') {
+            const shikiCal = reminkoShikimoriCalendarRowForMal(calMal);
+            if (shikiCal?.next_at) candidates.push(String(shikiCal.next_at));
+        }
+
         const calendarIso = cal && (cal.next_at || cal.nextAt);
         if (calendarIso) candidates.push(String(calendarIso));
 
@@ -200,8 +211,24 @@
         </div>`;
     }
 
-    function reminkoUpdateCountdownDom(root, parts, unknownText) {
+    function reminkoCompactCountdownText(parts) {
+        if (!parts) return '';
+        const d = String(parts.days);
+        const h = String(parts.hours).padStart(2, '0');
+        const m = String(parts.mins).padStart(2, '0');
+        const s = String(parts.secs).padStart(2, '0');
+        if (parts.days > 0) return `${d}д ${h}ч`;
+        return `${h}:${m}:${s}`;
+    }
+
+    function reminkoUpdateCountdownDom(root, parts, unknownText, compact) {
         if (!root) return;
+        if (compact) {
+            root.textContent = parts
+                ? reminkoCompactCountdownText(parts)
+                : unknownText || 'скоро';
+            return;
+        }
         if (!parts) {
             if (!root.querySelector('[data-cd-part]')) {
                 root.innerHTML = `<div class="countdown__unknown">${unknownText || 'Дата следующего эпизода неизвестна.'}</div>`;
@@ -255,7 +282,7 @@
             const iso = slot.iso;
             const target = iso ? Date.parse(iso) : NaN;
             if (!iso || Number.isNaN(target)) {
-                reminkoUpdateCountdownDom(el, null, slot.unknownText || 'Дата следующего эпизода неизвестна.');
+                reminkoUpdateCountdownDom(el, null, slot.unknownText || 'Дата следующего эпизода неизвестна.', slot.compact);
                 continue;
             }
             let left = target - now;
@@ -271,13 +298,14 @@
                     reminkoUpdateCountdownDom(
                         el,
                         null,
-                        slot.expiredText || 'Ожидаем обновление расписания следующей серии…'
+                        slot.expiredText || 'Ожидаем обновление расписания следующей серии…',
+                        slot.compact
                     );
                     if (typeof slot.onExpire === 'function') slot.onExpire(el);
                     continue;
                 }
             }
-            reminkoUpdateCountdownDom(el, reminkoCountdownParts(left));
+            reminkoUpdateCountdownDom(el, reminkoCountdownParts(left), null, slot.compact);
         }
         reminkoStopMasterTimerIfEmpty();
     }
@@ -294,7 +322,8 @@
             unknownText: opts?.unknownText,
             expiredText: opts?.expiredText,
             onExpire: opts?.onExpire,
-            rollData: opts?.rollData || null
+            rollData: opts?.rollData || null,
+            compact: !!opts?.compact
         };
         _slots.set(containerEl, slot);
         reminkoEnsureMasterTimer();
@@ -315,6 +344,9 @@
     let _calendarItems = null;
     let _calendarByMal = null;
     let _calendarLoading = null;
+    let _shikimoriCalendarItems = null;
+    let _shikimoriCalendarByMal = null;
+    let _shikimoriCalendarLoading = null;
 
     function reminkoIsLocalDevOrigin() {
         const host = global.location && global.location.hostname;
@@ -373,8 +405,133 @@
 
     function reminkoCalendarRowForMal(malId) {
         const mal = parseInt(malId, 10);
-        if (!mal || !_calendarByMal) return null;
-        return _calendarByMal.get(mal) || null;
+        if (!mal) return null;
+        const shikiRow = _shikimoriCalendarByMal ? _shikimoriCalendarByMal.get(mal) : null;
+        const kodikRow = _calendarByMal ? _calendarByMal.get(mal) : null;
+        return reminkoPickBestCalendarRow(shikiRow, kodikRow);
+    }
+
+    function reminkoNormalizeShikimoriCalendarEntry(entry) {
+        const a = entry && entry.anime;
+        if (!a || !a.id) return null;
+        const mal = parseInt(a.myanimelist_id || a.id, 10);
+        if (!Number.isFinite(mal) || mal <= 0) return null;
+
+        let iso = '';
+        if (entry.next_episode_at) {
+            const t = Date.parse(String(entry.next_episode_at));
+            if (Number.isFinite(t)) iso = new Date(t).toISOString();
+        }
+        if (!iso && a.next_episode_at) {
+            const t = Date.parse(String(a.next_episode_at));
+            if (Number.isFinite(t)) iso = new Date(t).toISOString();
+        }
+        if (!iso && a.aired_on) {
+            iso = reminkoIncompleteDateToIso(a.aired_on);
+        }
+
+        const epAired = parseInt(a.episodes_aired, 10);
+        const nextEp =
+            parseInt(entry.next_episode, 10) ||
+            (Number.isFinite(epAired) && epAired >= 0 ? epAired + 1 : 1);
+
+        return {
+            mal_id: mal,
+            shiki_id: a.id,
+            title_ru: a.russian || a.name || '',
+            next_at: iso,
+            next_episode: nextEp,
+            status: a.status || '',
+            source: 'shikimori'
+        };
+    }
+
+    async function reminkoLoadShikimoriCalendarData(force) {
+        if (_shikimoriCalendarItems && !force) return _shikimoriCalendarItems;
+        if (_shikimoriCalendarLoading && !force) return _shikimoriCalendarLoading;
+
+        _shikimoriCalendarLoading = Promise.resolve()
+            .then(async () => {
+                let raw = [];
+                if (
+                    global.shikimoriApi &&
+                    typeof global.shikimoriApi.fetchShikimoriCalendar === 'function'
+                ) {
+                    raw = await global.shikimoriApi.fetchShikimoriCalendar(!!force);
+                }
+                const items = [];
+                const byMal = new Map();
+                for (const entry of raw || []) {
+                    const row = reminkoNormalizeShikimoriCalendarEntry(entry);
+                    if (!row || !row.next_at) continue;
+                    items.push(row);
+                    byMal.set(row.mal_id, row);
+                }
+                items.sort((a, b) => Date.parse(a.next_at) - Date.parse(b.next_at));
+                _shikimoriCalendarItems = items;
+                _shikimoriCalendarByMal = byMal;
+                return items;
+            })
+            .catch(() => {
+                _shikimoriCalendarItems = [];
+                _shikimoriCalendarByMal = new Map();
+                return _shikimoriCalendarItems;
+            })
+            .finally(() => {
+                _shikimoriCalendarLoading = null;
+            });
+
+        return _shikimoriCalendarLoading;
+    }
+
+    async function reminkoLoadAllCalendarData(force) {
+        await Promise.all([reminkoLoadCalendarData(force), reminkoLoadShikimoriCalendarData(force)]);
+        return reminkoMergedCalendarItems();
+    }
+
+    function reminkoShikimoriCalendarRowForMal(malId) {
+        const mal = parseInt(malId, 10);
+        if (!mal || !_shikimoriCalendarByMal) return null;
+        return _shikimoriCalendarByMal.get(mal) || null;
+    }
+
+    function reminkoCalendarRowTime(row) {
+        if (!row) return NaN;
+        return Date.parse(row.next_at || row.nextAt || '');
+    }
+
+    function reminkoPickBestCalendarRow(shikiRow, kodikRow) {
+        const now = Date.now();
+        const shikiT = reminkoCalendarRowTime(shikiRow);
+        const kodikT = reminkoCalendarRowTime(kodikRow);
+        const shikiOk = Number.isFinite(shikiT) && shikiT > now;
+        const kodikOk = Number.isFinite(kodikT) && kodikT > now;
+
+        if (shikiOk && kodikOk) {
+            return shikiT <= kodikT + 3600000 ? shikiRow : kodikRow;
+        }
+        if (shikiOk) return shikiRow;
+        if (kodikOk) return kodikRow;
+        if (shikiRow) return shikiRow;
+        return kodikRow || null;
+    }
+
+    function reminkoMergedCalendarItems() {
+        const merged = new Map();
+        for (const row of _calendarItems || []) {
+            const mal = parseInt(row.mal_id, 10);
+            if (Number.isFinite(mal) && mal > 0) {
+                merged.set(mal, { ...row, source: row.source || 'kodik' });
+            }
+        }
+        for (const row of _shikimoriCalendarItems || []) {
+            const mal = parseInt(row.mal_id, 10);
+            if (!Number.isFinite(mal) || mal <= 0) continue;
+            merged.set(mal, reminkoPickBestCalendarRow(row, merged.get(mal)));
+        }
+        return [...merged.values()].sort(
+            (a, b) => reminkoCalendarRowTime(a) - reminkoCalendarRowTime(b)
+        );
     }
 
     /** Детские / ежедневные мультсериалы — не показываем в анонсах календаря. */
@@ -528,7 +685,11 @@
     global.reminkoStopLiveCountdown = reminkoStopLiveCountdown;
     global.reminkoStopAllLiveCountdowns = reminkoStopAllLiveCountdowns;
     global.reminkoLoadCalendarData = reminkoLoadCalendarData;
+    global.reminkoLoadShikimoriCalendarData = reminkoLoadShikimoriCalendarData;
+    global.reminkoLoadAllCalendarData = reminkoLoadAllCalendarData;
     global.reminkoCalendarRowForMal = reminkoCalendarRowForMal;
+    global.reminkoShikimoriCalendarRowForMal = reminkoShikimoriCalendarRowForMal;
+    global.reminkoMergedCalendarItems = reminkoMergedCalendarItems;
     global.reminkoSplitCalendarRows = reminkoSplitCalendarRows;
     global.reminkoIsKidsCartoonCalendarRow = reminkoIsKidsCartoonCalendarRow;
     global.reminkoIsTrueCalendarAnnounced = reminkoIsTrueCalendarAnnounced;

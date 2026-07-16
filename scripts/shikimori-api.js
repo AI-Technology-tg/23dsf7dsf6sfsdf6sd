@@ -5,7 +5,9 @@
 (function () {
     const SHIKI_BASE = 'https://shikimori.one/api';
     const CACHE_PREFIX = 'reminko_shiki_mal_';
+    const CALENDAR_CACHE_KEY = 'reminko_shiki_calendar';
     const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+    const CALENDAR_CACHE_TTL_MS = 30 * 60 * 1000;
     const MAX_QUEUE = 1;
     const MIN_GAP_MS = 550;
     let active = 0;
@@ -136,6 +138,42 @@
         }
     }
 
+    function readCalendarCache() {
+        try {
+            const raw = sessionStorage.getItem(CALENDAR_CACHE_KEY);
+            if (!raw) return null;
+            const o = JSON.parse(raw);
+            if (Date.now() - o.ts > CALENDAR_CACHE_TTL_MS) {
+                sessionStorage.removeItem(CALENDAR_CACHE_KEY);
+                return null;
+            }
+            return o.data;
+        } catch {
+            return null;
+        }
+    }
+
+    function writeCalendarCache(data) {
+        try {
+            sessionStorage.setItem(CALENDAR_CACHE_KEY, JSON.stringify({ ts: Date.now(), data }));
+        } catch {
+            /* ignore */
+        }
+    }
+
+    async function fetchShikimoriCalendar(force) {
+        if (!force) {
+            const cached = readCalendarCache();
+            if (Array.isArray(cached)) return cached;
+        }
+        const data = await enqueueShikiTask(async () => {
+            const list = await shikiFetch('/calendar?censored=true');
+            return Array.isArray(list) ? list : [];
+        }).catch(() => []);
+        writeCalendarCache(data);
+        return data;
+    }
+
     async function fetchShikimoriByMalId(malId, searchTitle) {
         if (!malId) return null;
         const cached = readCache(malId);
@@ -214,6 +252,7 @@
         enqueueFetchShikimoriByMalId,
         readCachedByMalId,
         searchAnimesByQuery,
+        fetchShikimoriCalendar,
         stripHtml,
         formatAiredTotal,
         useShikiProxy

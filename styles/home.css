@@ -914,6 +914,106 @@
     cursor: pointer;
 }
 
+.home-section--schedule {
+    margin-bottom: 2rem;
+}
+
+.home-schedule-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 0.75rem;
+}
+
+.home-schedule-item {
+    display: flex;
+    gap: 0.75rem;
+    padding: 0.65rem 0.75rem;
+    border-radius: 14px;
+    border: 1px solid rgba(168, 85, 247, 0.22);
+    background: rgba(15, 23, 42, 0.55);
+    cursor: pointer;
+    transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+}
+
+.home-schedule-item:hover {
+    border-color: rgba(168, 85, 247, 0.55);
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(124, 58, 237, 0.15);
+}
+
+.home-schedule-item__poster {
+    flex: 0 0 56px;
+    width: 56px;
+    height: 78px;
+    border-radius: 8px;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.home-schedule-item__poster img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.home-schedule-item__body {
+    min-width: 0;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.home-schedule-item__badge {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: #c4b5fd;
+}
+
+.home-schedule-item__title {
+    margin: 0;
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: #f8fafc;
+    line-height: 1.25;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.home-schedule-item__date {
+    font-size: 0.78rem;
+    color: rgba(255, 255, 255, 0.62);
+}
+
+.home-schedule-item__countdown {
+    font-size: 0.82rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: #fbbf24;
+    letter-spacing: 0.02em;
+}
+
+.jikan-card-countdown {
+    position: absolute;
+    left: 0.45rem;
+    bottom: 0.45rem;
+    z-index: 2;
+    padding: 0.18rem 0.45rem;
+    border-radius: 8px;
+    background: rgba(15, 23, 42, 0.82);
+    border: 1px solid rgba(251, 191, 36, 0.35);
+    color: #fbbf24;
+    font-size: 0.68rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.2;
+    pointer-events: none;
+}
+
 .section-more-link {
     margin-left: auto;
     font-size: 0.85rem;

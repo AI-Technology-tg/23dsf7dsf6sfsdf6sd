@@ -1763,9 +1763,23 @@ async function hydrateAnimeViewCountdownSchedule(anime) {
         (typeof isAnnouncedCatalogAnime === 'function' && isAnnouncedCatalogAnime(anime));
     if (!needsCountdown) return;
 
-    if (typeof reminkoLoadCalendarData === 'function') {
+    if (typeof reminkoLoadAllCalendarData === 'function') {
+        try {
+            await reminkoLoadAllCalendarData();
+        } catch (_) {
+            /* ignore */
+        }
+    } else if (typeof reminkoLoadCalendarData === 'function') {
         try {
             await reminkoLoadCalendarData();
+        } catch (_) {
+            /* ignore */
+        }
+    }
+
+    if (typeof reminkoLoadShikimoriCalendarData === 'function') {
+        try {
+            await reminkoLoadShikimoriCalendarData();
         } catch (_) {
             /* ignore */
         }

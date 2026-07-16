@@ -1,7 +1,7 @@
 /**
  * Прокси Shikimori REST API — обход CORS для re-minko-anime.com.
  * GET /.netlify/functions/shikimori-proxy?path=/animes/123
- * GET /.netlify/functions/shikimori-proxy?path=/animes&search=...&limit=10
+ * GET /.netlify/functions/shikimori-proxy?path=/calendar
  */
 const SHIKI_ORIGIN = 'https://shikimori.one';
 const SHIKI_UA = 'Re-Minko/1.0 (https://re-minko-anime.com; +contact@re-minko-anime.com)';
@@ -19,7 +19,7 @@ function normalizePath(raw) {
     if (!p || p === '/') return null;
     const normalized = p.startsWith('/') ? p : `/${p}`;
     if (/[@\\]/.test(normalized) || normalized.includes('..')) return null;
-    if (!/^\/animes(\/\d+)?$/.test(normalized)) return null;
+    if (!/^\/(calendar|animes(\/\d+)?)$/.test(normalized)) return null;
     return normalized;
 }
 

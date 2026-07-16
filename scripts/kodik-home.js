@@ -50,16 +50,18 @@
 
     async function loadCalendarMalIds() {
         try {
-            const res = await fetch(catalogUrl('data/kodik-calendar.json'), {
-                credentials: 'omit',
-                cache: 'default',
-            });
-            if (!res.ok) return;
-            const data = await res.json();
-            const items = (data && data.items) || data || [];
-            _calendarItems = items;
+            if (typeof global.reminkoLoadAllCalendarData === 'function') {
+                await global.reminkoLoadAllCalendarData();
+            } else if (typeof global.reminkoLoadCalendarData === 'function') {
+                await global.reminkoLoadCalendarData();
+            }
+            if (typeof global.reminkoMergedCalendarItems === 'function') {
+                _calendarItems = global.reminkoMergedCalendarItems();
+            } else if (typeof global.reminkoLoadCalendarData === 'function') {
+                _calendarItems = (await global.reminkoLoadCalendarData()) || [];
+            }
             const set = new Set();
-            for (const row of items) {
+            for (const row of _calendarItems) {
                 const mal = parseInt(row.mal_id, 10);
                 if (!Number.isNaN(mal) && mal > 0) set.add(mal);
             }
@@ -68,6 +70,13 @@
             _calendarItems = [];
             _calendarMalIds = new Set();
         }
+    }
+
+    function mergedCalendarRowForMal(malId) {
+        if (typeof global.reminkoCalendarRowForMal === 'function') {
+            return global.reminkoCalendarRowForMal(malId);
+        }
+        return calendarRowForMal(malId);
     }
 
     function kodikReleasedEpisodes(anime) {
@@ -148,11 +157,14 @@
     function pickAiring(all, mediaType) {
         const list = all.filter((a) => matchMedia(a, mediaType) && isKodikHomeAiring(a));
         list.sort((a, b) => {
-            const ac = a._calendar || (a.mal_id != null ? calendarRowForMal(a.mal_id) : null);
-            const bc = b._calendar || (b.mal_id != null ? calendarRowForMal(b.mal_id) : null);
-            const ap = ac && ac.active !== false && a.mal_id != null && _calendarMalIds.has(a.mal_id) ? 2 : 0;
-            const bp = bc && bc.active !== false && b.mal_id != null && _calendarMalIds.has(b.mal_id) ? 2 : 0;
+            const ac = mergedCalendarRowForMal(a.mal_id) || a._calendar;
+            const bc = mergedCalendarRowForMal(b.mal_id) || b._calendar;
+            const ap = ac && a.mal_id != null && _calendarMalIds.has(a.mal_id) ? 2 : 0;
+            const bp = bc && b.mal_id != null && _calendarMalIds.has(b.mal_id) ? 2 : 0;
             if (bp !== ap) return bp - ap;
+            const at = ac && (ac.next_at || ac.nextAt) ? Date.parse(ac.next_at || ac.nextAt) || Infinity : Infinity;
+            const bt = bc && (bc.next_at || bc.nextAt) ? Date.parse(bc.next_at || bc.nextAt) || Infinity : Infinity;
+            if (at !== bt) return at - bt;
             const ar = a.rating || 0;
             const br = b.rating || 0;
             if (br !== ar) return br - ar;
@@ -164,8 +176,8 @@
     function pickAnnounced(all, mediaType) {
         const list = all.filter((a) => matchMedia(a, mediaType) && isKodikHomeAnnounced(a));
         list.sort((a, b) => {
-            const ac = a._calendar || (a.mal_id != null ? calendarRowForMal(a.mal_id) : null);
-            const bc = b._calendar || (b.mal_id != null ? calendarRowForMal(b.mal_id) : null);
+            const ac = mergedCalendarRowForMal(a.mal_id) || a._calendar;
+            const bc = mergedCalendarRowForMal(b.mal_id) || b._calendar;
             const at = ac && (ac.next_at || ac.nextAt) ? Date.parse(ac.next_at || ac.nextAt) || Infinity : Infinity;
             const bt = bc && (bc.next_at || bc.nextAt) ? Date.parse(bc.next_at || bc.nextAt) || Infinity : Infinity;
             if (at !== bt) return at - bt;
@@ -207,14 +219,25 @@
 
     function epLine(anime) {
         if (!anime || anime.type === 'Фильм') return '';
+        const cal =
+            mergedCalendarRowForMal(anime.mal_id) ||
+            anime._calendar ||
+            (anime.mal_id != null ? calendarRowForMal(anime.mal_id) : null);
+        const nextAt = cal && (cal.next_at || cal.nextAt);
+        const nextEp = cal && cal.next_episode != null ? parseInt(cal.next_episode, 10) : null;
+
         if (isKodikHomeAnnounced(anime)) {
-            const cal = anime._calendar || (anime.mal_id != null ? calendarRowForMal(anime.mal_id) : null);
-            const nextAt = cal && (cal.next_at || cal.nextAt);
-            if (nextAt && cal.active !== false) {
+            if (nextAt) {
                 try {
                     const d = new Date(nextAt);
                     if (!Number.isNaN(d.getTime())) {
-                        return `1-я серия: ${d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}`;
+                        const dateStr = d.toLocaleDateString('ru-RU', {
+                            day: 'numeric',
+                            month: 'short',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        });
+                        return nextEp === 1 ? `1-я серия: ${dateStr}` : `Премьера: ${dateStr}`;
                     }
                 } catch (_) {
                     /* ignore */
@@ -222,9 +245,34 @@
             }
             return '0 эп.';
         }
+
+        if (nextAt && nextEp && nextEp > 1) {
+            try {
+                const d = new Date(nextAt);
+                if (!Number.isNaN(d.getTime()) && d.getTime() > Date.now()) {
+                    const dateStr = d.toLocaleDateString('ru-RU', {
+                        day: 'numeric',
+                        month: 'short',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                    return `Серия ${nextEp}: ${dateStr}`;
+                }
+            } catch (_) {
+                /* ignore */
+            }
+        }
+
         if (anime.episodes) return `${anime.episodes} эп.`;
         if (anime.totalEpisodes) return `${anime.totalEpisodes} эп.`;
         return '';
+    }
+
+    function cardCountdownHtml(anime) {
+        const cal = mergedCalendarRowForMal(anime.mal_id);
+        const iso = cal && (cal.next_at || cal.nextAt);
+        if (!iso || Number.isNaN(Date.parse(iso)) || Date.parse(iso) <= Date.now()) return '';
+        return `<div class="jikan-card-countdown" data-countdown-iso="${String(iso).replace(/"/g, '&quot;')}" aria-live="polite"></div>`;
     }
 
     function navigateKodikCard(anime) {
@@ -253,6 +301,7 @@
         const status = statusLabel(anime);
         const genres = Array.isArray(anime.genres) ? anime.genres.slice(0, 2).join(', ') : '';
         const ep = epLine(anime);
+        const countdown = cardCountdownHtml(anime);
 
         card.innerHTML = `
         <div class="jikan-card-poster">
@@ -262,6 +311,7 @@
             </div>
             ${score !== '—' ? `<div class="jikan-card-score">${score}</div>` : ''}
             ${status ? `<div class="jikan-card-status">${status}</div>` : ''}
+            ${countdown}
         </div>
         <div class="jikan-card-info">
             <div class="jikan-card-title"></div>
@@ -362,6 +412,18 @@
 
         void hydrateKodikHomePosters(container);
 
+        if (typeof global.reminkoStartLiveCountdown === 'function') {
+            container.querySelectorAll('.jikan-card-countdown[data-countdown-iso]').forEach((el) => {
+                const iso = el.getAttribute('data-countdown-iso');
+                if (!iso) return;
+                global.reminkoStartLiveCountdown(el, iso, {
+                    compact: true,
+                    unknownText: '',
+                    expiredText: 'скоро'
+                });
+            });
+        }
+
         global.requestAnimationFrame(() => {
             if (typeof global.enhanceHomeHorizontalScroll === 'function') {
                 global.enhanceHomeHorizontalScroll(container);
@@ -428,8 +490,119 @@
         }
     }
 
+    function catalogByMalMap() {
+        const map = new Map();
+        for (const a of _catalog) {
+            const mal = parseInt(a.mal_id, 10);
+            if (Number.isFinite(mal) && mal > 0) map.set(mal, a);
+        }
+        return map;
+    }
+
+    function navigateScheduleRow(row, catalogAnime) {
+        try {
+            global.sessionStorage.setItem('previousUrl', global.location.href);
+            if (catalogAnime && catalogAnime.id != null) {
+                global.sessionStorage.setItem('viewAnimeId', String(catalogAnime.id));
+                global.location.href = `anime/view.html?id=${encodeURIComponent(String(catalogAnime.id))}`;
+                return;
+            }
+        } catch (_) {
+            /* ignore */
+        }
+        if (row.mal_id != null) {
+            global.location.href = `anime/view.html?mal_id=${encodeURIComponent(String(row.mal_id))}`;
+        }
+    }
+
+    function renderHomeScheduleSection() {
+        const section = document.getElementById('kodikHomeSchedule');
+        const grid = document.getElementById('homeScheduleGrid');
+        if (!section || !grid) return;
+
+        if (
+            typeof global.reminkoSplitCalendarRows !== 'function' ||
+            typeof global.reminkoMergedCalendarItems !== 'function'
+        ) {
+            section.hidden = true;
+            return;
+        }
+
+        const metaByMal = catalogByMalMap();
+        const merged = global.reminkoMergedCalendarItems();
+        const { airing, announced } = global.reminkoSplitCalendarRows(merged, metaByMal);
+        const rows = [...airing, ...announced]
+            .filter((row) => {
+                const t = Date.parse(row.next_at || row.nextAt);
+                return Number.isFinite(t) && t > Date.now();
+            })
+            .slice(0, 24);
+
+        if (!rows.length) {
+            section.hidden = true;
+            return;
+        }
+
+        section.hidden = false;
+        section.removeAttribute('aria-hidden');
+        grid.innerHTML = '';
+
+        for (const row of rows) {
+            const mal = parseInt(row.mal_id, 10);
+            const catalogAnime = metaByMal.get(mal) || null;
+            const title =
+                (catalogAnime && (catalogAnime.title || catalogAnime.titleAlt)) ||
+                row.title_ru ||
+                '—';
+            const iso = row.next_at || row.nextAt;
+            const ep = parseInt(row.next_episode, 10) || 1;
+            const isAnnounced = ep <= 1 || row.status === 'anons';
+            const dateStr =
+                typeof global.reminkoFormatReleaseDateShort === 'function'
+                    ? global.reminkoFormatReleaseDateShort(iso)
+                    : new Date(iso).toLocaleString('ru-RU');
+            const poster =
+                (catalogAnime && catalogAnime.posterUrl) ||
+                (mal > 0 ? malPosterUrl(mal) : '');
+
+            const item = document.createElement('article');
+            item.className = 'home-schedule-item';
+            item.innerHTML = `
+                <div class="home-schedule-item__poster">
+                    <img src="${poster}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">
+                </div>
+                <div class="home-schedule-item__body">
+                    <div class="home-schedule-item__badge">${isAnnounced ? 'Анонс' : 'Серия ' + ep}</div>
+                    <h3 class="home-schedule-item__title"></h3>
+                    <div class="home-schedule-item__date">${dateStr}</div>
+                    <div class="home-schedule-item__countdown" data-countdown-iso="${String(iso).replace(/"/g, '&quot;')}"></div>
+                </div>
+            `;
+            const titleEl = item.querySelector('.home-schedule-item__title');
+            if (titleEl) {
+                titleEl.textContent = title;
+                titleEl.title = title;
+            }
+            item.addEventListener('click', () => navigateScheduleRow(row, catalogAnime));
+            grid.appendChild(item);
+        }
+
+        if (typeof global.reminkoStartLiveCountdown === 'function') {
+            grid.querySelectorAll('[data-countdown-iso]').forEach((el) => {
+                const iso = el.getAttribute('data-countdown-iso');
+                if (!iso) return;
+                global.reminkoStartLiveCountdown(el, iso, {
+                    compact: true,
+                    unknownText: '—',
+                    expiredText: 'скоро'
+                });
+            });
+        }
+    }
+
     async function renderAllSections(defaultMedia) {
         const media = normalizeMediaType(defaultMedia);
+        renderHomeScheduleSection();
         for (const cfg of KODIK_SECTIONS) {
             renderSection(cfg, media);
         }
@@ -438,6 +611,7 @@
 
     function refreshKodikHomeSections(skipAnnounced) {
         if (!document.querySelector('.home-page')) return;
+        renderHomeScheduleSection();
         for (const cfg of KODIK_SECTIONS) {
             const section = document.getElementById(cfg.sectionEl);
             if (!section || !_catalog.length) continue;
