@@ -121,30 +121,18 @@ const HOME_SOCIAL_INFO = {
         text: 'Discord-сервер для информирования и проведения розыгрышей прямо на сайте. Ссылка появится, когда сервер будет готов.',
     },
     android: {
-        title: 'Re-Minko для Android',
+        title: 'Приложения Re-Minko',
         img: 'Fons/androids.png',
         imgFallback: 'Fons/Sociale/ReMinkoAndroid.svg',
         imgLarge: true,
         hideTitle: true,
-        url: '',
-        goLabel: 'Скачать для Android',
-        text: 'Мобильное приложение для Android пока в разработке. Следите за новостями в Telegram и на главной — ссылка на скачивание появится здесь.',
-    },
-    pc: {
-        title: 'Re-Minko для ПК',
-        iconLetter: 'PC',
-        iconVariant: 'pc',
-        url: '',
-        goLabel: 'Скачать для ПК',
-        text: 'Десктопная программа для Windows в разработке: каталог, плеер и ваш аккаунт Re-Minko в одном приложении.',
-    },
-    tv: {
-        title: 'Re-Minko для телевизора',
-        iconLetter: 'TV',
-        iconVariant: 'tv',
-        url: '',
-        goLabel: 'Скачать для TV',
-        text: 'Приложение для Smart TV (Android TV и аналоги) в разработке — смотреть аниме с пульта, без браузера.',
+        isAppsHub: true,
+        text: 'Все версии сейчас в разработке. Следите за новостями в Telegram — ссылки на скачивание появятся здесь.',
+        appDownloads: [
+            { label: 'Скачать для Android', sub: 'Телефон и планшет' },
+            { label: 'Скачать для ПК', sub: 'Windows' },
+            { label: 'Скачать для TV', sub: 'Smart TV, Android TV' },
+        ],
     },
 };
 
@@ -157,6 +145,7 @@ function openHomeSocialPanel(key) {
     const titleEl = document.getElementById('homeSocialPanelTitle');
     const textEl = document.getElementById('homeSocialPanelText');
     const goEl = document.getElementById('homeSocialPanelGo');
+    const appsEl = document.getElementById('homeSocialPanelApps');
 
     if (titleEl) {
         titleEl.textContent = info.title || '';
