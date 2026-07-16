@@ -493,6 +493,24 @@ html {
     opacity: 0.7;
 }
 
+.anime-poster-countdown,
+.jikan-card-countdown {
+    position: absolute;
+    left: 0.45rem;
+    bottom: 0.45rem;
+    z-index: 4;
+    padding: 0.18rem 0.45rem;
+    border-radius: 8px;
+    background: rgba(15, 23, 42, 0.82);
+    border: 1px solid rgba(251, 191, 36, 0.35);
+    color: #fbbf24;
+    font-size: 0.68rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.2;
+    pointer-events: none;
+}
+
 .anime-year {
     position: absolute;
     top: 0.5rem;
@@ -1927,6 +1945,38 @@ html {
     html.reminko-mobile-preview .jikan-card-title {
         font-size: 0.82rem;
         line-height: 1.25;
+    }
+
+    html.reminko-mobile-preview .anime-poster-countdown,
+    html.reminko-mobile-preview .jikan-card-countdown {
+        left: 0.3rem;
+        bottom: 0.3rem;
+        font-size: 0.58rem;
+        padding: 0.12rem 0.35rem;
+        max-width: calc(100% - 0.6rem);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    html.reminko-mobile-preview .calendar-main {
+        padding: 0.75rem 0.65rem 2rem;
+    }
+
+    html.reminko-mobile-preview .calendar-item {
+        grid-template-columns: 2.6rem 40px 1fr;
+        gap: 0.45rem;
+        padding: 0.5rem 0.55rem;
+    }
+
+    html.reminko-mobile-preview .calendar-item__poster {
+        width: 40px;
+        height: 56px;
+    }
+
+    html.reminko-mobile-preview .calendar-toolbar {
+        flex-direction: column;
+        align-items: stretch;
     }
 
     html.reminko-mobile-preview .catalog-filter-bar {

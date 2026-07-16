@@ -398,3 +398,49 @@ body.theme-dark .global-chat-panel {
 body.theme-dark .loading-screen {
     background: #080611 !important;
 }
+
+body.theme-dark .jikan-card-countdown,
+body.theme-dark .anime-poster-countdown {
+    background: rgba(8, 6, 17, 0.88) !important;
+    border-color: rgba(255, 45, 85, 0.45) !important;
+    color: #ffb347 !important;
+    box-shadow: 0 0 12px rgba(255, 45, 85, 0.2);
+}
+
+body.theme-dark .calendar-main,
+body.theme-dark .calendar-item,
+body.theme-dark .calendar-day__title {
+    color: #b7afcf;
+}
+
+body.theme-dark .calendar-item {
+    background: rgba(18, 8, 31, 0.62) !important;
+    border-color: rgba(157, 77, 255, 0.38) !important;
+}
+
+body.theme-dark .calendar-item:hover {
+    border-color: rgba(255, 45, 85, 0.55) !important;
+    box-shadow: 0 8px 24px rgba(255, 45, 85, 0.15) !important;
+}
+
+body.theme-dark .calendar-tab {
+    color: #b7afcf !important;
+}
+
+body.theme-dark .calendar-tab.is-active {
+    background: linear-gradient(135deg, #ff2d55, #b00045) !important;
+    color: #fff !important;
+}
+
+body.theme-dark .calendar-tabs {
+    background: rgba(8, 6, 17, 0.85) !important;
+    border-color: rgba(157, 77, 255, 0.4) !important;
+}
+
+body.theme-dark .calendar-item__countdown {
+    color: #ffb347 !important;
+}
+
+body.theme-dark .calendar-item__title {
+    color: #fff !important;
+}

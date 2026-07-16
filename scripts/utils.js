@@ -495,6 +495,11 @@ function createAnimeCard(anime, clickHandler) {
         ? reminkoContentViewUrl('anime4k', anime.id)
         : reminkoContentViewUrl('anime', anime.id);
 
+    const needsCountdown =
+        typeof reminkoAnimeNeedsEpisodeCountdown === 'function'
+            ? reminkoAnimeNeedsEpisodeCountdown(anime)
+            : anime.status === 'Онгоинг' && anime.type !== 'Фильм';
+
     card.innerHTML = `
         <a class="anime-card-seo-link" href="${seoHref}" tabindex="-1" aria-hidden="true">${stats.title}</a>
         <div class="anime-poster" style="${posterStyle}">
@@ -503,6 +508,7 @@ function createAnimeCard(anime, clickHandler) {
             </div>
             <div class="anime-year">${stats.year}</div>
             ${stats.status ? `<div class="anime-status">${stats.status}</div>` : ''}
+            ${needsCountdown ? '<div class="anime-poster-countdown" data-countdown-slot aria-live="polite" hidden></div>' : ''}
         </div>
         <div class="anime-info">
             <h3 class="anime-title">${stats.title}</h3>

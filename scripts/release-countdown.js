@@ -675,6 +675,41 @@
         });
     }
 
+    function reminkoAnimeNeedsEpisodeCountdown(anime) {
+        if (!anime || anime.type === 'Фильм') return false;
+        return anime.status === 'Онгоинг' || anime.status === 'Анонс';
+    }
+
+    function reminkoResolveAnimeCountdownIso(anime, shiki) {
+        if (!anime) return '';
+        const mal = parseInt(anime.mal_id, 10);
+        const cal =
+            (Number.isFinite(mal) && mal > 0 && typeof reminkoCalendarRowForMal === 'function'
+                ? reminkoCalendarRowForMal(mal)
+                : null) ||
+            anime._calendarRow ||
+            anime._calendar;
+        const iso = reminkoResolveCountdownTargetIso(anime, shiki || null, {
+            calendar: cal,
+            _calendar: cal
+        });
+        return iso && Date.parse(iso) > Date.now() ? iso : '';
+    }
+
+    function reminkoApplyCompactCountdown(el, iso) {
+        if (!el || !iso) return;
+        el.hidden = false;
+        el.setAttribute('data-countdown-iso', String(iso));
+        reminkoStartLiveCountdown(el, iso, {
+            compact: true,
+            unknownText: '',
+            expiredText: 'скоро'
+        });
+    }
+
+    global.reminkoAnimeNeedsEpisodeCountdown = reminkoAnimeNeedsEpisodeCountdown;
+    global.reminkoResolveAnimeCountdownIso = reminkoResolveAnimeCountdownIso;
+    global.reminkoApplyCompactCountdown = reminkoApplyCompactCountdown;
     global.reminkoRuUnit = reminkoRuUnit;
     global.reminkoBroadcastToNextIso = reminkoBroadcastToNextIso;
     global.reminkoIsAiringAnimeStatus = reminkoIsAiringAnimeStatus;

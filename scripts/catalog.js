@@ -69,6 +69,105 @@ async function ensureKodikCatalogForPage() {
             console.warn('[Catalog] Kodik catalog:', e);
         }
     }
+    if (typeof reminkoLoadAllCalendarData === 'function') {
+        try {
+            await reminkoLoadAllCalendarData();
+        } catch (e) {
+            console.warn('[Catalog] Calendar load:', e);
+        }
+    }
+}
+
+function applyCatalogCountdownToCard(anime, shiki) {
+    if (!anime || anime.id == null) return;
+    const card = document.querySelector(`#catalogResults .anime-card[data-id="${anime.id}"]`);
+    if (!card) return;
+    const slot = card.querySelector('[data-countdown-slot]');
+    if (!slot) return;
+    const iso =
+        typeof reminkoResolveAnimeCountdownIso === 'function'
+            ? reminkoResolveAnimeCountdownIso(anime, shiki)
+            : '';
+    if (!iso) return;
+    if (typeof reminkoApplyCompactCountdown === 'function') {
+        reminkoApplyCompactCountdown(slot, iso);
+    }
+}
+
+function scheduleCatalogCountdownForPage(container, pageItems) {
+    if (!container || !Array.isArray(pageItems)) return;
+
+    const targets = pageItems.filter(
+        (a) =>
+            a &&
+            a.mal_id != null &&
+            (typeof reminkoAnimeNeedsEpisodeCountdown === 'function'
+                ? reminkoAnimeNeedsEpisodeCountdown(a)
+                : a.status === 'Онгоинг' && a.type !== 'Фильм')
+    );
+    if (!targets.length) return;
+
+    const needFetch = [];
+    for (const anime of targets) {
+        const mal = parseInt(anime.mal_id, 10);
+        if (!Number.isFinite(mal) || mal <= 0) continue;
+        const cached =
+            window.shikimoriApi && typeof window.shikimoriApi.readCachedByMalId === 'function'
+                ? window.shikimoriApi.readCachedByMalId(mal)
+                : null;
+        const iso =
+            typeof reminkoResolveAnimeCountdownIso === 'function'
+                ? reminkoResolveAnimeCountdownIso(anime, cached)
+                : '';
+        if (iso) {
+            applyCatalogCountdownToCard(anime, cached);
+            continue;
+        }
+        needFetch.push(anime);
+    }
+
+    if (!window.shikimoriApi || typeof window.shikimoriApi.enqueueFetchShikimoriByMalId !== 'function') {
+        return;
+    }
+
+    const prefetch = needFetch.slice(0, 24);
+    prefetch.forEach((anime) => {
+        const t = anime.titleAlt || anime.title || '';
+        window.shikimoriApi.enqueueFetchShikimoriByMalId(anime.mal_id, t).then((sh) => {
+            applyCatalogCountdownToCard(anime, sh);
+        });
+    });
+
+    const rest = needFetch.slice(24);
+    if (!rest.length || typeof IntersectionObserver === 'undefined') return;
+
+    const loaded = new Set(prefetch.map((x) => x.mal_id));
+    const io = new IntersectionObserver(
+        (entries) => {
+            entries.forEach((ent) => {
+                if (!ent.isIntersecting) return;
+                const cardEl = ent.target;
+                const mid = parseInt(cardEl.dataset.malId, 10);
+                io.unobserve(cardEl);
+                if (!mid || loaded.has(mid)) return;
+                loaded.add(mid);
+                const anime = rest.find((x) => parseInt(x.mal_id, 10) === mid);
+                if (!anime) return;
+                const t = anime.titleAlt || anime.title || '';
+                window.shikimoriApi.enqueueFetchShikimoriByMalId(anime.mal_id, t).then((sh) => {
+                    applyCatalogCountdownToCard(anime, sh);
+                });
+            });
+        },
+        { root: null, rootMargin: '160px', threshold: 0.02 }
+    );
+
+    container.querySelectorAll('.anime-card[data-mal-id] [data-countdown-slot]').forEach((slot) => {
+        const card = slot.closest('.anime-card');
+        if (!card || card.querySelector('[data-countdown-iso]')) return;
+        const mid = parseInt(card.dataset.malId, 10);
+        if (mid && rest.some((x) => parseInt(x.mal_id, 10) === mid)) io.observe(card);
+    });
 }
 window.addEventListener('reminko:navigation-applied', initAnimeCatalogAfterNavigation);
 
@@ -666,6 +765,7 @@ function displayResults(results, options) {
         
         finalUniqueItems.forEach((anime) => container.appendChild(createAnimeCard(anime)));
         scheduleCatalogShikimoriForPage(container, finalUniqueItems);
+        scheduleCatalogCountdownForPage(container, finalUniqueItems);
 
         const resultsInfo = document.getElementById('resultsInfo');
         if (resultsInfo) {
