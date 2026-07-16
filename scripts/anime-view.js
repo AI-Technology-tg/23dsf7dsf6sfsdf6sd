@@ -1401,6 +1401,7 @@ async function renderJikanAnimeDetail(data, mergedCard = null) {
     window.__jikanVirtualPlayerAnime = virtualAnime;
     wireAnimePlayerTabs();
     refreshAnimeViewCountdown(virtualAnime, data, shiki);
+    void hydrateAnimeViewCountdownSchedule(virtualAnime);
     queueMicrotask(() => {
         if (typeof window.reminkoApplySidebarMaintenanceLocks === 'function') {
             window.reminkoApplySidebarMaintenanceLocks();
@@ -1652,6 +1653,7 @@ async function renderAnimeDetail(anime) {
     `;
     wireAnimePlayerTabs();
     refreshAnimeViewCountdown(anime, anime._jikanRaw || null, null);
+    void hydrateAnimeViewCountdownSchedule(anime);
     queueMicrotask(() => {
         if (typeof window.reminkoApplySidebarMaintenanceLocks === 'function') {
             window.reminkoApplySidebarMaintenanceLocks();
@@ -1733,9 +1735,59 @@ function getCatalogAvailableEpisodes(anime) {
 let currentPlayerAnime = null;
 let currentEpisode = 1;
 function reminkoCalendarForAnime(anime, malId) {
-    if (anime?._calendar) return anime._calendar;
     const mal = malId != null ? malId : anime?.mal_id;
-    return typeof reminkoCalendarRowForMal === 'function' ? reminkoCalendarRowForMal(mal) : null;
+    if (typeof reminkoCalendarRowForMal === 'function') {
+        const row = reminkoCalendarRowForMal(mal);
+        if (row) return row;
+    }
+    if (anime?._calendar) return anime._calendar;
+    return null;
+}
+
+function animeShowOngoingCountdownBar(anime, jikanData, announcedOnly) {
+    if (announcedOnly || !anime) return false;
+    const st = String(jikanData?.status || anime.status || '');
+    if (st === 'Онгоинг') return anime.type !== 'Фильм';
+    if (typeof reminkoIsAiringAnimeStatus === 'function' && reminkoIsAiringAnimeStatus(st)) {
+        return anime.type !== 'Фильм';
+    }
+    return false;
+}
+
+async function hydrateAnimeViewCountdownSchedule(anime) {
+    if (!anime) return;
+    const needsCountdown =
+        anime.status === 'Онгоинг' ||
+        anime.status === 'Анонс' ||
+        (typeof isAnnouncedCatalogAnime === 'function' && isAnnouncedCatalogAnime(anime));
+    if (!needsCountdown) return;
+
+    if (typeof reminkoLoadCalendarData === 'function') {
+        try {
+            await reminkoLoadCalendarData();
+        } catch (_) {
+            /* ignore */
+        }
+    }
+
+    let jikanData = anime._jikanRaw || null;
+    if (
+        anime.mal_id &&
+        (!jikanData?.broadcast?.day || jikanData?.status == null) &&
+        typeof fetchJikanAnimeByMalId === 'function'
+    ) {
+        const fetched = await fetchJikanAnimeByMalId(anime.mal_id);
+        if (fetched) {
+            anime._jikanRaw = fetched;
+            jikanData = fetched;
+        }
+    }
+
+    let shiki = null;
+    if (anime.mal_id && window.shikimoriApi?.readCachedByMalId) {
+        shiki = window.shikimoriApi.readCachedByMalId(Number(anime.mal_id));
+    }
+    refreshAnimeViewCountdown(anime, jikanData, shiki);
 }
 
 function animeNextEpisodeCountdownBarHtml() {
@@ -1781,10 +1833,10 @@ function startAnimeViewCountdowns(iso, opts) {
     const bar = document.getElementById('animeNextEpCountdownBar');
     const barInner = document.getElementById('animeNextEpCountdownInner');
     if (!announcedOnly && bar && barInner) {
-        if (iso) {
+        if (iso || opts?.showBarWhenUnknown) {
             bar.hidden = false;
             if (typeof reminkoStartLiveCountdown === 'function') {
-                reminkoStartLiveCountdown(barInner, iso, countdownOpts);
+                reminkoStartLiveCountdown(barInner, iso || '', countdownOpts);
             }
         } else {
             bar.hidden = true;
@@ -1809,7 +1861,11 @@ function refreshAnimeViewCountdown(anime, jikanData, shiki) {
         (jikanData && jikanData.status === 'Not yet aired') ||
         (anime && typeof isAnnouncedCatalogAnime === 'function' && isAnnouncedCatalogAnime(anime));
     const rollData = jikanData || anime?._jikanRaw || anime || null;
-    startAnimeViewCountdowns(iso, { announcedOnly: announced, rollData });
+    startAnimeViewCountdowns(iso, {
+        announcedOnly: announced,
+        rollData,
+        showBarWhenUnknown: animeShowOngoingCountdownBar(anime, jikanData || anime?._jikanRaw, announced)
+    });
     return iso;
 }
 

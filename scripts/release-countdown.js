@@ -83,34 +83,35 @@
         return '';
     }
 
+    function reminkoIsAnnouncedAnimeStatus(status) {
+        if (!status) return false;
+        const s = String(status).toLowerCase();
+        return s === 'not yet aired' || s.includes('анонс') || s.includes('upcoming');
+    }
+
     function reminkoResolveCountdownTargetIso(data, shiki, extra) {
         const cal = extra?.calendar || extra?._calendar || data?._calendar;
         const candidates = [];
         const now = Date.now();
 
         const calendarIso = cal && (cal.next_at || cal.nextAt);
-        if (calendarIso) {
-            const t = Date.parse(calendarIso);
-            if (Number.isFinite(t) && t > now) {
-                return String(calendarIso);
-            }
-            return '';
-        }
+        if (calendarIso) candidates.push(String(calendarIso));
 
         const ne = shiki && (shiki.next_episode_at || shiki.nextEpisodeAt);
         if (ne) candidates.push(String(ne));
 
-        if (data?.status === 'Not yet aired' && data.aired?.from) {
-            candidates.push(String(data.aired.from));
+        const st = data?.status || '';
+        if (reminkoIsAnnouncedAnimeStatus(st) || st === 'Not yet aired') {
+            if (data?.aired?.from) candidates.push(String(data.aired.from));
         }
-        if (reminkoIsAiringAnimeStatus(data?.status) && data?.broadcast?.day && data?.broadcast?.time) {
+        if (reminkoIsAiringAnimeStatus(st) && data?.broadcast?.day && data?.broadcast?.time) {
             const b = reminkoBroadcastToNextIso(data.broadcast);
             if (b) candidates.push(b);
         }
 
         for (const iso of candidates) {
             const future = reminkoRollForwardCountdownIso(iso, data);
-            if (future) return future;
+            if (future && Date.parse(future) > now) return future;
         }
         return '';
     }
@@ -465,6 +466,7 @@
     global.reminkoRuUnit = reminkoRuUnit;
     global.reminkoBroadcastToNextIso = reminkoBroadcastToNextIso;
     global.reminkoIsAiringAnimeStatus = reminkoIsAiringAnimeStatus;
+    global.reminkoIsAnnouncedAnimeStatus = reminkoIsAnnouncedAnimeStatus;
     global.reminkoRollForwardCountdownIso = reminkoRollForwardCountdownIso;
     global.reminkoResolveCountdownTargetIso = reminkoResolveCountdownTargetIso;
     global.reminkoCountdownParts = reminkoCountdownParts;
