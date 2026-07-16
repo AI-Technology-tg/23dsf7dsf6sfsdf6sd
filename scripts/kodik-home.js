@@ -173,6 +173,71 @@
         return list.slice(0, KODIK_HOME_LIMIT);
     }
 
+    function catalogByMalMap() {
+        const map = new Map();
+        for (const a of _catalog) {
+            const mal = parseInt(a.mal_id, 10);
+            if (Number.isFinite(mal) && mal > 0) map.set(mal, a);
+        }
+        return map;
+    }
+
+    function isCalendarRowFilm(row) {
+        const k = String(row && row.kind ? row.kind : '').toLowerCase();
+        return k === 'movie' || k === 'mv' || k === 'film';
+    }
+
+    function calendarRowMatchesMedia(row, mediaType) {
+        const m = normalizeMediaType(mediaType);
+        const isFilm = isCalendarRowFilm(row);
+        return m === 'film' ? isFilm : !isFilm;
+    }
+
+    function virtualAnimeFromCalendarRow(row) {
+        const mal = parseInt(row.mal_id, 10);
+        const isFilm = isCalendarRowFilm(row);
+        const ep = parseInt(row.next_episode, 10) || 1;
+        const isAnn = row.status === 'anons' || ep <= 1;
+        return {
+            id: `shiki-cal-${mal}`,
+            mal_id: mal,
+            title: row.title_ru || '—',
+            titleAlt: row.title_ru || '',
+            type: isFilm ? 'Фильм' : 'Сериал',
+            status: isAnn ? 'Анонс' : 'Онгоинг',
+            isCalendarAnnounced: isAnn,
+            rating: row.score || 0,
+            genres: [],
+            posterUrl: malPosterUrl(mal),
+            _calendarRow: row
+        };
+    }
+
+    function pickShikimoriAnnouncedExtras(all, mediaType, excludeMal) {
+        if (
+            typeof global.reminkoMergedCalendarItems !== 'function' ||
+            typeof global.reminkoSplitCalendarRows !== 'function'
+        ) {
+            return [];
+        }
+        const metaByMal = catalogByMalMap();
+        const merged = global.reminkoMergedCalendarItems();
+        const { announced } = global.reminkoSplitCalendarRows(merged, metaByMal);
+        const now = Date.now();
+        const out = [];
+        for (const row of announced) {
+            const mal = parseInt(row.mal_id, 10);
+            if (!Number.isFinite(mal) || mal <= 0) continue;
+            if (excludeMal.has(mal)) continue;
+            if (!calendarRowMatchesMedia(row, mediaType)) continue;
+            const t = Date.parse(row.next_at || row.nextAt);
+            if (!Number.isFinite(t) || t <= now) continue;
+            if (metaByMal.has(mal)) continue;
+            out.push(virtualAnimeFromCalendarRow(row));
+        }
+        return out;
+    }
+
     function pickAnnounced(all, mediaType) {
         const list = all.filter((a) => matchMedia(a, mediaType) && isKodikHomeAnnounced(a));
         list.sort((a, b) => {
@@ -184,6 +249,147 @@
             return (b.rating || 0) - (a.rating || 0);
         });
         return list.slice(0, KODIK_HOME_LIMIT);
+    }
+
+    function pickAnnouncedMerged(all, mediaType) {
+        const kodikItems = pickAnnounced(all, mediaType);
+        const seenMal = new Set(
+            kodikItems.map((a) => parseInt(a.mal_id, 10)).filter((m) => Number.isFinite(m) && m > 0)
+        );
+        const shikiExtras = pickShikimoriAnnouncedExtras(all, mediaType, seenMal);
+        const merged = [...kodikItems, ...shikiExtras];
+        merged.sort((a, b) => {
+            const ac = mergedCalendarRowForMal(a.mal_id) || a._calendarRow || a._calendar;
+            const bc = mergedCalendarRowForMal(b.mal_id) || b._calendarRow || b._calendar;
+            const at = ac && (ac.next_at || ac.nextAt) ? Date.parse(ac.next_at || ac.nextAt) || Infinity : Infinity;
+            const bt = bc && (bc.next_at || bc.nextAt) ? Date.parse(bc.next_at || bc.nextAt) || Infinity : Infinity;
+            if (at !== bt) return at - bt;
+            return (b.rating || 0) - (a.rating || 0);
+        });
+        return merged.slice(0, KODIK_HOME_LIMIT);
+    }
+
+    function resolveCardCountdownIso(anime, shiki) {
+        const cal =
+            mergedCalendarRowForMal(anime.mal_id) ||
+            anime._calendarRow ||
+            anime._calendar ||
+            (anime.mal_id != null ? calendarRowForMal(anime.mal_id) : null);
+        if (typeof global.reminkoResolveCountdownTargetIso === 'function') {
+            const iso = global.reminkoResolveCountdownTargetIso(anime, shiki || null, {
+                calendar: cal,
+                _calendar: cal
+            });
+            if (iso && Date.parse(iso) > Date.now()) return iso;
+        }
+        const raw = cal && (cal.next_at || cal.nextAt);
+        if (raw && Date.parse(raw) > Date.now()) return String(raw);
+        if (shiki && shiki.next_episode_at && Date.parse(shiki.next_episode_at) > Date.now()) {
+            return String(shiki.next_episode_at);
+        }
+        return '';
+    }
+
+    function applyCountdownToCard(card, iso) {
+        if (!card || !iso) return;
+        const poster = card.querySelector('.jikan-card-poster');
+        if (!poster) return;
+        let el = poster.querySelector('.jikan-card-countdown');
+        if (!el) {
+            el = document.createElement('div');
+            el.className = 'jikan-card-countdown';
+            el.setAttribute('aria-live', 'polite');
+            poster.appendChild(el);
+        }
+        el.setAttribute('data-countdown-iso', iso);
+        if (typeof global.reminkoStartLiveCountdown === 'function') {
+            global.reminkoStartLiveCountdown(el, iso, {
+                compact: true,
+                unknownText: '',
+                expiredText: 'скоро'
+            });
+        }
+    }
+
+    function updateCardEpLine(card, anime, iso) {
+        if (!card || !iso || isKodikHomeAnnounced(anime)) return;
+        const epEl = card.querySelector('.jikan-card-ep');
+        const existing = epEl ? epEl.textContent.trim() : '';
+        if (existing && (existing.includes('Серия ') || existing.includes('След. серия'))) return;
+
+        const cal =
+            mergedCalendarRowForMal(anime.mal_id) || anime._calendarRow || anime._calendar;
+        const nextEp = cal && cal.next_episode != null ? parseInt(cal.next_episode, 10) : null;
+        try {
+            const d = new Date(iso);
+            if (Number.isNaN(d.getTime())) return;
+            const dateStr = d.toLocaleDateString('ru-RU', {
+                day: 'numeric',
+                month: 'short',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            const line =
+                nextEp && nextEp > 1 ? `Серия ${nextEp}: ${dateStr}` : `След. серия: ${dateStr}`;
+            if (epEl) epEl.textContent = line;
+            else {
+                const meta = card.querySelector('.jikan-card-meta');
+                if (meta) {
+                    const span = document.createElement('span');
+                    span.className = 'jikan-card-ep';
+                    span.textContent = line;
+                    meta.prepend(span);
+                }
+            }
+        } catch (_) {
+            /* ignore */
+        }
+    }
+
+    async function hydrateHomeCardCountdowns(container, items) {
+        if (!container || !Array.isArray(items) || !items.length) return;
+        if (!global.shikimoriApi) return;
+
+        const byId = new Map(items.map((a) => [String(a.id), a]));
+        const cards = [...container.querySelectorAll('.kodik-home-card')];
+        const needFetch = [];
+
+        for (const card of cards) {
+            if (card.querySelector('.jikan-card-countdown[data-countdown-iso]')) continue;
+            const anime = byId.get(card.dataset.id);
+            if (!anime || anime.mal_id == null) continue;
+            const mal = parseInt(anime.mal_id, 10);
+            if (!Number.isFinite(mal) || mal <= 0) continue;
+
+            const cached =
+                typeof global.shikimoriApi.readCachedByMalId === 'function'
+                    ? global.shikimoriApi.readCachedByMalId(mal)
+                    : null;
+            const iso = resolveCardCountdownIso(anime, cached);
+            if (iso) {
+                applyCountdownToCard(card, iso);
+                updateCardEpLine(card, anime, iso);
+                continue;
+            }
+            needFetch.push({ card, anime, mal });
+        }
+
+        const limit = container.id === 'kodikAiringGrid' ? 28 : 14;
+        for (const job of needFetch.slice(0, limit)) {
+            try {
+                const shiki = await global.shikimoriApi.enqueueFetchShikimoriByMalId(
+                    job.mal,
+                    job.anime.titleAlt || job.anime.title || ''
+                );
+                const iso = resolveCardCountdownIso(job.anime, shiki);
+                if (iso) {
+                    applyCountdownToCard(job.card, iso);
+                    updateCardEpLine(job.card, job.anime, iso);
+                }
+            } catch (_) {
+                /* ignore */
+            }
+        }
     }
 
     function popularYear(anime) {
@@ -246,20 +452,33 @@
             return '0 эп.';
         }
 
-        if (nextAt && nextEp && nextEp > 1) {
-            try {
-                const d = new Date(nextAt);
-                if (!Number.isNaN(d.getTime()) && d.getTime() > Date.now()) {
-                    const dateStr = d.toLocaleDateString('ru-RU', {
-                        day: 'numeric',
-                        month: 'short',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    });
-                    return `Серия ${nextEp}: ${dateStr}`;
+        if (!isKodikHomeAnnounced(anime)) {
+            const mal = parseInt(anime.mal_id, 10);
+            const cached =
+                Number.isFinite(mal) &&
+                mal > 0 &&
+                global.shikimoriApi &&
+                typeof global.shikimoriApi.readCachedByMalId === 'function'
+                    ? global.shikimoriApi.readCachedByMalId(mal)
+                    : null;
+            const countdownIso = resolveCardCountdownIso(anime, cached);
+            const showAt = countdownIso || nextAt;
+            if (showAt) {
+                try {
+                    const d = new Date(showAt);
+                    if (!Number.isNaN(d.getTime()) && d.getTime() > Date.now()) {
+                        const dateStr = d.toLocaleDateString('ru-RU', {
+                            day: 'numeric',
+                            month: 'short',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        });
+                        if (nextEp && nextEp > 1) return `Серия ${nextEp}: ${dateStr}`;
+                        return `След. серия: ${dateStr}`;
+                    }
+                } catch (_) {
+                    /* ignore */
                 }
-            } catch (_) {
-                /* ignore */
             }
         }
 
@@ -269,9 +488,16 @@
     }
 
     function cardCountdownHtml(anime) {
-        const cal = mergedCalendarRowForMal(anime.mal_id);
-        const iso = cal && (cal.next_at || cal.nextAt);
-        if (!iso || Number.isNaN(Date.parse(iso)) || Date.parse(iso) <= Date.now()) return '';
+        const mal = parseInt(anime.mal_id, 10);
+        const cached =
+            Number.isFinite(mal) &&
+            mal > 0 &&
+            global.shikimoriApi &&
+            typeof global.shikimoriApi.readCachedByMalId === 'function'
+                ? global.shikimoriApi.readCachedByMalId(mal)
+                : null;
+        const iso = resolveCardCountdownIso(anime, cached);
+        if (!iso) return '';
         return `<div class="jikan-card-countdown" data-countdown-iso="${String(iso).replace(/"/g, '&quot;')}" aria-live="polite"></div>`;
     }
 
@@ -424,6 +650,8 @@
             });
         }
 
+        void hydrateHomeCardCountdowns(container, items);
+
         global.requestAnimationFrame(() => {
             if (typeof global.enhanceHomeHorizontalScroll === 'function') {
                 global.enhanceHomeHorizontalScroll(container);
@@ -471,7 +699,7 @@
             }
         }
 
-        const items = _catalog.length ? pickAnnounced(_catalog, m) : [];
+        const items = pickAnnouncedMerged(_catalog, m);
         if (items.length) {
             renderSectionGrid('kodikAnnouncedGrid', items);
             if (typeof global.appendAnnouncedHomeSection === 'function') {
@@ -490,119 +718,8 @@
         }
     }
 
-    function catalogByMalMap() {
-        const map = new Map();
-        for (const a of _catalog) {
-            const mal = parseInt(a.mal_id, 10);
-            if (Number.isFinite(mal) && mal > 0) map.set(mal, a);
-        }
-        return map;
-    }
-
-    function navigateScheduleRow(row, catalogAnime) {
-        try {
-            global.sessionStorage.setItem('previousUrl', global.location.href);
-            if (catalogAnime && catalogAnime.id != null) {
-                global.sessionStorage.setItem('viewAnimeId', String(catalogAnime.id));
-                global.location.href = `anime/view.html?id=${encodeURIComponent(String(catalogAnime.id))}`;
-                return;
-            }
-        } catch (_) {
-            /* ignore */
-        }
-        if (row.mal_id != null) {
-            global.location.href = `anime/view.html?mal_id=${encodeURIComponent(String(row.mal_id))}`;
-        }
-    }
-
-    function renderHomeScheduleSection() {
-        const section = document.getElementById('kodikHomeSchedule');
-        const grid = document.getElementById('homeScheduleGrid');
-        if (!section || !grid) return;
-
-        if (
-            typeof global.reminkoSplitCalendarRows !== 'function' ||
-            typeof global.reminkoMergedCalendarItems !== 'function'
-        ) {
-            section.hidden = true;
-            return;
-        }
-
-        const metaByMal = catalogByMalMap();
-        const merged = global.reminkoMergedCalendarItems();
-        const { airing, announced } = global.reminkoSplitCalendarRows(merged, metaByMal);
-        const rows = [...airing, ...announced]
-            .filter((row) => {
-                const t = Date.parse(row.next_at || row.nextAt);
-                return Number.isFinite(t) && t > Date.now();
-            })
-            .slice(0, 24);
-
-        if (!rows.length) {
-            section.hidden = true;
-            return;
-        }
-
-        section.hidden = false;
-        section.removeAttribute('aria-hidden');
-        grid.innerHTML = '';
-
-        for (const row of rows) {
-            const mal = parseInt(row.mal_id, 10);
-            const catalogAnime = metaByMal.get(mal) || null;
-            const title =
-                (catalogAnime && (catalogAnime.title || catalogAnime.titleAlt)) ||
-                row.title_ru ||
-                '—';
-            const iso = row.next_at || row.nextAt;
-            const ep = parseInt(row.next_episode, 10) || 1;
-            const isAnnounced = ep <= 1 || row.status === 'anons';
-            const dateStr =
-                typeof global.reminkoFormatReleaseDateShort === 'function'
-                    ? global.reminkoFormatReleaseDateShort(iso)
-                    : new Date(iso).toLocaleString('ru-RU');
-            const poster =
-                (catalogAnime && catalogAnime.posterUrl) ||
-                (mal > 0 ? malPosterUrl(mal) : '');
-
-            const item = document.createElement('article');
-            item.className = 'home-schedule-item';
-            item.innerHTML = `
-                <div class="home-schedule-item__poster">
-                    <img src="${poster}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">
-                </div>
-                <div class="home-schedule-item__body">
-                    <div class="home-schedule-item__badge">${isAnnounced ? 'Анонс' : 'Серия ' + ep}</div>
-                    <h3 class="home-schedule-item__title"></h3>
-                    <div class="home-schedule-item__date">${dateStr}</div>
-                    <div class="home-schedule-item__countdown" data-countdown-iso="${String(iso).replace(/"/g, '&quot;')}"></div>
-                </div>
-            `;
-            const titleEl = item.querySelector('.home-schedule-item__title');
-            if (titleEl) {
-                titleEl.textContent = title;
-                titleEl.title = title;
-            }
-            item.addEventListener('click', () => navigateScheduleRow(row, catalogAnime));
-            grid.appendChild(item);
-        }
-
-        if (typeof global.reminkoStartLiveCountdown === 'function') {
-            grid.querySelectorAll('[data-countdown-iso]').forEach((el) => {
-                const iso = el.getAttribute('data-countdown-iso');
-                if (!iso) return;
-                global.reminkoStartLiveCountdown(el, iso, {
-                    compact: true,
-                    unknownText: '—',
-                    expiredText: 'скоро'
-                });
-            });
-        }
-    }
-
     async function renderAllSections(defaultMedia) {
         const media = normalizeMediaType(defaultMedia);
-        renderHomeScheduleSection();
         for (const cfg of KODIK_SECTIONS) {
             renderSection(cfg, media);
         }
@@ -611,7 +728,6 @@
 
     function refreshKodikHomeSections(skipAnnounced) {
         if (!document.querySelector('.home-page')) return;
-        renderHomeScheduleSection();
         for (const cfg of KODIK_SECTIONS) {
             const section = document.getElementById(cfg.sectionEl);
             if (!section || !_catalog.length) continue;

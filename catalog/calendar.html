@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <style id="reminko-critical-first-paint">
+      html { background-color: #0b0b12; }
+      body { margin: 0; background-color: #0b0b12; color: #e5e7eb; }
+      #loadingScreen {
+        position: fixed !important;
+        inset: 0 !important;
+        width: 100% !important;
+        min-height: 100vh !important;
+        z-index: 2147483646 !important;
+        background: #000000 !important;
+        display: flex !important;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        box-sizing: border-box;
+      }
+      body:not(.reminko-content-revealed) .main-layout {
+        opacity: 0 !important;
+        visibility: hidden !important;
+        pointer-events: none !important;
+      }
+    </style>
+    <script src="../scripts/desktop-only-guard.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Календарь выхода аниме — Shikimori + Kodik | Re-Minko</title>
+    <meta name="description" content="Расписание выхода аниме: даты следующих серий и анонсов из Shikimori с каталогом Kodik на Re-Minko." />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://re-minko-anime.com/catalog/calendar.html" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../Fons/vavo/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="../Fons/vavo/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="../Fons/vavo/favicon-16x16.png">
+    <link rel="manifest" href="../Fons/vavo/site.webmanifest">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles/main.css?v=mobile-v4-9">
+    <link rel="stylesheet" href="../styles/sidebar-layout.css">
+    <link rel="stylesheet" href="../styles/calendar.css">
+    <link rel="stylesheet" href="../styles/loading.css">
+    <link rel="stylesheet" href="../styles/notifications.css">
+</head>
+<body>
+    <div class="loading-screen" id="loadingScreen">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Загрузка<span class="loading-dots"></span></div>
+        <div class="loading-character"></div>
+        <div class="loading-anime"></div>
+    </div>
+
+    <div class="main-layout">
+        <main class="main-content-wrapper calendar-main">
+            <header class="calendar-header">
+                <h1 class="calendar-title">Календарь выхода</h1>
+                <p class="calendar-subtitle">Все даты следующих серий и премьер — Shikimori + каталог Kodik</p>
+            </header>
+
+            <div class="calendar-toolbar">
+                <div class="calendar-tabs" role="tablist" aria-label="Фильтр календаря">
+                    <button type="button" class="calendar-tab is-active" data-calendar-tab="all" role="tab" aria-selected="true">Все</button>
+                    <button type="button" class="calendar-tab" data-calendar-tab="airing" role="tab" aria-selected="false">Онгоинги</button>
+                    <button type="button" class="calendar-tab" data-calendar-tab="announced" role="tab" aria-selected="false">Анонсы</button>
+                </div>
+                <div class="calendar-meta" id="calendarMeta">Загрузка…</div>
+            </div>
+
+            <div class="calendar-days" id="calendarDays">
+                <div class="calendar-loading">Загрузка расписания…</div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../config.local.js" onerror="window.__reminkoNoLocalConfig=true"></script>
+    <script src="../scripts/config.js"></script>
+    <script src="../scripts/kodik-catalog-store.js"></script>
+    <script src="../scripts/mature-content.js"></script>
+    <script src="../scripts/data.js"></script>
+    <script src="../scripts/shikimori-api.js"></script>
+    <script src="../scripts/utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../scripts/supabase-config.js"></script>
+    <script src="../scripts/oauth-auth.js"></script>
+    <script src="../scripts/navigation.js"></script>
+    <script src="../scripts/auth.js"></script>
+    <script src="../scripts/notifications.js"></script>
+    <script src="../scripts/main.js"></script>
+    <script src="../scripts/loading-phrases.js"></script>
+    <script src="../scripts/loading.js"></script>
+    <script src="../scripts/release-countdown.js"></script>
+    <script src="../scripts/calendar-page.js"></script>
+    <script src="../scripts/apply-navigation.js?v=rem-theme-4"></script>
+</body>
+</html>

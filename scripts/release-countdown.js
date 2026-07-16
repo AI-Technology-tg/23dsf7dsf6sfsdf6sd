@@ -442,6 +442,8 @@
             next_at: iso,
             next_episode: nextEp,
             status: a.status || '',
+            kind: a.kind || '',
+            score: parseFloat(a.score) || 0,
             source: 'shikimori'
         };
     }
