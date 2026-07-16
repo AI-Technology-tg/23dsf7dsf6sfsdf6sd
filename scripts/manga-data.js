@@ -53,13 +53,20 @@ async function getAllMangaAsync() {
 
 // Поиск манги
 function searchManga(query) {
-    const lowerQuery = query.toLowerCase();
+    const lowerQuery = query.toLowerCase().trim();
     const list = getAllManga();
-    return list.filter(manga => 
-        manga.title.toLowerCase().includes(lowerQuery) ||
-        (manga.titleAlt && manga.titleAlt.toLowerCase().includes(lowerQuery)) ||
-        (manga.genres && manga.genres.some(g => g.toLowerCase().includes(lowerQuery))) ||
-        (manga.author && manga.author.toLowerCase().includes(lowerQuery))
+    return list.filter(
+        (manga) =>
+            (typeof textMatchesSearchQuery === 'function' &&
+                (textMatchesSearchQuery(manga.title, lowerQuery) ||
+                    textMatchesSearchQuery(manga.titleAlt, lowerQuery) ||
+                    textMatchesSearchQuery(manga.author, lowerQuery) ||
+                    (manga.genres &&
+                        manga.genres.some((g) => textMatchesSearchQuery(g, lowerQuery))))) ||
+            manga.title.toLowerCase().includes(lowerQuery) ||
+            (manga.titleAlt && manga.titleAlt.toLowerCase().includes(lowerQuery)) ||
+            (manga.genres && manga.genres.some((g) => g.toLowerCase().includes(lowerQuery))) ||
+            (manga.author && manga.author.toLowerCase().includes(lowerQuery))
     );
 }
 

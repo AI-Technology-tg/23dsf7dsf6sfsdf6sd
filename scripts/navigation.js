@@ -347,6 +347,53 @@ class NavigationManager {
         
         const basePath = this.basePath;
         let debounceTimer = null;
+        const navScriptLoads = {};
+
+        const loadNavScriptOnce = (file) => {
+            const src = `${basePath}scripts/${file}`;
+            if (navScriptLoads[src]) return navScriptLoads[src];
+            if (file === 'anime4k-catalog-store.js' && window.Anime4kCatalogStore) {
+                return Promise.resolve();
+            }
+            if (file === 'anime4k-data.js' && typeof searchAnime4k === 'function') {
+                return Promise.resolve();
+            }
+            navScriptLoads[src] = new Promise((resolve) => {
+                const existing = document.querySelector(`script[src="${src}"]`);
+                if (existing) {
+                    existing.addEventListener('load', () => resolve(), { once: true });
+                    existing.addEventListener('error', () => resolve(), { once: true });
+                    if (existing.dataset.loaded === '1') resolve();
+                    return;
+                }
+                const s = document.createElement('script');
+                s.src = src;
+                s.async = true;
+                s.onload = () => {
+                    s.dataset.loaded = '1';
+                    resolve();
+                };
+                s.onerror = () => resolve();
+                document.head.appendChild(s);
+            });
+            return navScriptLoads[src];
+        };
+
+        const ensureAnime4kSearchReady = async () => {
+            if (typeof searchAnime4k !== 'function') {
+                if (!window.Anime4kCatalogStore) {
+                    await loadNavScriptOnce('anime4k-catalog-store.js');
+                }
+                await loadNavScriptOnce('anime4k-data.js');
+            }
+            if (typeof window.Anime4kCatalogStore?.load === 'function') {
+                try {
+                    await window.Anime4kCatalogStore.load();
+                } catch (_) {
+                    /* ignore */
+                }
+            }
+        };
         
         const performSearch = () => {
             const query = topSearchInput.value.trim();
@@ -405,13 +452,7 @@ class NavigationManager {
                 return;
             }
 
-            if (typeof window.Anime4kCatalogStore?.load === 'function') {
-                try {
-                    await window.Anime4kCatalogStore.load();
-                } catch (_) {
-                    /* ignore */
-                }
-            }
+            await ensureAnime4kSearchReady();
             
             let defaultAnime = searchAnime(query).slice(0, 10);
             let anime4kHits = typeof searchAnime4k === 'function' ? searchAnime4k(query).slice(0, 6) : [];
@@ -423,8 +464,8 @@ class NavigationManager {
             }
 
             const results = [
-                ...defaultAnime.map((a) => ({ ...a, _catalog: 'default' })),
                 ...anime4kHits.map((a) => ({ ...a, _catalog: '4k', _isAnime4k: true })),
+                ...defaultAnime.map((a) => ({ ...a, _catalog: 'default' })),
                 ...mangaResults.map((m) => ({ ...m, _isManga: true }))
             ];
             
@@ -462,7 +503,11 @@ class NavigationManager {
                         <div class="search-item-meta">${year}${item.type ? ' · ' + item.type : ''}${item.genres ? ' · ' + item.genres.slice(0, 2).join(', ') : ''}</div>
                     </div>
                 </a>`;
-            }).join('') + `<a href="${basePath}catalog/anime.html?search=${encodeURIComponent(query)}" class="search-dropdown-footer">Все в каталоге аниме</a>`;
+            }).join('') +
+                (anime4kHits.length
+                    ? `<a href="${basePath}catalog/anime-4k.html?search=${encodeURIComponent(query)}" class="search-dropdown-footer">Все в каталоге ≈4K</a>`
+                    : '') +
+                `<a href="${basePath}catalog/anime.html?search=${encodeURIComponent(query)}" class="search-dropdown-footer">Все в каталоге аниме</a>`;
             dropdown.style.display = 'block';
             hydrateNavSearchPosters(dropdown, results);
         };

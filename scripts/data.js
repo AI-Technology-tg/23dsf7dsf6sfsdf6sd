@@ -204,6 +204,14 @@ function reminkoFoldForSearch(s) {
     return out;
 }
 
+/** Пунктуация и лишние пробелы убираются — «Re: Zero» ≈ «re zero». */
+function reminkoNormalizeSearchText(s) {
+    if (!s || typeof s !== 'string') return '';
+    let t = reminkoFoldForSearch(s.toLowerCase());
+    t = t.replace(/[^a-z0-9\u0400-\u04ff]+/g, ' ').replace(/\s+/g, ' ').trim();
+    return t;
+}
+
 function textMatchesSearchQuery(haystack, queryLower) {
     if (!queryLower) return true;
     if (haystack == null || haystack === '') return false;
@@ -211,8 +219,19 @@ function textMatchesSearchQuery(haystack, queryLower) {
     const hl = h.toLowerCase();
     if (hl.includes(queryLower)) return true;
     const fq = reminkoFoldForSearch(queryLower);
-    if (!fq) return false;
-    return reminkoFoldForSearch(h).includes(fq);
+    const fh = reminkoFoldForSearch(h);
+    if (fq && fh.includes(fq)) return true;
+
+    const nq = reminkoNormalizeSearchText(queryLower);
+    const nh = reminkoNormalizeSearchText(h);
+    if (!nq) return false;
+    if (nh.includes(nq)) return true;
+
+    const tokens = nq.split(' ').filter((tok) => tok.length >= 2);
+    if (tokens.length > 1) {
+        return tokens.every((tok) => nh.includes(tok));
+    }
+    return false;
 }
 
 function forEachJikanSearchTitle(raw, fn) {
@@ -905,13 +924,15 @@ function searchAnimeSortKey(anime, queryLower) {
     if (anime._jikanRaw) {
         forEachJikanSearchTitle(anime._jikanRaw, (t) => variants.push(t));
     }
+    const nq = reminkoNormalizeSearchText(queryLower);
     let best = 0;
     for (const v of variants) {
         if (v == null || v === '') continue;
         const vl = String(v).toLowerCase();
-        if (vl === queryLower) best = Math.max(best, 100);
-        else if (vl.startsWith(queryLower)) best = Math.max(best, 82);
-        else if (vl.includes(queryLower)) best = Math.max(best, 65);
+        const nv = reminkoNormalizeSearchText(v);
+        if (vl === queryLower || (nq && nv === nq)) best = Math.max(best, 100);
+        else if (vl.startsWith(queryLower) || (nq && nv.startsWith(nq))) best = Math.max(best, 82);
+        else if (vl.includes(queryLower) || (nq && nv.includes(nq))) best = Math.max(best, 65);
         else if (textMatchesSearchQuery(v, queryLower)) best = Math.max(best, 48);
     }
     return best;
