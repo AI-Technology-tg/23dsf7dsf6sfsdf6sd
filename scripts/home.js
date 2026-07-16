@@ -183,16 +183,35 @@ function openHomeSocialPanel(key) {
     }
 
     if (goEl) {
-        if (info.url) {
-            goEl.href = info.url;
-            goEl.textContent = info.goLabel;
-            goEl.classList.remove('is-disabled');
-            goEl.removeAttribute('aria-disabled');
+        if (info.isAppsHub && Array.isArray(info.appDownloads) && appsEl) {
+            goEl.hidden = true;
+            appsEl.hidden = false;
+            appsEl.innerHTML = info.appDownloads
+                .map(
+                    (item) => `<button type="button" class="home-social-panel__app-btn is-disabled" disabled aria-disabled="true">
+                        <span class="home-social-panel__app-btn-label">${item.label}</span>
+                        ${item.sub ? `<span class="home-social-panel__app-btn-sub">${item.sub}</span>` : ''}
+                        <span class="home-social-panel__app-btn-badge">скоро</span>
+                    </button>`
+                )
+                .join('');
         } else {
-            goEl.href = '#';
-            goEl.textContent = info.goLabel;
-            goEl.classList.add('is-disabled');
-            goEl.setAttribute('aria-disabled', 'true');
+            if (appsEl) {
+                appsEl.hidden = true;
+                appsEl.innerHTML = '';
+            }
+            goEl.hidden = false;
+            if (info.url) {
+                goEl.href = info.url;
+                goEl.textContent = info.goLabel;
+                goEl.classList.remove('is-disabled');
+                goEl.removeAttribute('aria-disabled');
+            } else {
+                goEl.href = '#';
+                goEl.textContent = info.goLabel;
+                goEl.classList.add('is-disabled');
+                goEl.setAttribute('aria-disabled', 'true');
+            }
         }
     }
 
