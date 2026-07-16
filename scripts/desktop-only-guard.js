@@ -38,6 +38,33 @@
     else d.addEventListener('DOMContentLoaded', injectNoScript, { once: true });
 })(window, document, 'script', 'dataLayer', 'GTM-W4RSMVH3');
 
+(function reminkoGtagBoot(w, d, s, measureId) {
+    if (w.__reminkoGtagBoot) return;
+    w.__reminkoGtagBoot = true;
+
+    w.dataLayer = w.dataLayer || [];
+    w.gtag =
+        w.gtag ||
+        function gtag() {
+            w.dataLayer.push(arguments);
+        };
+    w.gtag('js', new Date());
+    w.gtag('config', measureId);
+
+    var src = 'https://www.googletagmanager.com/gtag/js?id=' + measureId;
+    var scripts = d.getElementsByTagName(s);
+    for (var j = 0; j < scripts.length; j++) {
+        if (scripts[j].src === src) return;
+    }
+
+    var tag = d.createElement(s);
+    tag.async = true;
+    tag.src = src;
+    var first = scripts[0];
+    if (first && first.parentNode) first.parentNode.insertBefore(tag, first);
+    else (d.head || d.documentElement).appendChild(tag);
+})(window, document, 'script', 'G-S9CBJW9NLK');
+
 (function remThemeEarlyBoot() {
     if (typeof window === 'undefined' || window.__remThemeEarlyBoot) return;
     window.__remThemeEarlyBoot = true;
