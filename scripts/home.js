@@ -127,8 +127,24 @@ const HOME_SOCIAL_INFO = {
         imgLarge: true,
         hideTitle: true,
         url: '',
-        goLabel: 'Скачать на Android',
-        text: 'Мы все еще разрабатываем приложение',
+        goLabel: 'Скачать для Android',
+        text: 'Мобильное приложение для Android пока в разработке. Следите за новостями в Telegram и на главной — ссылка на скачивание появится здесь.',
+    },
+    pc: {
+        title: 'Re-Minko для ПК',
+        iconLetter: 'PC',
+        iconVariant: 'pc',
+        url: '',
+        goLabel: 'Скачать для ПК',
+        text: 'Десктопная программа для Windows в разработке: каталог, плеер и ваш аккаунт Re-Minko в одном приложении.',
+    },
+    tv: {
+        title: 'Re-Minko для телевизора',
+        iconLetter: 'TV',
+        iconVariant: 'tv',
+        url: '',
+        goLabel: 'Скачать для TV',
+        text: 'Приложение для Smart TV (Android TV и аналоги) в разработке — смотреть аниме с пульта, без браузера.',
     },
 };
 
