@@ -415,54 +415,111 @@
         global.location.href = `${base}?id=${encodeURIComponent(String(virtualId))}&mal_id=${encodeURIComponent(String(mal))}`;
     }
 
+    function jikanPosterFromAnime(anime) {
+        if (!anime) return '';
+        const jpg = anime.images?.jpg || anime.images?.webp;
+        if (!jpg) return '';
+        return jpg.large_image_url || jpg.image_url || jpg.small_image_url || '';
+    }
+
+    function isShikimoriPlaceholderPoster(url) {
+        const s = String(url || '').toLowerCase();
+        if (!s) return true;
+        return s.includes('missing_') || s.includes('/assets/globals/missing');
+    }
+
+    function shikimoriPosterUrlFromPath(path) {
+        const p = String(path || '').trim();
+        if (!p || isShikimoriPlaceholderPoster(p)) return '';
+        if (/^https?:\/\//i.test(p)) return p;
+        return `https://shikimori.one${p.startsWith('/') ? p : `/${p}`}`;
+    }
+
+    async function fetchPosterUrlForMal(malId, anime) {
+        const mal = parseInt(malId, 10);
+        if (!Number.isFinite(mal) || mal <= 0) return '';
+
+        const candidates = [];
+        const fromJikan = jikanPosterFromAnime(anime);
+        if (fromJikan) candidates.push(fromJikan);
+        if (anime?.posterUrl) candidates.push(anime.posterUrl);
+        if (anime?.image?.original) candidates.push(shikimoriPosterUrlFromPath(anime.image.original));
+        if (anime?._jikanRaw) {
+            const j2 = jikanPosterFromAnime(anime._jikanRaw);
+            if (j2) candidates.push(j2);
+        }
+
+        for (const url of candidates) {
+            if (url && !isShikimoriPlaceholderPoster(url)) return url;
+        }
+
+        try {
+            if (typeof global.jikanFetchPosterByMalId === 'function') {
+                const u = await global.jikanFetchPosterByMalId(mal);
+                if (u && !isShikimoriPlaceholderPoster(u)) return u;
+            }
+            if (typeof global.jikanFetchAnimeFullByMalId === 'function') {
+                const full = await global.jikanFetchAnimeFullByMalId(mal);
+                const u = jikanPosterFromAnime(full);
+                if (u && !isShikimoriPlaceholderPoster(u)) return u;
+            }
+        } catch (_) {
+            /* ignore */
+        }
+
+        if (global.shikimoriApi?.readCachedByMalId) {
+            const sh = global.shikimoriApi.readCachedByMalId(mal);
+            const u = shikimoriPosterUrlFromPath(sh?.image?.original);
+            if (u) return u;
+        }
+
+        return `https://shikimori.one/system/animes/${mal}/original.jpg`;
+    }
+
     function attachJikanPosterFallback(img, malId, anime) {
         if (!img) return;
+        if (img.dataset.posterHydrating === '1') return;
+        img.dataset.posterHydrating = '1';
         const mal = parseInt(malId, 10);
         if (!Number.isFinite(mal) || mal <= 0) return;
-
-        const primary = jikanPosterFromAnime(anime);
-        if (primary) img.src = primary;
 
         img.referrerPolicy = 'no-referrer';
         img.decoding = 'async';
 
-        img.onerror = async function onPosterErr() {
-            if (this.dataset.posterStep === '2') {
-                const cdn = `https://shikimori.one/system/animes/${mal}/original.jpg`;
-                if (this.src !== cdn) {
-                    this.dataset.posterStep = '3';
-                    this.src = cdn;
-                    return;
-                }
-                this.style.display = 'none';
-                return;
-            }
-            if (this.dataset.posterStep === '1') return;
-            this.dataset.posterStep = '1';
-            try {
-                let url = '';
-                if (typeof global.jikanFetchPosterByMalId === 'function') {
-                    url = await global.jikanFetchPosterByMalId(mal);
-                }
-                if (!url && typeof global.jikanFetchAnimeFullByMalId === 'function') {
-                    const full = await global.jikanFetchAnimeFullByMalId(mal);
-                    url = jikanPosterFromAnime(full);
-                }
-                if (url) {
-                    this.dataset.posterStep = '2';
-                    this.src = url;
-                    return;
-                }
-            } catch (_) {
-                /* ignore */
-            }
-            this.dataset.posterStep = '2';
-            this.src = `https://shikimori.one/system/animes/${mal}/original.jpg`;
+        let resolved = false;
+        const applyUrl = (url) => {
+            if (!url || !img.isConnected || resolved) return;
+            img.src = url;
         };
 
-        if (img.complete && img.naturalWidth === 0 && primary) {
-            img.onerror();
+        const hideBroken = () => {
+            if (img.isConnected) img.style.display = 'none';
+        };
+
+        img.onerror = hideBroken;
+
+        img.onload = function onPosterLoad() {
+            if (resolved) return;
+            if (isShikimoriPlaceholderPoster(this.src)) {
+                this.onload = null;
+                void resolvePoster();
+            }
+        };
+
+        async function resolvePoster() {
+            if (resolved) return;
+            const url = await fetchPosterUrlForMal(mal, anime);
+            if (!url || !img.isConnected) return;
+            if (isShikimoriPlaceholderPoster(url)) {
+                hideBroken();
+                return;
+            }
+            resolved = true;
+            img.onerror = hideBroken;
+            applyUrl(url);
         }
+
+        void resolvePoster();
     }
 
     global.fetchJikanAnnouncedList = fetchJikanAnnouncedList;
@@ -472,6 +529,8 @@
     global.jikanAnnouncedToCalendarRow = jikanAnnouncedToCalendarRow;
     global.jikanAnnouncedToCalendarRows = jikanAnnouncedToCalendarRows;
     global.jikanPosterFromAnime = jikanPosterFromAnime;
+    global.isShikimoriPlaceholderPoster = isShikimoriPlaceholderPoster;
+    global.fetchPosterUrlForMal = fetchPosterUrlForMal;
     global.attachJikanPosterFallback = attachJikanPosterFallback;
     global.navigateToJikanAnnouncedAnime = navigateToJikanAnnouncedAnime;
     global.jikanVirtualAnimeId = jikanVirtualAnimeId;

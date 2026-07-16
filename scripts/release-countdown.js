@@ -435,6 +435,14 @@
             parseInt(entry.next_episode, 10) ||
             (Number.isFinite(epAired) && epAired >= 0 ? epAired + 1 : 1);
 
+        let posterUrl = '';
+        const imgPath = a.image && a.image.original ? String(a.image.original) : '';
+        if (imgPath && !imgPath.toLowerCase().includes('missing_')) {
+            posterUrl = imgPath.startsWith('http')
+                ? imgPath
+                : `https://shikimori.one${imgPath.startsWith('/') ? imgPath : `/${imgPath}`}`;
+        }
+
         return {
             mal_id: mal,
             shiki_id: a.id,
@@ -444,6 +452,7 @@
             status: a.status || '',
             kind: a.kind || '',
             score: parseFloat(a.score) || 0,
+            posterUrl,
             source: 'shikimori'
         };
     }

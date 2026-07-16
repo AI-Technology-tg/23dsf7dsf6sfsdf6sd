@@ -208,7 +208,9 @@
             isCalendarAnnounced: isAnn,
             rating: row.score || 0,
             genres: [],
-            posterUrl: malPosterUrl(mal),
+            posterUrl:
+                (row.posterUrl && String(row.posterUrl).trim()) ||
+                (Number.isFinite(mal) && mal > 0 ? malPosterUrl(mal) : ''),
             _calendarRow: row
         };
     }
@@ -521,7 +523,15 @@
         card.dataset.id = String(anime.id);
         if (anime.mal_id != null) card.dataset.malId = String(anime.mal_id);
 
-        const imgUrl = anime.posterUrl || (anime.mal_id != null ? malPosterUrl(anime.mal_id) : '');
+        const imgUrl =
+            anime.posterUrl &&
+            typeof global.isShikimoriPlaceholderPoster === 'function' &&
+            !global.isShikimoriPlaceholderPoster(anime.posterUrl)
+                ? anime.posterUrl
+                : anime.posterUrl &&
+                    typeof global.isShikimoriPlaceholderPoster !== 'function'
+                  ? anime.posterUrl
+                  : '';
         const score = anime.rating ? Number(anime.rating).toFixed(1) : '—';
         const title = anime.title || anime.titleAlt || '—';
         const status = statusLabel(anime);
@@ -531,7 +541,7 @@
 
         card.innerHTML = `
         <div class="jikan-card-poster">
-            <img src="${imgUrl}" alt="" decoding="async" loading="lazy" referrerpolicy="no-referrer" data-poster-fallback="1">
+            <img src="${imgUrl || 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'}" alt="" decoding="async" loading="lazy" referrerpolicy="no-referrer" data-poster-fallback="1">
             <div class="jikan-card-poster-hover" aria-hidden="true">
                 <button type="button" class="jikan-card-go-btn">Перейти</button>
             </div>
@@ -554,7 +564,12 @@
             titleEl.setAttribute('title', title);
         }
         const posterImg = card.querySelector('.jikan-card-poster img');
-        if (posterImg) posterImg.alt = title;
+        if (posterImg) {
+            posterImg.alt = title;
+            if (anime.mal_id != null && typeof global.attachJikanPosterFallback === 'function') {
+                global.attachJikanPosterFallback(posterImg, anime.mal_id, anime._jikanRaw || anime);
+            }
+        }
 
         const go = () => navigateKodikCard(anime);
         card.addEventListener('click', go);
@@ -572,7 +587,6 @@
         if (!container) return;
         const imgs = container.querySelectorAll('img[data-poster-fallback]');
         for (const img of imgs) {
-            if (img.complete && img.naturalWidth > 0) continue;
             const card = img.closest('.kodik-home-card');
             let malId = card?.dataset?.malId;
             if (!malId) continue;
@@ -580,40 +594,8 @@
                 const norm = global.reminkoNormalizeMalId(malId);
                 if (Number.isFinite(norm) && norm > 0) malId = String(norm);
             }
-
-            img.onerror = async function handlePosterError() {
-                if (this.dataset.jikanHydrated === '1') {
-                    this.style.display = 'none';
-                    return;
-                }
-                this.dataset.jikanHydrated = '1';
-                let url = '';
-                try {
-                    if (typeof global.jikanFetchPosterByMalId === 'function') {
-                        url = await global.jikanFetchPosterByMalId(malId);
-                    }
-                    if (!url && typeof global.jikanFetchAnimeFullByMalId === 'function') {
-                        const data = await global.jikanFetchAnimeFullByMalId(malId);
-                        url =
-                            data?.images?.jpg?.large_image_url || data?.images?.jpg?.image_url || '';
-                    }
-                    if (url) {
-                        this.onerror = () => {
-                            this.style.display = 'none';
-                        };
-                        this.src = url;
-                        return;
-                    }
-                } catch (_) {
-                    /* ignore */
-                }
-                this.style.display = 'none';
-            };
-
-            if (!img.src || img.src === global.location.href) {
-                img.src = malPosterUrl(malId);
-            } else if (img.complete && img.naturalWidth === 0) {
-                img.onerror();
+            if (typeof global.attachJikanPosterFallback === 'function') {
+                global.attachJikanPosterFallback(img, malId, null);
             }
         }
     }

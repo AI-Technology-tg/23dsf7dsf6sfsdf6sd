@@ -146,6 +146,10 @@
             titleEl.title = title;
         }
         item.addEventListener('click', () => navigateToAnime(row));
+        const posterImg = item.querySelector('.calendar-item__poster img');
+        if (posterImg && Number.isFinite(mal) && mal > 0 && typeof global.attachJikanPosterFallback === 'function') {
+            global.attachJikanPosterFallback(posterImg, mal, catalogAnime || row);
+        }
         return item;
     }
 

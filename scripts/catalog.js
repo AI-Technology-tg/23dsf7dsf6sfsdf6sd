@@ -215,9 +215,13 @@ function _createCalendarAnnouncedCard(row) {
     const img = card.querySelector('img');
     if (img) {
         img.alt = title;
-        img.onerror = () => {
-            img.style.display = 'none';
-        };
+        if (typeof attachJikanPosterFallback === 'function') {
+            attachJikanPosterFallback(img, mal, row);
+        } else {
+            img.onerror = () => {
+                img.style.display = 'none';
+            };
+        }
     }
     card.addEventListener('click', () => {
         try {
