@@ -1744,8 +1744,9 @@ function reminkoCalendarForAnime(anime, malId) {
     return null;
 }
 
-function animeShowOngoingCountdownBar(anime, jikanData, announcedOnly) {
+function animeShowOngoingCountdownBar(anime, jikanData, shiki, announcedOnly) {
     if (announcedOnly || !anime) return false;
+    if (shiki && (shiki.ongoing || shiki.status === 'ongoing')) return anime.type !== 'Фильм';
     const st = String(jikanData?.status || anime.status || '');
     if (st === 'Онгоинг') return anime.type !== 'Фильм';
     if (typeof reminkoIsAiringAnimeStatus === 'function' && reminkoIsAiringAnimeStatus(st)) {
@@ -1784,7 +1785,17 @@ async function hydrateAnimeViewCountdownSchedule(anime) {
     }
 
     let shiki = null;
-    if (anime.mal_id && window.shikimoriApi?.readCachedByMalId) {
+    if (anime.mal_id && window.shikimoriApi?.enqueueFetchShikimoriByMalId) {
+        try {
+            shiki = await window.shikimoriApi.enqueueFetchShikimoriByMalId(
+                Number(anime.mal_id),
+                anime.titleAlt || anime.title || ''
+            );
+        } catch (_) {
+            shiki = null;
+        }
+    }
+    if (!shiki && anime.mal_id && window.shikimoriApi?.readCachedByMalId) {
         shiki = window.shikimoriApi.readCachedByMalId(Number(anime.mal_id));
     }
     refreshAnimeViewCountdown(anime, jikanData, shiki);
@@ -1859,12 +1870,15 @@ function refreshAnimeViewCountdown(anime, jikanData, shiki) {
     syncAnimeViewCountdownIso(iso);
     const announced =
         (jikanData && jikanData.status === 'Not yet aired') ||
+        (shiki && (shiki.anons || shiki.status === 'anons')) ||
         (anime && typeof isAnnouncedCatalogAnime === 'function' && isAnnouncedCatalogAnime(anime));
-    const rollData = jikanData || anime?._jikanRaw || anime || null;
+    const rollData = reminkoRollDataFromContext
+        ? reminkoRollDataFromContext(jikanData || anime?._jikanRaw || anime, shiki)
+        : jikanData || anime?._jikanRaw || anime || null;
     startAnimeViewCountdowns(iso, {
         announcedOnly: announced,
         rollData,
-        showBarWhenUnknown: animeShowOngoingCountdownBar(anime, jikanData || anime?._jikanRaw, announced)
+        showBarWhenUnknown: animeShowOngoingCountdownBar(anime, jikanData || anime?._jikanRaw, shiki, announced)
     });
     return iso;
 }

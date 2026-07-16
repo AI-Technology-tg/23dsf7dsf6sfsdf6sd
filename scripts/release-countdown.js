@@ -89,28 +89,81 @@
         return s === 'not yet aired' || s.includes('анонс') || s.includes('upcoming');
     }
 
+    function reminkoIncompleteDateToIso(value) {
+        if (value == null || value === '') return '';
+        if (typeof value === 'string') {
+            const raw = value.trim();
+            if (!raw) return '';
+            const t = Date.parse(raw);
+            if (Number.isFinite(t)) return new Date(t).toISOString();
+            return '';
+        }
+        if (typeof value === 'object') {
+            const y = parseInt(value.year, 10);
+            const m = parseInt(value.month, 10);
+            const d = parseInt(value.day, 10);
+            if (Number.isFinite(y) && Number.isFinite(m) && Number.isFinite(d)) {
+                return new Date(Date.UTC(y, m - 1, d, 12, 0, 0)).toISOString();
+            }
+        }
+        return '';
+    }
+
+    function reminkoShikimoriCountdownCandidates(shiki) {
+        if (!shiki) return [];
+        const out = [];
+        if (shiki.next_episode_at) out.push(String(shiki.next_episode_at));
+        if (shiki.aired_on) {
+            const iso = reminkoIncompleteDateToIso(shiki.aired_on);
+            if (iso) out.push(iso);
+        }
+        if (shiki.released_on) {
+            const iso = reminkoIncompleteDateToIso(shiki.released_on);
+            if (iso) out.push(iso);
+        }
+        return out;
+    }
+
+    function reminkoRollDataFromContext(data, shiki) {
+        const base = data && typeof data === 'object' ? { ...data } : {};
+        if (shiki?.ongoing || shiki?.status === 'ongoing') {
+            base.status = base.status || 'Currently Airing';
+        } else if (shiki?.anons || shiki?.status === 'anons') {
+            base.status = base.status || 'Not yet aired';
+        }
+        return base;
+    }
+
     function reminkoResolveCountdownTargetIso(data, shiki, extra) {
         const cal = extra?.calendar || extra?._calendar || data?._calendar;
         const candidates = [];
         const now = Date.now();
+        const rollData = reminkoRollDataFromContext(data, shiki);
+
+        if (shiki) {
+            for (const iso of reminkoShikimoriCountdownCandidates(shiki)) {
+                candidates.push(iso);
+            }
+        }
 
         const calendarIso = cal && (cal.next_at || cal.nextAt);
         if (calendarIso) candidates.push(String(calendarIso));
 
-        const ne = shiki && (shiki.next_episode_at || shiki.nextEpisodeAt);
-        if (ne) candidates.push(String(ne));
-
-        const st = data?.status || '';
+        const st = rollData?.status || data?.status || '';
         if (reminkoIsAnnouncedAnimeStatus(st) || st === 'Not yet aired') {
-            if (data?.aired?.from) candidates.push(String(data.aired.from));
+            if (rollData?.aired?.from) candidates.push(String(rollData.aired.from));
+            else if (data?.aired?.from) candidates.push(String(data.aired.from));
         }
-        if (reminkoIsAiringAnimeStatus(st) && data?.broadcast?.day && data?.broadcast?.time) {
+        if (reminkoIsAiringAnimeStatus(st) && rollData?.broadcast?.day && rollData?.broadcast?.time) {
+            const b = reminkoBroadcastToNextIso(rollData.broadcast);
+            if (b) candidates.push(b);
+        } else if (reminkoIsAiringAnimeStatus(st) && data?.broadcast?.day && data?.broadcast?.time) {
             const b = reminkoBroadcastToNextIso(data.broadcast);
             if (b) candidates.push(b);
         }
 
         for (const iso of candidates) {
-            const future = reminkoRollForwardCountdownIso(iso, data);
+            const future = reminkoRollForwardCountdownIso(iso, rollData);
             if (future && Date.parse(future) > now) return future;
         }
         return '';
@@ -467,7 +520,8 @@
     global.reminkoBroadcastToNextIso = reminkoBroadcastToNextIso;
     global.reminkoIsAiringAnimeStatus = reminkoIsAiringAnimeStatus;
     global.reminkoIsAnnouncedAnimeStatus = reminkoIsAnnouncedAnimeStatus;
-    global.reminkoRollForwardCountdownIso = reminkoRollForwardCountdownIso;
+    global.reminkoRollDataFromContext = reminkoRollDataFromContext;
+    global.reminkoShikimoriCountdownCandidates = reminkoShikimoriCountdownCandidates;
     global.reminkoResolveCountdownTargetIso = reminkoResolveCountdownTargetIso;
     global.reminkoCountdownParts = reminkoCountdownParts;
     global.reminkoStartLiveCountdown = reminkoStartLiveCountdown;
