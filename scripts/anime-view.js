@@ -1698,13 +1698,20 @@ function getCatalogEpisodeCursor(anime) {
     if (!anime) return 1;
     const available = getCatalogAvailableEpisodes(anime);
     if (anime.type !== 'Сериал' || available <= 1) return 1;
-    let ep = available;
-    const epStr = anime.episodes != null ? String(anime.episodes).trim() : '';
-    const range = epStr.match(/(\d+)\s*-\s*(\d+)/);
-    if (range) ep = parseInt(range[2], 10);
-    else if (epStr) ep = parseInt(epStr, 10);
-    if (Number.isNaN(ep) || ep < 1) ep = 1;
-    return Math.min(ep, available);
+
+    try {
+        const rawEp = new URLSearchParams(window.location.search).get('episode');
+        if (rawEp != null && String(rawEp).trim() !== '') {
+            const n = parseInt(rawEp, 10);
+            if (Number.isFinite(n) && n >= 1) {
+                return Math.min(n, available);
+            }
+        }
+    } catch (_) {
+        /* ignore */
+    }
+
+    return 1;
 }
 
 function getCatalogAvailableEpisodes(anime) {
